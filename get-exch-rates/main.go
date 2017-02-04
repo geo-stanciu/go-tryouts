@@ -63,13 +63,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Publisher: %v\n", q.Header.Publisher)
-	fmt.Printf("PublishingDate: %v\n", q.Header.PublishingDate)
-	fmt.Printf("MessageType: %v\n", q.Header.MessageType)
-
-	fmt.Printf("Subject: %v\n", q.Body.Subject)
-	fmt.Printf("OrigCurrency: %v\n", q.Body.OrigCurrency)
-
 	for _, cube := range q.Body.Cube {
 		fmt.Printf("Date: %v\n", cube.Date)
 
@@ -91,7 +84,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			fmt.Printf("%v: %.4f\n", rate.Currency, multiplier*exchRate)
+			fmt.Printf("%v: %.4f\n", rate.Currency, exchRate/multiplier)
 		}
 	}
 }
