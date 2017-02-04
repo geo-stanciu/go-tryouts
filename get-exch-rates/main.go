@@ -84,7 +84,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			fmt.Printf("%v: %.4f\n", rate.Currency, exchRate/multiplier)
+			fmt.Printf("%v: %.6f\n", rate.Currency, exchRate/multiplier)
 		}
 	}
 }
