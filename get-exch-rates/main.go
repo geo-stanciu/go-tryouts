@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -42,13 +40,13 @@ type Query struct {
 }
 
 func main() {
-	var xmlstr string
+	var xmlBytes []byte
 	var err error
 
 	if len(os.Args) >= 2 {
-		xmlstr, err = readFromFile(os.Args[1])
+		xmlBytes, err = readBytesFromFile(os.Args[1])
 	} else {
-		xmlstr, err = readFromURL("http://bnro.ro/nbrfxrates.xml")
+		xmlBytes, err = readBytesFromURL("http://bnro.ro/nbrfxrates.xml")
 	}
 
 	if err != nil {
@@ -57,7 +55,7 @@ func main() {
 
 	var q Query
 
-	err = xml.Unmarshal([]byte(xmlstr), &q)
+	err = xml.Unmarshal(xmlBytes, &q)
 
 	if err != nil {
 		log.Fatal(err)
@@ -89,11 +87,11 @@ func main() {
 	}
 }
 
-func readFromURL(url string) (string, error) {
+func readBytesFromURL(url string) ([]byte, error) {
 	response, err := http.Get(url)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	defer response.Body.Close()
@@ -101,35 +99,26 @@ func readFromURL(url string) (string, error) {
 	buf, err := ioutil.ReadAll(response.Body)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	xmlstr := fmt.Sprintf("%s", buf)
-
-	return xmlstr, nil
+	return buf, nil
 }
 
-func readFromFile(filename string) (string, error) {
+func readBytesFromFile(filename string) ([]byte, error) {
 	f, err := os.Open(filename)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	defer f.Close()
 
-	scanner := bufio.NewScanner(f)
+	buf, err := ioutil.ReadAll(f)
 
-	var buffer bytes.Buffer
-
-	for scanner.Scan() {
-		buffer.WriteString(scanner.Text())
-		buffer.WriteString("\n")
+	if err != nil {
+		return nil, err
 	}
 
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	return buffer.String(), nil
+	return buf, nil
 }
