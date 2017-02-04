@@ -3,12 +3,43 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
+
+type Rate struct {
+	Currency   string `xml:"currency,attr"`
+	Multiplier string `xml:"multiplier,attr"`
+	Rate       string `xml:",chardata"`
+}
+
+type Cube struct {
+	Date string `xml:"date,attr"`
+	Rate []Rate
+}
+
+type Header struct {
+	Publisher      string `xml:"Publisher"`
+	PublishingDate string `xml:"PublishingDate"`
+	MessageType    string `xml:"MessageType"`
+}
+
+type Body struct {
+	Subject      string `xml:"Subject"`
+	OrigCurrency string `xml:"OrigCurrency"`
+	Cube         []Cube
+}
+
+type Query struct {
+	XMLName xml.Name `xml:"DataSet"`
+	Header  Header   `xml:"Header"`
+	Body    Body     `xml:"Body"`
+}
 
 func main() {
 	var xmlstr string
@@ -20,10 +51,48 @@ func main() {
 		xmlstr, err = readFromURL("http://bnro.ro/nbrfxrates.xml")
 	}
 
-	fmt.Println(xmlstr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var q Query
+
+	err = xml.Unmarshal([]byte(xmlstr), &q)
 
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	fmt.Printf("Publisher: %v\n", q.Header.Publisher)
+	fmt.Printf("PublishingDate: %v\n", q.Header.PublishingDate)
+	fmt.Printf("MessageType: %v\n", q.Header.MessageType)
+
+	fmt.Printf("Subject: %v\n", q.Body.Subject)
+	fmt.Printf("OrigCurrency: %v\n", q.Body.OrigCurrency)
+
+	for _, cube := range q.Body.Cube {
+		fmt.Printf("Date: %v\n", cube.Date)
+
+		for _, rate := range cube.Rate {
+			multiplier := 1.0
+			exchRate := 1.0
+
+			if len(rate.Multiplier) > 0 {
+				multiplier, err = strconv.ParseFloat(rate.Multiplier, 64)
+
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			exchRate, err = strconv.ParseFloat(rate.Rate, 64)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Printf("%v: %.4f\n", rate.Currency, multiplier*exchRate)
+		}
 	}
 }
 
