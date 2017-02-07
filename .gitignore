@@ -1,2 +1,4 @@
 .directory
-
+*.~sql
+*.~cod
+*.bak
