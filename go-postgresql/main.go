@@ -13,7 +13,7 @@ func main() {
 	connStr := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s&application_name=%s",
 		"geo",
-		"p",
+		"geo",
 		"localhost",
 		"5432",
 		"devel",
