@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -38,11 +40,43 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		filename = fmt.Sprintf("%s.html", r.URL.Path[1:])
 	}
 
-	err := templates.ExecuteTemplate(w, filename, passedObj)
+	err := executeTemplate(w, filename, passedObj)
 
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "Not found", 404)
+		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return
 	}
+}
+
+func executeTemplate(w io.Writer, tmplName string, data interface{}) error {
+	var err error
+
+	layout := templates.Lookup("layout.html")
+
+	if layout == nil {
+		errNoLayout := errors.New("layout.html not found")
+		return errNoLayout
+	}
+
+	layout, err = layout.Clone()
+
+	if err != nil {
+		return err
+	}
+
+	t := templates.Lookup(tmplName)
+
+	if t == nil {
+		errNoLayout := fmt.Errorf("%s not found", tmplName)
+		return errNoLayout
+	}
+
+	_, err = layout.AddParseTree("content", t.Tree)
+
+	if err != nil {
+		return err
+	}
+
+	return layout.Execute(w, data)
 }

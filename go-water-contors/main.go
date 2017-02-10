@@ -73,8 +73,9 @@ func main() {
 	http.Handle("/css/",
 		http.StripPrefix("/css/", http.FileServer(http.Dir("resources/css"))))
 
-	http.HandleFunc("/", handler)
 	http.Handle("/favicon.ico", http.NotFoundHandler())
+
+	http.HandleFunc("/", handler)
 
 	err = http.ListenAndServe(*addr, nil)
 
