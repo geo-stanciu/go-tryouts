@@ -174,9 +174,17 @@ func createTablesIfNotExist(db *sql.DB) error {
 
 	var count int32
 
+	tx, err := db.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
 	query := "select count(*) from currency"
 
-	err = db.QueryRow(query).Scan(&count)
+	err = tx.QueryRow(query).Scan(&count)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -188,30 +196,32 @@ func createTablesIfNotExist(db *sql.DB) error {
 	if count == 0 {
 		query = "insert into currency (currency) values ($1)"
 
-		_, err = db.Exec(query, "RON")
+		_, err = tx.Exec(query, "RON")
 
 		if err != nil {
 			return err
 		}
 
-		_, err = db.Exec(query, "EUR")
+		_, err = tx.Exec(query, "EUR")
 
 		if err != nil {
 			return err
 		}
 
-		_, err = db.Exec(query, "USD")
+		_, err = tx.Exec(query, "USD")
 
 		if err != nil {
 			return err
 		}
 
-		_, err = db.Exec(query, "CHF")
+		_, err = tx.Exec(query, "CHF")
 
 		if err != nil {
 			return err
 		}
 	}
+
+	tx.Commit()
 
 	return nil
 }
@@ -224,6 +234,14 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 	if err != nil {
 		return err
 	}
+
+	tx, err := db.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
 
 	for _, cube := range q.Body.Cube {
 		fmt.Printf("Importing exchange rates for %s\n", cube.Date)
@@ -246,7 +264,7 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 				return err
 			}
 
-			err = storeRate(db, cube.Date, rate.Currency, multiplier, exchRate)
+			err = storeRate(tx, cube.Date, rate.Currency, multiplier, exchRate)
 
 			if err != nil {
 				return err
@@ -254,16 +272,18 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 		}
 	}
 
+	tx.Commit()
+
 	return nil
 }
 
-func storeRate(db *sql.DB, date string, currency string, multiplier float64, exchRate float64) error {
+func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exchRate float64) error {
 	var currencyID int32
 	var count int32
 
 	query := "select currency_id from currency where currency = $1"
 
-	err := db.QueryRow(query, currency).Scan(&currencyID)
+	err := tx.QueryRow(query, currency).Scan(&currencyID)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -279,7 +299,7 @@ func storeRate(db *sql.DB, date string, currency string, multiplier float64, exc
 		  and rate_date = to_date($2, 'yyyy-mm-dd')
 	`
 
-	err = db.QueryRow(query, currencyID, date).Scan(&count)
+	err = tx.QueryRow(query, currencyID, date).Scan(&count)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -300,7 +320,7 @@ func storeRate(db *sql.DB, date string, currency string, multiplier float64, exc
 			)
 		`
 
-		_, err = db.Exec(query, currencyID, date, exchRate/multiplier)
+		_, err = tx.Exec(query, currencyID, date, exchRate/multiplier)
 
 		if err != nil {
 			return err
