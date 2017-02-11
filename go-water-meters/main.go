@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,16 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"strings"
-
 	_ "github.com/lib/pq"
 )
-
-type Configuration struct {
-	Port  string `json:"Port"`
-	DbURL string `json:"DbURL"`
-	Db    string `json:"DB"`
-}
 
 var (
 	templateDelims = []string{"{{%", "%}}"}
@@ -49,13 +40,7 @@ func main() {
 	var err error
 
 	cfgFile := "./conf.json"
-
-	if _, err = os.Stat(cfgFile); os.IsNotExist(err) {
-		log.Println(fmt.Sprintf("No config file was found with name: %s", cfgFile))
-		os.Exit(1)
-	}
-
-	err = readConfig(cfgFile)
+	err = config.readFromFile(cfgFile)
 
 	if err != nil {
 		log.Fatal(err)
@@ -96,55 +81,6 @@ func main() {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-}
-
-func parseTemplate(basePath string) filepath.WalkFunc {
-	return func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// don't process folders themselves
-		if info.IsDir() {
-			return nil
-		}
-
-		if !strings.Contains(path, ".html") {
-			return nil
-		}
-
-		templateName := path[len(basePath):]
-
-		if templates == nil {
-			templates = template.New(templateName)
-			templates.Delims(templateDelims[0], templateDelims[1])
-			_, err = templates.ParseFiles(path)
-		} else {
-			_, err = templates.New(templateName).ParseFiles(path)
-		}
-
-		return err
-	}
-}
-
-func readConfig(cfgFile string) error {
-	file, err := os.Open(cfgFile)
-
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	decoder := json.NewDecoder(file)
-
-	err = decoder.Decode(&config)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func connect2Database(dbURL string) error {

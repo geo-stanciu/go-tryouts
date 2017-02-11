@@ -14,7 +14,7 @@ type Page struct {
 	Action     string
 }
 
-func (p Page) getModel(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (p *Page) getModel(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	switch p.Controller {
 	case "Home":
 		home := HomeController{}
