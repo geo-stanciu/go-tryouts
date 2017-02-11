@@ -22,20 +22,19 @@ type Configuration struct {
 }
 
 var (
-	templateDelims   = []string{"{{%", "%}}"}
-	templateBasePath string
-	templates        *template.Template
-	addr             *string
-	db               *sql.DB
-	config           = Configuration{}
+	templateDelims = []string{"{{%", "%}}"}
+	templates      *template.Template
+	addr           *string
+	db             *sql.DB
+	config         = Configuration{}
 )
 
 func init() {
 	// initialize the templates,
 	// since we have custom delimiters.
-	templateBasePath := "templates/"
+	basePath := "templates/"
 
-	err := filepath.Walk(templateBasePath, parseTemplate)
+	err := filepath.Walk(basePath, parseTemplate(basePath))
 
 	if err != nil {
 		log.Fatal(err)
@@ -95,27 +94,29 @@ func main() {
 	}
 }
 
-func parseTemplate(path string, info os.FileInfo, err error) error {
-	if err != nil {
+func parseTemplate(basePath string) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// don't process folders themselves
+		if info.IsDir() {
+			return nil
+		}
+
+		templateName := path[len(basePath):]
+
+		if templates == nil {
+			templates = template.New(templateName)
+			templates.Delims(templateDelims[0], templateDelims[1])
+			_, err = templates.ParseFiles(path)
+		} else {
+			_, err = templates.New(templateName).ParseFiles(path)
+		}
+
 		return err
 	}
-
-	// don't process folders themselves
-	if info.IsDir() {
-		return nil
-	}
-
-	templateName := path[len(templateBasePath):]
-
-	if templates == nil {
-		templates = template.New(templateName)
-		templates.Delims(templateDelims[0], templateDelims[1])
-		_, err = templates.ParseFiles(path)
-	} else {
-		_, err = templates.New(templateName).ParseFiles(path)
-	}
-
-	return err
 }
 
 func readConfig(cfgFile string) error {

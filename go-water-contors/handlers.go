@@ -29,6 +29,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "private, max-age=600, no-store")
 
 	var filename string
 
