@@ -24,10 +24,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	url := strings.ToLower(r.URL.Path)
+
+	if strings.Contains(url, ".js") {
+		http.ServeFile(w, r, r.URL.Path[1:])
+		return
+	}
+
 	t := time.Now().Unix()
 
 	passedObj := template0Data{
-		Title:   "Index",
 		AppName: appName,
 		Version: appVersion,
 		Date:    t,
@@ -36,7 +42,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "private, max-age=600, no-store")
 
-	page, err := getPageByURL(strings.ToLower(r.URL.Path))
+	page, err := getPageByURL(url)
 
 	if err != nil {
 		log.Println(err)
@@ -49,7 +55,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	model, err := page.getModel()
+	model, err := page.getModel(w, r)
 
 	if err != nil {
 		log.Println(err)
