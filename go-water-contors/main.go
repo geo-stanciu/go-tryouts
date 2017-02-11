@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	_ "github.com/lib/pq"
 )
@@ -21,15 +22,24 @@ type Configuration struct {
 }
 
 var (
-	templateDelims = []string{"{{%", "%}}"}
-	templates      *template.Template
-	addr           *string
-	db             *sql.DB
-	config         = Configuration{}
+	templateDelims   = []string{"{{%", "%}}"}
+	templateBasePath string
+	templates        *template.Template
+	addr             *string
+	db               *sql.DB
+	config           = Configuration{}
 )
 
 func init() {
-	templates = template.Must(template.ParseGlob("templates/*.html"))
+	// initialize the templates,
+	// since we have custom delimiters.
+	templateBasePath := "templates/"
+
+	err := filepath.Walk(templateBasePath, parseTemplate)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
@@ -83,6 +93,29 @@ func main() {
 		log.Fatal(err)
 		os.Exit(1)
 	}
+}
+
+func parseTemplate(path string, info os.FileInfo, err error) error {
+	if err != nil {
+		return err
+	}
+
+	// don't process folders themselves
+	if info.IsDir() {
+		return nil
+	}
+
+	templateName := path[len(templateBasePath):]
+
+	if templates == nil {
+		templates = template.New(templateName)
+		templates.Delims(templateDelims[0], templateDelims[1])
+		_, err = templates.ParseFiles(path)
+	} else {
+		_, err = templates.New(templateName).ParseFiles(path)
+	}
+
+	return err
 }
 
 func readConfig(cfgFile string) error {
