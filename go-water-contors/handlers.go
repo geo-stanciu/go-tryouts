@@ -52,19 +52,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func executeTemplate(w io.Writer, tmplName string, data interface{}) error {
 	var err error
 
-	layout := templates.Lookup("layout.html")
-
-	if layout == nil {
-		errNoLayout := errors.New("layout.html not found")
-		return errNoLayout
-	}
-
-	layout, err = layout.Clone()
-
-	if err != nil {
-		return err
-	}
-
 	t := templates.Lookup(tmplName)
 
 	if t == nil {
@@ -72,11 +59,24 @@ func executeTemplate(w io.Writer, tmplName string, data interface{}) error {
 		return errNoLayout
 	}
 
-	_, err = layout.AddParseTree("content", t.Tree)
+	layout := templates.Lookup("layout")
+
+	if layout == nil {
+		errNoLayout := errors.New("layout.html not found")
+		return errNoLayout
+	}
+
+	page, err := layout.Clone()
 
 	if err != nil {
 		return err
 	}
 
-	return layout.Execute(w, data)
+	_, err = page.AddParseTree("content", t.Tree)
+
+	if err != nil {
+		return err
+	}
+
+	return page.Execute(w, data)
 }

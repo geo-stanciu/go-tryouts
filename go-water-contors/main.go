@@ -29,7 +29,7 @@ var (
 )
 
 func init() {
-	templates = template.Must(template.ParseGlob("templates/*.html")).Delims(templateDelims[0], templateDelims[1])
+	templates = template.Must(template.ParseGlob("templates/*.html"))
 }
 
 func main() {
