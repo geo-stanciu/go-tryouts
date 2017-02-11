@@ -11,8 +11,11 @@ import (
 )
 
 type template0Data struct {
+	Title   string
+	AppName string
 	Version string
 	Date    int64
+	Model   interface{}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -24,24 +27,40 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	t := time.Now().Unix()
 
 	passedObj := template0Data{
-		Version: "0.0.0.1",
+		Title:   "Index",
+		AppName: appName,
+		Version: appVersion,
 		Date:    t,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "private, max-age=600, no-store")
 
-	var filename string
+	page, err := getPageByURL(strings.ToLower(r.URL.Path))
 
-	if r.URL.Path == "/" {
-		filename = "index.html"
-	} else if strings.Contains(r.URL.Path, ".html") {
-		filename = fmt.Sprintf("%s", r.URL.Path[1:])
-	} else {
-		filename = fmt.Sprintf("%s.html", r.URL.Path[1:])
+	if err != nil {
+		log.Println(err)
+		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
+		return
 	}
 
-	err := executeTemplate(w, filename, passedObj)
+	if page == nil {
+		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
+		return
+	}
+
+	model, err := page.getModel()
+
+	if err != nil {
+		log.Println(err)
+		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
+		return
+	}
+
+	passedObj.Title = page.Title
+	passedObj.Model = model
+
+	err = executeTemplate(w, page.Template, passedObj)
 
 	if err != nil {
 		log.Println(err)

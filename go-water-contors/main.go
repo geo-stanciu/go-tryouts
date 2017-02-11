@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"strings"
+
 	_ "github.com/lib/pq"
 )
 
@@ -27,6 +29,8 @@ var (
 	addr           *string
 	db             *sql.DB
 	config         = Configuration{}
+	appName        = "Water Meter"
+	appVersion     = "0.0.0.1"
 )
 
 func init() {
@@ -76,11 +80,11 @@ func main() {
 	http.Handle("/static",
 		http.FileServer(http.Dir("./static/")))
 	http.Handle("/images/",
-		http.StripPrefix("/images/", http.FileServer(http.Dir("resources/images"))))
+		http.StripPrefix("/images/", http.FileServer(http.Dir("public/images"))))
 	http.Handle("/js/",
-		http.StripPrefix("/js/", http.FileServer(http.Dir("resources/js"))))
+		http.StripPrefix("/js/", http.FileServer(http.Dir("public/js"))))
 	http.Handle("/css/",
-		http.StripPrefix("/css/", http.FileServer(http.Dir("resources/css"))))
+		http.StripPrefix("/css/", http.FileServer(http.Dir("public/css"))))
 
 	http.Handle("/favicon.ico", http.NotFoundHandler())
 
@@ -102,6 +106,10 @@ func parseTemplate(basePath string) filepath.WalkFunc {
 
 		// don't process folders themselves
 		if info.IsDir() {
+			return nil
+		}
+
+		if !strings.Contains(path, ".html") {
 			return nil
 		}
 
