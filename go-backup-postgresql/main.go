@@ -32,6 +32,16 @@ func main() {
 
 	var err error
 
+	logFile, err := os.OpenFile(fmt.Sprintf("logs/backup_%s.txt", sData), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer logFile.Close()
+
+	log.SetOutput(logFile)
+
 	cfgFile := "./conf.json"
 	err = config.readFromFile(cfgFile)
 
@@ -330,7 +340,13 @@ func deleteOldBackups(logID int, archFile2Keep string) error {
 
 		log.Printf("Delete \"%s\"\n", bkFile)
 
-		err = os.Remove(bkFile)
+		if _, err := os.Stat(bkFile); err == nil {
+			err = os.Remove(bkFile)
+
+			if err != nil {
+				return err
+			}
+		}
 
 		if err != nil {
 			return err
@@ -358,7 +374,7 @@ func deleteOldBackups(logID int, archFile2Keep string) error {
 			return err
 		}
 
-		fmt.Println(string(out))
+		log.Println(string(out))
 	}
 
 	return nil
