@@ -1,0 +1,7 @@
+{
+  "DbURL": "postgres://postgres:postgres@localhost:5432/devel?sslmode=disable&application_name=Backup",
+  "PG-data-dir": "D:/PostgreSQL/9.6/data",
+  "PG-backup-dir": "d:/backup/devel",
+  "PG-archive-dir": "d:/backup/devel/archive",
+  "NumberOfBackups2Keep": 3
+}
