@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -40,7 +41,9 @@ func main() {
 
 	defer logFile.Close()
 
-	log.SetOutput(logFile)
+	mw := io.MultiWriter(os.Stdout, logFile)
+
+	log.SetOutput(mw)
 
 	cfgFile := "./conf.json"
 	err = config.readFromFile(cfgFile)
