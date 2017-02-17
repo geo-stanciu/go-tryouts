@@ -1,4 +1,20 @@
 <div>You are at index</div>
 <br><br>
+
+{{% if not .HasResponseData %}}
+<form action="/login" method="POST">
+    Username:<input type="text" name="username">
+    Password:<input type="password" name="password">
+    <input type="submit" value="Login">
+</form>
+{{% end %}}
+
+{{% if .HasResponseData %}}
+<div>User is: {{% .ResponseModel.User %}}</div>
+{{% end %}}
+
+<br><br>
 <a href="/">index</a>
 <a href="/about">about</a>
+
+<script src="/templates/home/index.js?v={{% .Version %}}"></script>
