@@ -41,7 +41,7 @@ func getUserByName(user string) (*MembershipUser, error) {
 }
 
 func loginByUserPassword(user string, pass string) (bool, error) {
-	var password string
+	var hashedPassword string
 	var passwordSalt string
 
 	query := `
@@ -51,7 +51,7 @@ func loginByUserPassword(user string, pass string) (bool, error) {
          WHERE lower(u.username) = lower($1)
     `
 
-	err := db.QueryRow(query, user).Scan(&password, &passwordSalt)
+	err := db.QueryRow(query, user).Scan(&hashedPassword, &passwordSalt)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -61,18 +61,13 @@ func loginByUserPassword(user string, pass string) (bool, error) {
 	}
 
 	passBytes := []byte(passwordSalt + pass)
+	hashBytes := []byte(hashedPassword)
 
-	hashedPassword, err := bcrypt.GenerateFromPassword(passBytes, bcrypt.DefaultCost)
+	err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
 
 	if err != nil {
 		return false, err
 	}
 
-	computedPassword := string(hashedPassword)
-
-	if password == computedPassword {
-		return true, nil
-	}
-
-	return false, nil
+	return true, nil
 }

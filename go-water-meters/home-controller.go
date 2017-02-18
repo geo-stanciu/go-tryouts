@@ -26,12 +26,6 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*LoginRespo
 			return &lres, err
 		}
 
-		if user != "a" || pass != "b" {
-			lres.bErr = true
-			lres.sErr = "Unknown user or wrong password."
-			return &lres, nil
-		}
-
 		err = createSession(w, r, user)
 
 		if err != nil {
