@@ -4,9 +4,7 @@ declare
 	
 	p varchar[];
 	arr  varchar[] := array[
-		[ 'Index', 'home/index.html', 'Home', 'Index', 'index' ],
-		[ 'About', 'home/about.html', 'Home', 'About', 'about' ],
-		[ 'Login', 'home/login.html', 'Home', 'Login', 'login' ]
+		[ 'login', 'Home', 'Login', 'index', 'login' ]
 	];
 begin
 	
@@ -14,16 +12,16 @@ begin
 	LOOP
 		select count(*)
 		  into lContor
-		  from wmeter.page
-		 where page_url = p[5];
+		  from wmeter.request
+		 where request_url = p[1];
 		
 		if lContor = 0 then
-			insert into wmeter.page (
-				page_title,
-				page_template,
+			insert into wmeter.request (
+				request_url,
 				controller,
 				action,
-				page_url
+				redirect_url,
+				redirect_on_error
 			)
 			values (
 				p[1],

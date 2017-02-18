@@ -11,18 +11,14 @@ import (
 )
 
 type template0Data struct {
-	Title           string
-	AppName         string
-	Version         string
-	Date            int64
-	Model           interface{}
-	HasResponseData bool
-	ResponseModel   interface{}
-}
-
-type IndexModel struct {
-	IsLoggedIn bool
-	User       string
+	Err     bool
+	SErr    string
+	Title   string
+	AppName string
+	Version string
+	Date    int64
+	Session SessionData
+	Model   interface{}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -37,30 +33,66 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePostRequest(w http.ResponseWriter, r *http.Request) {
+	url := strings.ToLower(r.URL.Path)
+
 	r.ParseForm()
 
-	user := r.FormValue("username")
-	//pass := r.FormValue("password")
+	helper, err := getResponseHelperByURL(url)
 
-	model := IndexModel{true, user}
+	if err != nil {
+		log.Println(err)
+	}
 
-	redirect2Url(w, r, "/index", model)
+	if helper == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	model, err := helper.getResponse(w, r)
+
+	if err != nil {
+		log.Println(err)
+	}
+	
+	if model == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	if model.Err() {
+		setOperationError(w, r, model.SErr())
+	}
+
+	http.Redirect(w, r, model.Url(), http.StatusSeeOther)
 }
 
 func handleGetRequest(w http.ResponseWriter, r *http.Request) {
-	sendResponse(w, r, r.URL.Path, nil)
-}
+	url := strings.ToLower(r.URL.Path)
 
-func redirect2Url(w http.ResponseWriter, r *http.Request, sURL string, responseModel interface{}) {
-	sendResponse(w, r, sURL, responseModel)
-}
+	session, err := getSessionData(r)
 
-func sendResponse(w http.ResponseWriter, r *http.Request, sURL string, responseModel interface{}) {
-	url := strings.ToLower(sURL)
+	if (err != nil || !session.LoggedIn) && url != "/login" {
+		if err != nil {
+			log.Println(err)
+		}
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	if session.LoggedIn && strings.HasPrefix(url, "/login") {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 
 	if strings.HasSuffix(url, ".js") {
-		http.ServeFile(w, r, sURL[1:])
+		http.ServeFile(w, r, r.URL.Path[1:])
 		return
+	}
+
+	bErr, sErr, err := getLastOperationError(r)
+
+	if err != nil {
+		log.Println(err)
 	}
 
 	t := time.Now().Unix()
@@ -78,12 +110,12 @@ func sendResponse(w http.ResponseWriter, r *http.Request, sURL string, responseM
 
 	if err != nil {
 		log.Println(err)
-		http.Error(w, fmt.Sprintf("%s - Not found", sURL), 404)
+		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return
 	}
 
 	if page == nil {
-		http.Error(w, fmt.Sprintf("%s - Not found", sURL), 404)
+		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return
 	}
 
@@ -91,25 +123,21 @@ func sendResponse(w http.ResponseWriter, r *http.Request, sURL string, responseM
 
 	if err != nil {
 		log.Println(err)
-		http.Error(w, fmt.Sprintf("%s - Not found", sURL), 404)
+		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return
 	}
 
+	passedObj.Err = bErr
+	passedObj.SErr = sErr
 	passedObj.Title = page.Title
 	passedObj.Model = model
-
-	if responseModel != nil {
-		passedObj.HasResponseData = true
-		passedObj.ResponseModel = responseModel
-	} else {
-		passedObj.HasResponseData = false
-	}
+	passedObj.Session = *session
 
 	err = executeTemplate(w, page.Template, passedObj)
 
 	if err != nil {
 		log.Println(err)
-		http.Error(w, fmt.Sprintf("%s - Not found", sURL), 404)
+		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return
 	}
 }

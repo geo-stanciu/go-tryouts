@@ -13,20 +13,34 @@ import (
 	"path/filepath"
 	"time"
 
+	"encoding/gob"
+
+	"github.com/gorilla/sessions"
+
+	"strings"
+
+	"github.com/gorilla/securecookie"
 	_ "github.com/lib/pq"
 )
 
 var (
-	templateDelims = []string{"{{%", "%}}"}
-	templates      *template.Template
-	addr           *string
-	db             *sql.DB
-	config         = Configuration{}
-	appName        = "Water Meter"
-	appVersion     = "0.0.0.1"
+	templateDelims  = []string{"{{%", "%}}"}
+	templates       *template.Template
+	addr            *string
+	db              *sql.DB
+	config          = Configuration{}
+	appName         = "Water Meter"
+	appVersion      = "0.0.0.1"
+	cookieStoreName = strings.Replace(appName, " ", "", -1)
+	cookieStore     = sessions.NewCookieStore(
+		securecookie.GenerateRandomKey(32),
+		securecookie.GenerateRandomKey(32),
+	)
 )
 
 func init() {
+	gob.Register(&SessionData{})
+
 	// initialize the templates,
 	// since we have custom delimiters.
 	basePath := "templates/"

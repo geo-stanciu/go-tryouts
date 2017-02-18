@@ -1,16 +1,8 @@
 <div>You are at index</div>
 <br><br>
 
-{{% if not .HasResponseData %}}
-<form action="/login" method="POST">
-    Username:<input type="text" name="username">
-    Password:<input type="password" name="password">
-    <input type="submit" value="Login">
-</form>
-{{% end %}}
-
-{{% if .HasResponseData %}}
-<div>User is: {{% .ResponseModel.User %}}</div>
+{{% if .Session.LoggedIn %}}
+<div>User is: {{% .Session.User.Username %}}</div>
 {{% end %}}
 
 <br><br>
