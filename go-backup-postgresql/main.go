@@ -163,10 +163,10 @@ func createBackupTables() error {
 	t1 := `
 		create table if not exists backup_log (
 			backup_log_id   serial PRIMARY KEY,
-			backup_time     timestamp DEFAULT statement_timestamp(),
-			backup_file     varchar(256),
-			arch_file       varchar(256),
-			last_file_index varchar(8)
+			backup_time     timestamp    not null DEFAULT statement_timestamp(),
+			backup_file     varchar(256) not null,
+			arch_file       varchar(256) not null,
+			last_file_index varchar(8)   not null
 		)
 	`
 

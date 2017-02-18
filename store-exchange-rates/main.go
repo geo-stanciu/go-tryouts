@@ -143,7 +143,7 @@ func createTablesIfNotExist(db *sql.DB) error {
 	t1 := `
 		create table if not exists currency (
 			currency_id serial primary key,
-			currency    varchar(8),
+			currency    varchar(8) not null,
 			constraint currency_uk unique (currency)
 		)
 	`
@@ -151,9 +151,9 @@ func createTablesIfNotExist(db *sql.DB) error {
 	t2 := `
 		create table if not exists exchange_rate (
 			exchange_rate_id serial primary key,
-			currency_id      int,
-			rate_date        date,       
-			rate             numeric(18, 6),
+			currency_id      int            not null,
+			rate_date        date           not null,       
+			rate             numeric(18, 6) not null,
 			constraint exchange_rate_currency_fk foreign key (currency_id)
 			    references currency (currency_id),
 			constraint exchange_rate_uk unique (currency_id, rate_date)
