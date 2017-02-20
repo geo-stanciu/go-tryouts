@@ -19,7 +19,7 @@ func parseTemplate(basePath string) filepath.WalkFunc {
 			return nil
 		}
 
-		if !strings.Contains(path, ".html") {
+		if !strings.HasSufix(path, ".html") {
 			return nil
 		}
 
