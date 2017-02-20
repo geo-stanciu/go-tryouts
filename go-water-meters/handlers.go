@@ -98,6 +98,8 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 	t := time.Now().Unix()
 
 	passedObj := template0Data{
+		Err:     bErr,
+		SErr:    sErr,
 		AppName: appName,
 		Version: appVersion,
 		Date:    t,
@@ -127,8 +129,6 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	passedObj.Err = bErr
-	passedObj.SErr = sErr
 	passedObj.Title = page.Title
 	passedObj.Model = model
 	passedObj.Session = *session
