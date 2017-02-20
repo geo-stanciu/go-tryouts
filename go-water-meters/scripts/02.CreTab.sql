@@ -34,7 +34,7 @@ CREATE TABLE wmeter.user_password (
     user_id       int          not null,
     password      varchar(256) not null,
     password_salt varchar(256) not null,
-    valid_from    timestamp    not null,
+    valid_from    timestamp    not null DEFAULT statement_timestamp(),
     valid_until   timestamp,
     constraint user_password_fk foreign key (user_id)
         references wmeter.user(user_id)
