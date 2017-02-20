@@ -19,11 +19,15 @@ CREATE TABLE wmeter.request (
 );
 
 CREATE TABLE wmeter.user (
-    user_id  serial PRIMARY KEY,
-    username varchar(64) not null,
-    name     varchar(64) not null,
-    surname  varchar(64) not null,
-    email    varchar(64) not null
+    user_id         serial PRIMARY KEY,
+    username        varchar(64) not null,
+    name            varchar(64) not null,
+    surname         varchar(64) not null,
+    email           varchar(64) not null,
+    loweredusername varchar(64) not null,
+    loweredemail    varchar(64) not null,
+    constraint lower_user_uk unique (loweredusername),
+    constraint lower_email_uk unique (loweredemail)
 );
 
 CREATE UNIQUE INDEX username_uk

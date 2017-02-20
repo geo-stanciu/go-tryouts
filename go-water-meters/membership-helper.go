@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"strings"
+
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -28,10 +30,10 @@ func getUserByName(user string) (*MembershipUser, error) {
                surname,
                email
           FROM wmeter.user
-         WHERE lower(username) = lower($1)
+         WHERE loweredusername = lower($1)
     `
 
-	err := db.QueryRow(query, user).Scan(&u.UserID, &u.Username, &u.Name, &u.Surname, &u.Email)
+	err := db.QueryRow(query, user).Scan(&u.Username, &u.Name, &u.Surname, &u.Email)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -51,7 +53,7 @@ func loginByUserPassword(user string, pass string) (bool, error) {
         SELECT p.password, p.password_salt
           FROM wmeter.user u
           LEFT OUTER JOIN wmeter.user_password p ON (u.user_id = p.user_id)
-         WHERE lower(u.username) = lower($1)
+         WHERE loweredusername = lower($1)
     `
 
 	err := db.QueryRow(query, user).Scan(&hashedPassword, &passwordSalt)
@@ -77,7 +79,6 @@ func loginByUserPassword(user string, pass string) (bool, error) {
 
 func (u *MembershipUser) Save() error {
 	var userID int
-	var passwordID int
 	var mutex = &sync.Mutex{}
 
 	mutex.Lock()
@@ -94,7 +95,7 @@ func (u *MembershipUser) Save() error {
 	query := `
 		SELECT user_id
 		  FROM wmeter.user
-		 WHERE lower(username) = lower($1)
+		 WHERE loweredusername = lower($1)
 	`
 
 	err = tx.QueryRow(query, u.Username).Scan(&userID)
@@ -110,17 +111,27 @@ func (u *MembershipUser) Save() error {
 		query := `
 			INSERT INTO wmeter.user (
 				username,
+				loweredusername,
 				name,
 				surname,
-				email
+				email,
+				loweredemail
 			)
 			VALUES (
-				$1, $2, $3, $4
+				$1, $2, $3, $4, $5, $6
 			)
 			RETURNING user_id
 		`
 
-		err = tx.QueryRow(query, u.Username, u.Name, u.Surname, u.Email).Scan(&userID)
+		err = tx.QueryRow(
+			query,
+			u.Username,
+			strings.ToLower(u.Username),
+			u.Name,
+			u.Surname,
+			u.Email,
+			strings.ToLower(u.Email),
+		).Scan(&userID)
 
 		switch {
 		case err == sql.ErrNoRows:
@@ -141,11 +152,13 @@ func (u *MembershipUser) Save() error {
 	} else {
 		query = `
 			UPDATE wmeter.user
-			   SET username = $1,
-			       name     = $2,
-				   surname  = $3,
-				   email    = $4
-			 WHERE user_id = $5
+			   SET username        = $1,
+			       loweredusername = $2,
+			       name            = $3,
+				   surname         = $4,
+				   email           = $5,
+				   loweredemail    = $6
+			 WHERE user_id = $7
 		`
 
 		usr := u.Username
@@ -154,7 +167,16 @@ func (u *MembershipUser) Save() error {
 			usr = u.NewUsername
 		}
 
-		_, err = tx.Exec(query, usr, u.Name, u.Surname, u.Email, userID)
+		_, err = tx.Exec(
+			query,
+			usr,
+			strings.ToLower(usr),
+			u.Name,
+			u.Surname,
+			u.Email,
+			strings.ToLower(u.Email),
+			userID,
+		)
 
 		if err != nil {
 			return err
@@ -211,9 +233,9 @@ func savePassword(tx *sql.Tx, userID int, pass string) error {
 
 		query = `
 			UPDATE wmeter.user_password
-				SET valid_until = statement_timestamp()
-				WHERE password_id = $1
-				AND valid_until is not null
+			   SET valid_until = statement_timestamp()
+			 WHERE password_id = $1
+			   AND valid_until is null
 		`
 
 		_, err = tx.Exec(query, passwordID)
