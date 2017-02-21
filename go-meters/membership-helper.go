@@ -12,6 +12,7 @@ import (
 )
 
 type MembershipUser struct {
+	UserID      int
 	Username    string
 	Name        string
 	Surname     string
@@ -24,8 +25,8 @@ func getUserByName(user string) (*MembershipUser, error) {
 	var u MembershipUser
 
 	query := `
-        SELECT user_id,
-               username,
+        SELECT user_id
+		       username,
                name,
                surname,
                email
@@ -34,6 +35,7 @@ func getUserByName(user string) (*MembershipUser, error) {
     `
 
 	err := db.QueryRow(query, user).Scan(
+		&u.UserID,
 		&u.Username,
 		&u.Name,
 		&u.Surname,
@@ -81,12 +83,12 @@ func loginByUserPassword(user string, pass string) (bool, error) {
 	return true, nil
 }
 
-func (u *MembershipUser) testSaveUser(tx *sql.Tx, userID int) error {
+func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 	if len(u.Username) == 0 {
 		return fmt.Errorf("unknown user \"%s\"", u.Username)
 	}
 
-	if userID <= 0 && len(u.Password) == 0 {
+	if u.UserID <= 0 && len(u.Password) == 0 {
 		return fmt.Errorf("cannot create user with empty password")
 	}
 
@@ -107,7 +109,7 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx, userID int) error {
 
 	defer stmt.Close()
 
-	err = stmt.QueryRow(u.Username, userID).Scan(&contor)
+	err = stmt.QueryRow(u.Username, u.UserID).Scan(&contor)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -121,7 +123,7 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx, userID int) error {
 	}
 
 	if len(u.NewUsername) > 0 {
-		err = stmt.QueryRow(u.NewUsername, userID).Scan(&contor)
+		err = stmt.QueryRow(u.NewUsername, u.UserID).Scan(&contor)
 
 		switch {
 		case err == sql.ErrNoRows:
@@ -139,7 +141,8 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx, userID int) error {
 }
 
 func (u *MembershipUser) Save() error {
-	var userID int
+	var query string
+
 	var mutex = &sync.Mutex{}
 
 	mutex.Lock()
@@ -153,28 +156,13 @@ func (u *MembershipUser) Save() error {
 
 	defer tx.Rollback()
 
-	query := `
-		SELECT user_id
-		  FROM wmeter.user
-		 WHERE loweredusername = lower($1)
-	`
-
-	err = tx.QueryRow(query, u.Username).Scan(&userID)
-
-	switch {
-	case err == sql.ErrNoRows:
-		userID = -1
-	case err != nil:
-		return err
-	}
-
-	err = u.testSaveUser(tx, userID)
+	err = u.testSaveUser(tx)
 
 	if err != nil {
 		return err
 	}
 
-	if userID <= 0 {
+	if u.UserID <= 0 {
 		query := `
 			INSERT INTO wmeter.user (
 				username,
@@ -182,10 +170,11 @@ func (u *MembershipUser) Save() error {
 				name,
 				surname,
 				email,
-				loweredemail
+				loweredemail,
+				valid
 			)
 			VALUES (
-				$1, $2, $3, $4, $5, $6
+				$1, $2, $3, $4, $5, $6, $7
 			)
 			RETURNING user_id
 		`
@@ -198,20 +187,21 @@ func (u *MembershipUser) Save() error {
 			u.Surname,
 			u.Email,
 			strings.ToLower(u.Email),
-		).Scan(&userID)
+			1,
+		).Scan(&u.UserID)
 
 		switch {
 		case err == sql.ErrNoRows:
-			userID = -1
+			u.UserID = -1
 		case err != nil:
 			return err
 		}
 
-		if userID <= 0 {
+		if u.UserID <= 0 {
 			return fmt.Errorf("unknown user \"%s\"", u.Username)
 		}
 
-		err = savePassword(tx, userID, u.Password)
+		err = u.ChangePassword(tx, u.Password)
 
 		if err != nil {
 			return err
@@ -242,7 +232,7 @@ func (u *MembershipUser) Save() error {
 			u.Surname,
 			u.Email,
 			strings.ToLower(u.Email),
-			userID,
+			u.UserID,
 		)
 
 		if err != nil {
@@ -250,7 +240,7 @@ func (u *MembershipUser) Save() error {
 		}
 
 		if len(u.Password) > 0 {
-			err = savePassword(tx, userID, u.Password)
+			err = u.ChangePassword(tx, u.Password)
 
 			if err != nil {
 				return err
@@ -263,7 +253,7 @@ func (u *MembershipUser) Save() error {
 	return nil
 }
 
-func savePassword(tx *sql.Tx, userID int, pass string) error {
+func (u *MembershipUser) ChangePassword(tx *sql.Tx, pass string) error {
 	var passwordID int
 	var oldPassword string
 	var oldSalt string
@@ -284,7 +274,11 @@ func savePassword(tx *sql.Tx, userID int, pass string) error {
 		 WHERE user_id = $1
 	`
 
-	err := tx.QueryRow(query, userID).Scan(&passwordID, &oldPassword, &oldSalt, &validityDate)
+	err := tx.QueryRow(query, u.UserID).Scan(
+		&passwordID,
+		&oldPassword,
+		&oldSalt,
+		&validityDate)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -358,7 +352,7 @@ func savePassword(tx *sql.Tx, userID int, pass string) error {
 		)
 	`
 
-	_, err = tx.Exec(query, userID, password, salt)
+	_, err = tx.Exec(query, u.UserID, password, salt)
 
 	if err != nil {
 		return err

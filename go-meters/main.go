@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"encoding/gob"
 
@@ -58,19 +57,9 @@ func init() {
 
 func main() {
 	var err error
+	var auditLog AuditLog
 
-	t := time.Now()
-	sData := t.Format("20060102")
-
-	logFile, err := os.OpenFile(fmt.Sprintf("logs/log_%s.txt", sData), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer logFile.Close()
-
-	mw := io.MultiWriter(os.Stdout, logFile)
+	mw := io.MultiWriter(os.Stdout, auditLog)
 
 	log.SetOutput(mw)
 

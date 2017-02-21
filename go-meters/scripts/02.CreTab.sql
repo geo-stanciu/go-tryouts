@@ -26,6 +26,7 @@ CREATE TABLE wmeter.user (
     email           varchar(64) not null,
     loweredusername varchar(64) not null,
     loweredemail    varchar(64) not null,
+    valid           int,
     constraint lower_user_uk unique (loweredusername),
     constraint lower_email_uk unique (loweredemail)
 );
@@ -53,4 +54,10 @@ CREATE TABLE wmeter.user_password_archive (
     valid_until   timestamp,
     constraint user_password_archive_fk foreign key (user_id)
         references wmeter.user(user_id)
+);
+
+CREATE TABLE wmeter.audit_log (
+    audit_log_id   bigserial PRIMARY KEY,
+    log_time       timestamp   not null DEFAULT statement_timestamp(),
+    audit_msg      jsonb       not null
 );
