@@ -14,7 +14,7 @@ import (
 	"encoding/gob"
 
 	"github.com/gorilla/sessions"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"strings"
 
@@ -23,6 +23,7 @@ import (
 )
 
 var (
+	log             = logrus.New()
 	templateDelims  = []string{"{{%", "%}}"}
 	templates       *template.Template
 	addr            *string
@@ -39,7 +40,8 @@ var (
 
 func init() {
 	// Log as JSON instead of the default ASCII formatter.
-	log.SetFormatter(new(log.JSONFormatter))
+	log.Formatter = new(logrus.JSONFormatter)
+	log.Level = logrus.DebugLevel
 
 	// register SessionData for cookie use
 	gob.Register(&SessionData{})
@@ -61,7 +63,7 @@ func main() {
 
 	mw := io.MultiWriter(os.Stdout, auditLog)
 
-	log.SetOutput(mw)
+	log.Out = mw
 
 	cfgFile := "./conf.json"
 	err = config.readFromFile(cfgFile)
