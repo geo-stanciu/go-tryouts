@@ -152,11 +152,11 @@ func createTablesIfNotExist(db *sql.DB) error {
 		create table if not exists exchange_rate (
 			exchange_rate_id serial primary key,
 			currency_id      int            not null,
-			rate_date        date           not null,       
+			exchange_date    date           not null,       
 			rate             numeric(18, 6) not null,
 			constraint exchange_rate_currency_fk foreign key (currency_id)
 			    references currency (currency_id),
-			constraint exchange_rate_uk unique (currency_id, rate_date)
+			constraint exchange_rate_uk unique (currency_id, exchange_date)
 		)
 	`
 
@@ -296,7 +296,7 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		select count(*) 
 		  from exchange_rate 
 		where currency_id = $1 
-		  and rate_date = to_date($2, 'yyyy-mm-dd')
+		  and exchange_date = to_date($2, 'yyyy-mm-dd')
 	`
 
 	err = tx.QueryRow(query, currencyID, date).Scan(&count)
@@ -312,7 +312,7 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		query = `
 			insert into exchange_rate (
 				currency_id,
-				rate_date,       
+				exchange_date,       
 				rate
 			)
 			values (
