@@ -18,6 +18,12 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*LoginRespo
 		user := r.FormValue("username")
 		pass := r.FormValue("password")
 
+		if len(user) == 0 || len(pass) == 0 {
+			lres.bErr = true
+			lres.sErr = "Unknown user or wrong password."
+			return &lres, nil
+		}
+
 		success, err := loginByUserPassword(user, pass)
 
 		if err != nil || !success {
