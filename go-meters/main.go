@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 	"encoding/gob"
 
 	"github.com/gorilla/sessions"
+	log "github.com/sirupsen/logrus"
 
 	"strings"
 
@@ -29,7 +29,7 @@ var (
 	addr            *string
 	db              *sql.DB
 	config          = Configuration{}
-	appName         = "Water Meter"
+	appName         = "GoMeters"
 	appVersion      = "0.0.0.1"
 	cookieStoreName = strings.Replace(appName, " ", "", -1)
 	cookieStore     = sessions.NewCookieStore(
@@ -39,6 +39,10 @@ var (
 )
 
 func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	log.SetFormatter(new(log.JSONFormatter))
+
+	// register SessionData for cookie use
 	gob.Register(&SessionData{})
 
 	// initialize the templates,
@@ -92,6 +96,8 @@ func main() {
 
 	defer db.Close()
 
+	log.WithField("port", *addr).Info("Starting listening...")
+
 	// Normal resources
 	http.Handle("/static",
 		http.FileServer(http.Dir("./static/")))
@@ -112,6 +118,8 @@ func main() {
 		log.Fatal(err)
 		os.Exit(1)
 	}
+
+	log.Info("Closing application...")
 }
 
 func connect2Database(dbURL string) error {

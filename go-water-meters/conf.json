@@ -1,5 +1,0 @@
-{
-  "Port": "8080",
-  "DbURL": "postgres://geo:geo@localhost:5432/devel?sslmode=disable&application_name=Water-Meter",
-  "DB": "devel"
-}
