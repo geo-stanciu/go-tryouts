@@ -1,20 +1,9 @@
-package helpers
+package main
 
-import (
-	"database/sql"
-	"sync"
-)
+import "sync"
 
 type AuditLog struct {
 	sync.RWMutex
-	db *sql.DB
-}
-
-func (a *AuditLog) SetDb(db *sql.DB) {
-	a.Lock()
-	defer a.Unlock()
-
-	a.db = db
 }
 
 func (a AuditLog) Write(p []byte) (n int, err error) {
@@ -29,7 +18,7 @@ func (a AuditLog) Write(p []byte) (n int, err error) {
 
 	msg := string(p)
 
-	_, err = a.db.Exec(query, msg)
+	_, err = db.Exec(query, msg)
 
 	if err != nil {
 		return 0, err

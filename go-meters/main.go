@@ -13,8 +13,6 @@ import (
 
 	"encoding/gob"
 
-	"./helpers"
-
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 
@@ -57,7 +55,7 @@ func init() {
 
 func main() {
 	var err error
-	var auditLog helpers.AuditLog
+	var auditLog AuditLog
 
 	cfgFile := "./conf.json"
 	err = config.ReadFromFile(cfgFile)
@@ -76,7 +74,6 @@ func main() {
 
 	defer db.Close()
 
-	auditLog.SetDb(db)
 	mw := io.MultiWriter(os.Stdout, auditLog)
 	log.Out = mw
 
