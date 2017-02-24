@@ -40,7 +40,7 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*LoginRespo
 			return &lres, err
 		}
 
-		err = createSession(w, r, user)
+		session, err = createSession(w, r, user)
 
 		if err != nil {
 			lres.bErr = true

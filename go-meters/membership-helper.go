@@ -12,6 +12,7 @@ import (
 )
 
 type MembershipUser struct {
+	sync.RWMutex
 	UserID      int
 	Username    string
 	Name        string
@@ -23,6 +24,9 @@ type MembershipUser struct {
 
 func getUserByName(user string) (*MembershipUser, error) {
 	var u MembershipUser
+
+	u.Lock()
+	defer u.Unlock()
 
 	query := `
         SELECT user_id
@@ -143,10 +147,8 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 func (u *MembershipUser) Save() error {
 	var query string
 
-	var mutex = &sync.Mutex{}
-
-	mutex.Lock()
-	defer mutex.Unlock()
+	u.Lock()
+	defer u.Unlock()
 
 	tx, err := db.Begin()
 
@@ -201,7 +203,7 @@ func (u *MembershipUser) Save() error {
 			return fmt.Errorf("unknown user \"%s\"", u.Username)
 		}
 
-		err = u.ChangePassword(tx, u.Password)
+		err = u.ChangePassword(tx)
 
 		if err != nil {
 			return err
@@ -240,7 +242,7 @@ func (u *MembershipUser) Save() error {
 		}
 
 		if len(u.Password) > 0 {
-			err = u.ChangePassword(tx, u.Password)
+			err = u.ChangePassword(tx)
 
 			if err != nil {
 				return err
@@ -253,7 +255,7 @@ func (u *MembershipUser) Save() error {
 	return nil
 }
 
-func (u *MembershipUser) ChangePassword(tx *sql.Tx, pass string) error {
+func (u *MembershipUser) ChangePassword(tx *sql.Tx) error {
 	var passwordID int
 	var oldPassword string
 	var oldSalt string
@@ -262,7 +264,7 @@ func (u *MembershipUser) ChangePassword(tx *sql.Tx, pass string) error {
 	saltBytes := uuid.NewV4()
 	salt := saltBytes.String()
 
-	passwordBytes := []byte(salt + pass)
+	passwordBytes := []byte(salt + u.Password)
 	password := string(passwordBytes)
 
 	query := `

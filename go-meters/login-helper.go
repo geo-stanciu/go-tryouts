@@ -41,7 +41,7 @@ func (l *LoginResponse) SetURL(url string) {
 	l.URL = url
 }
 
-func createSession(w http.ResponseWriter, r *http.Request, user string) error {
+func createSession(w http.ResponseWriter, r *http.Request, user string) (*SessionData, error) {
 	session, _ := cookieStore.Get(r, cookieStoreName)
 
 	session.Options = &sessions.Options{
@@ -69,10 +69,10 @@ func createSession(w http.ResponseWriter, r *http.Request, user string) error {
 	err := session.Save(r, w)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &sessionData, nil
 }
 
 func getSessionData(r *http.Request) (*SessionData, error) {
