@@ -61,3 +61,10 @@ CREATE TABLE wmeter.audit_log (
     log_time       timestamp   not null DEFAULT statement_timestamp(),
     audit_msg      jsonb       not null
 );
+
+CREATE TABLE wmeter.cookie_encode_key (
+    cookie_encode_key_id serial       PRIMARY KEY,
+    encode_key           varchar(256) not null,
+    valid_from           timestamp    not null DEFAULT statement_timestamp(),
+    valid_until          timestamp    not null DEFAULT statement_timestamp() + interval '30' day
+);

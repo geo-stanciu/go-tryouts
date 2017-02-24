@@ -18,7 +18,6 @@ import (
 
 	"strings"
 
-	"github.com/gorilla/securecookie"
 	_ "github.com/lib/pq"
 )
 
@@ -32,10 +31,7 @@ var (
 	appName         = "GoMeters"
 	appVersion      = "0.0.0.1"
 	cookieStoreName = strings.Replace(appName, " ", "", -1)
-	cookieStore     = sessions.NewCookieStore(
-		securecookie.GenerateRandomKey(32),
-		securecookie.GenerateRandomKey(32),
-	)
+	cookieStore     *sessions.CookieStore
 )
 
 func init() {
@@ -86,6 +82,13 @@ func main() {
 	}
 
 	defer db.Close()
+
+	cookieStore, err = getNewCookieStore()
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
 
 	log.WithField("port", *addr).Info("Starting listening...")
 
