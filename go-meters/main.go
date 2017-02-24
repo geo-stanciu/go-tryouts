@@ -13,6 +13,8 @@ import (
 
 	"encoding/gob"
 
+	"./helpers"
+
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 
@@ -55,24 +57,15 @@ func init() {
 
 func main() {
 	var err error
-	var auditLog AuditLog
-
-	mw := io.MultiWriter(os.Stdout, auditLog)
-
-	log.Out = mw
+	var auditLog helpers.AuditLog
 
 	cfgFile := "./conf.json"
-	err = config.readFromFile(cfgFile)
+	err = config.ReadFromFile(cfgFile)
 
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-
-	// server flags
-	addr = flag.String("addr", ":"+config.Port, "http service address")
-
-	flag.Parse()
 
 	err = connect2Database(config.DbURL)
 
@@ -83,12 +76,21 @@ func main() {
 
 	defer db.Close()
 
+	auditLog.SetDb(db)
+	mw := io.MultiWriter(os.Stdout, auditLog)
+	log.Out = mw
+
 	cookieStore, err = getNewCookieStore()
 
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
+
+	// server flags
+	addr = flag.String("addr", ":"+config.Port, "http service address")
+
+	flag.Parse()
 
 	log.WithField("port", *addr).Info("Starting listening...")
 

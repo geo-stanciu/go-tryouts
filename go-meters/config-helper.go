@@ -11,7 +11,7 @@ type Configuration struct {
 	Db    string `json:"DB"`
 }
 
-func (c *Configuration) readFromFile(cfgFile string) error {
+func (c *Configuration) ReadFromFile(cfgFile string) error {
 	if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
 		return err
 	}

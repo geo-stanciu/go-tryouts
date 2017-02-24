@@ -22,9 +22,7 @@ type MembershipUser struct {
 	NewUsername string
 }
 
-func getUserByName(user string) (*MembershipUser, error) {
-	var u MembershipUser
-
+func (u *MembershipUser) GetUserByName(user string) error {
 	u.Lock()
 	defer u.Unlock()
 
@@ -47,15 +45,15 @@ func getUserByName(user string) (*MembershipUser, error) {
 
 	switch {
 	case err == sql.ErrNoRows:
-		return nil, fmt.Errorf("username \"%s\" not found", user)
+		return fmt.Errorf("username \"%s\" not found", user)
 	case err != nil:
-		return nil, err
+		return err
 	}
 
-	return &u, nil
+	return nil
 }
 
-func loginByUserPassword(user string, pass string) (bool, error) {
+func LoginByUserPassword(user string, pass string) (bool, error) {
 	var hashedPassword string
 	var passwordSalt string
 

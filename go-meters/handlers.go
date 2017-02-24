@@ -97,7 +97,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bErr, sErr, err := getLastOperationError(r)
+	bErr, sErr, err := getLastOperationError(w, r)
 
 	if err != nil {
 		log.WithError(err).WithFields(logrus.Fields{
@@ -136,17 +136,17 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 
 	model, err := page.getModel(w, r)
 
-	if strings.HasSuffix(url, "/logout") {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
 	if err != nil {
 		log.WithError(err).WithFields(logrus.Fields{
 			"url": r.URL.Path,
 		}).Error("Failed request")
 
 		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
+		return
+	}
+
+	if page.Template == "-" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 

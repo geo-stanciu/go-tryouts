@@ -23,28 +23,6 @@ type SessionData struct {
 	User      User
 }
 
-type LoginResponse struct {
-	bErr bool
-	sErr string
-	URL  string
-}
-
-func (l *LoginResponse) Err() bool {
-	return l.bErr
-}
-
-func (l *LoginResponse) SErr() string {
-	return l.sErr
-}
-
-func (l *LoginResponse) Url() string {
-	return l.URL
-}
-
-func (l *LoginResponse) SetURL(url string) {
-	l.URL = url
-}
-
 func clearSession(w http.ResponseWriter, r *http.Request) error {
 	session, _ := cookieStore.Get(r, cookieStoreName)
 	sessionData := SessionData{}

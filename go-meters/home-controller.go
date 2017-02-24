@@ -15,8 +15,8 @@ func (HomeController) Index() (interface{}, error) {
 	return nil, nil
 }
 
-func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*LoginResponse, error) {
-	var lres LoginResponse
+func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*models.LoginResponse, error) {
+	var lres models.LoginResponse
 
 	session, _ := getSessionData(r)
 
@@ -25,18 +25,18 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*LoginRespo
 		pass := r.FormValue("password")
 
 		if len(user) == 0 || len(pass) == 0 {
-			lres.bErr = true
-			lres.sErr = "Unknown user or wrong password."
+			lres.BError = true
+			lres.SError = "Unknown user or wrong password."
 			loginError(user, "Unknown user or wrong password.")
 
 			return &lres, nil
 		}
 
-		success, err := loginByUserPassword(user, pass)
+		success, err := LoginByUserPassword(user, pass)
 
 		if err != nil || !success {
-			lres.bErr = true
-			lres.sErr = "Unknown user or wrong password."
+			lres.BError = true
+			lres.SError = "Unknown user or wrong password."
 			loginError(user, "Unknown user or wrong password.")
 
 			return &lres, err
@@ -45,15 +45,15 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*LoginRespo
 		session, err = createSession(w, r, user)
 
 		if err != nil {
-			lres.bErr = true
-			lres.sErr = err.Error()
-			loginError(user, lres.sErr)
+			lres.BError = true
+			lres.SError = err.Error()
+			loginError(user, lres.SError)
 
 			return &lres, err
 		}
 	}
 
-	lres.bErr = false
+	lres.BError = false
 	loginSuccess(session.User.Username, "User logged in.")
 
 	return &lres, nil

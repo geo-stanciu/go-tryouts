@@ -29,7 +29,7 @@ func setOperationError(w http.ResponseWriter, r *http.Request, sError string) er
 	return nil
 }
 
-func getLastOperationError(r *http.Request) (bool, string, error) {
+func getLastOperationError(w http.ResponseWriter, r *http.Request) (bool, string, error) {
 	session, _ := cookieStore.Get(r, cookieStoreName)
 
 	vErr := session.Values["Err"]
@@ -44,6 +44,17 @@ func getLastOperationError(r *http.Request) (bool, string, error) {
 
 	if !ok {
 		return false, "", nil
+	}
+
+	// clear last err
+	session.Values["Err"] = false
+	session.Values["SErr"] = ""
+
+	//save the session
+	err := session.Save(r, w)
+
+	if err != nil {
+		return false, "", err
 	}
 
 	return bErr, sErr, nil
