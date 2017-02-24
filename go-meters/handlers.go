@@ -136,6 +136,11 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 
 	model, err := page.getModel(w, r)
 
+	if strings.HasSuffix(url, "/logout") {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
 	if err != nil {
 		log.WithError(err).WithFields(logrus.Fields{
 			"url": r.URL.Path,

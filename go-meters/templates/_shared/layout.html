@@ -11,7 +11,14 @@
     </style>
 </head>
 <body>
-    {{% template "content" . %}}
+    <div>
+        {{% if .Session.LoggedIn %}}
+        <div style="text-align: right">{{% .Session.User.Username %}} <a href="/logout">logout</a></div>
+        {{% end %}}
+    </div>
+    <div>
+        {{% template "content" . %}}
+    </div>
 </body>
 </html>
 {{% end %}}

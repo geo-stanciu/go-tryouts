@@ -45,6 +45,22 @@ func (l *LoginResponse) SetURL(url string) {
 	l.URL = url
 }
 
+func clearSession(w http.ResponseWriter, r *http.Request) error {
+	session, _ := cookieStore.Get(r, cookieStoreName)
+	sessionData := SessionData{}
+
+	session.Values["SessionData"] = sessionData
+
+	//save the session
+	err := session.Save(r, w)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func createSession(w http.ResponseWriter, r *http.Request, user string) (*SessionData, error) {
 	session, _ := cookieStore.Get(r, cookieStoreName)
 

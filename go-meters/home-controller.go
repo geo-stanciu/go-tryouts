@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 
+	"./models"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -57,6 +59,28 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*LoginRespo
 	return &lres, nil
 }
 
+func (HomeController) Logout(w http.ResponseWriter, r *http.Request) (*models.GenericResponseModel, error) {
+	var lres models.GenericResponseModel
+	var user string
+
+	session, _ := getSessionData(r)
+
+	if session.LoggedIn {
+		user = session.User.Username
+		err := clearSession(w, r)
+
+		if err != nil {
+			lres.BError = true
+			lres.SError = err.Error()
+			return nil, err
+		}
+	}
+
+	logoutMessage(user, "User logged out.")
+
+	return &lres, nil
+}
+
 func loginSuccess(user string, msg string) {
 	log.WithFields(logrus.Fields{
 		"msg_type": "login",
@@ -71,4 +95,11 @@ func loginError(user string, msg string) {
 		"status":   "failed",
 		"user":     user,
 	}).Error(msg)
+}
+
+func logoutMessage(user string, msg string) {
+	log.WithFields(logrus.Fields{
+		"msg_type": "logout",
+		"user":     user,
+	}).Info(msg)
 }

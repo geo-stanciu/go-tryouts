@@ -9,10 +9,6 @@
 </form>
 {{% end %}}
 
-{{% if .Session.LoggedIn %}}
-<div>User is: {{% .Session.User.Username %}}</div>
-{{% end %}}
-
 {{% if .Err %}}
 <div style="color: red;">{{% .SErr %}}</div>
 {{% end %}}
