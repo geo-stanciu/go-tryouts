@@ -19,22 +19,28 @@ begin
         
     -- If the partition needed does not yet exist, then we create it:
     if NOT FOUND then
-        EXECUTE 'CREATE TABLE ' || quote_ident(_tablePartition) || ' (
-            CHECK (exchange_date >= DATE ' || quote_literal(_year || '-01-01') || '
-              AND exchange_date <= DATE ' || quote_literal(_year || '-12-31') || '),
-            CONSTRAINT ' || quote_ident(_tablePartition) || '_currency_fk foreign key (currency_id)
-              references currency (currency_id)
-            ) INHERITS (' || quote_ident(_table) || ')';
+        EXECUTE format('CREATE TABLE %I (
+            CHECK (exchange_date >= DATE %L AND exchange_date <= DATE %L),
+            CONSTRAINT %I foreign key (currency_id)
+                references currency (currency_id)
+            ) INHERITS (%I)',
+            _tablePartition,
+            _year || '-01-01',
+            _year || '-12-31',
+            _tablePartition || '_currency_fk',
+            _table);
         
-        EXECUTE 'CREATE UNIQUE INDEX ' || quote_ident(_tablePartition) || '_UK ON ' ||
-            quote_ident(_tablePartition) ||
-            ' (currency_id, exchange_date)';
+        EXECUTE format('CREATE UNIQUE INDEX %I ON %I (currency_id, exchange_date)',
+            _tablePartition || '_UK',
+            _tablePartition);
             
         RAISE NOTICE 'A partition has been created %', _tablePartition;
     end if;
     
     -- Insert the current record into the correct partition, which we are sure will now exist.
-    EXECUTE 'INSERT INTO ' || quote_ident(_tablePartition) || ' VALUES ($1.*)' USING NEW;
+    EXECUTE format('INSERT INTO %I VALUES ($1.*)', _tablePartition)
+      USING NEW;
+      
     RETURN NULL;
 end;
 $$
