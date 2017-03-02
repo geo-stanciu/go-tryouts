@@ -13,6 +13,10 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var (
+	config = Configuration{}
+)
+
 type Rate struct {
 	Currency   string `xml:"currency,attr"`
 	Multiplier string `xml:"multiplier,attr"`
@@ -46,7 +50,15 @@ func main() {
 	var xmlBytes []byte
 	var err error
 
-	db, err := connect2Database()
+	cfgFile := "./conf.json"
+	err = config.ReadFromFile(cfgFile)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	db, err := connect2Database(config.DbURL)
 
 	if err != nil {
 		log.Fatal(err)
@@ -60,7 +72,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = createTablesIfNotExist(db)
+	err = prepareCurrencies(db)
 
 	if err != nil {
 		log.Fatal(err)
@@ -119,18 +131,8 @@ func readBytesFromFile(filename string) ([]byte, error) {
 	return buf, nil
 }
 
-func connect2Database() (*sql.DB, error) {
-	connStr := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=%s&application_name=%s",
-		"geo",
-		"geo",
-		"localhost",
-		"5432",
-		"devel",
-		"disable",
-		"go-test-postgresql")
-
-	db, err := sql.Open("postgres", connStr)
+func connect2Database(dbURL string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", dbURL)
 
 	if err != nil {
 		return nil, err
@@ -139,39 +141,7 @@ func connect2Database() (*sql.DB, error) {
 	return db, nil
 }
 
-func createTablesIfNotExist(db *sql.DB) error {
-	t1 := `
-		create table if not exists currency (
-			currency_id serial primary key,
-			currency    varchar(8) not null,
-			constraint currency_uk unique (currency)
-		)
-	`
-
-	t2 := `
-		create table if not exists exchange_rate (
-			exchange_rate_id serial primary key,
-			currency_id      int            not null,
-			exchange_date    date           not null,       
-			rate             numeric(18, 6) not null,
-			constraint exchange_rate_currency_fk foreign key (currency_id)
-			    references currency (currency_id),
-			constraint exchange_rate_uk unique (currency_id, exchange_date)
-		)
-	`
-
-	_, err := db.Exec(t1)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = db.Exec(t2)
-
-	if err != nil {
-		return err
-	}
-
+func prepareCurrencies(db *sql.DB) error {
 	var count int32
 
 	tx, err := db.Begin()
@@ -250,7 +220,9 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 			multiplier := 1.0
 			exchRate := 1.0
 
-			if len(rate.Multiplier) > 0 {
+			if rate.Multiplier == "-" {
+				multiplier = 1.0
+			} else if len(rate.Multiplier) > 0 {
 				multiplier, err = strconv.ParseFloat(rate.Multiplier, 64)
 
 				if err != nil {
@@ -258,10 +230,14 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 				}
 			}
 
-			exchRate, err = strconv.ParseFloat(rate.Rate, 64)
+			if rate.Rate == "-" {
+				continue
+			} else {
+				exchRate, err = strconv.ParseFloat(rate.Rate, 64)
 
-			if err != nil {
-				return err
+				if err != nil {
+					return err
+				}
 			}
 
 			err = storeRate(tx, cube.Date, rate.Currency, multiplier, exchRate)

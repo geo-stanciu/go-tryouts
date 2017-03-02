@@ -14,7 +14,7 @@ CREATE TABLE wmeter.request (
     controller        varchar(64)  not null,
     action            varchar(64)  not null,
     redirect_url      varchar(256) not null,
-    redirect_on_error varchar(256) not null
+    redirect_on_error varchar(256) not null,
     constraint request_url_uk unique (request_url)
 );
 
