@@ -1,6 +1,6 @@
 DO $$
 declare
-    lContor int;
+    _found boolean;
     
     p varchar[];
     arr  varchar[] := array[
@@ -11,12 +11,13 @@ begin
     
     FOREACH p SLICE 1 IN ARRAY arr
     LOOP
-        select count(*)
-          into lContor
-          from wmeter.request
-         where request_url = p[1];
+        select exists(
+            select *
+              from wmeter.request
+            where request_url = p[1]
+        ) into _found;
         
-        if lContor = 0 then
+        if _found = FALSE then
             insert into wmeter.request (
                 request_url,
                 controller,

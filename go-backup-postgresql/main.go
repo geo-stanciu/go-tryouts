@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -147,13 +146,13 @@ func connect2Database(dbURL string) error {
 	db, err = sql.Open("postgres", dbURL)
 
 	if err != nil {
-		return errors.New("Can't connect to the database, go error " + fmt.Sprintf("%s", err))
+		return fmt.Errorf("Can't connect to the database, error: %s", err.Error())
 	}
 
 	err = db.Ping()
 
 	if err != nil {
-		return errors.New("Can't ping the database, go error " + fmt.Sprintf("%s", err))
+		return fmt.Errorf("Can't ping the database, error: %s", err.Error())
 	}
 
 	return nil

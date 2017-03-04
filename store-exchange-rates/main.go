@@ -4,16 +4,20 @@ import (
 	"database/sql"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/sirupsen/logrus"
 
 	_ "github.com/lib/pq"
 )
 
 var (
+	log    = logrus.New()
+	db     *sql.DB
 	config = Configuration{}
 )
 
@@ -46,7 +50,14 @@ type Query struct {
 	Body    Body     `xml:"Body"`
 }
 
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	log.Formatter = new(logrus.JSONFormatter)
+	log.Level = logrus.DebugLevel
+}
+
 func main() {
+	var auditLog AuditLog
 	var xmlBytes []byte
 	var err error
 
@@ -58,19 +69,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := connect2Database(config.DbURL)
+	err = connect2Database(config.DbURL)
 
 	if err != nil {
 		log.Fatal(err)
+		os.Exit(1)
 	}
 
 	defer db.Close()
 
-	err = db.Ping()
-
-	if err != nil {
-		log.Fatal(err)
-	}
+	mw := io.MultiWriter(os.Stdout, auditLog)
+	log.Out = mw
 
 	err = prepareCurrencies(db)
 
@@ -131,18 +140,26 @@ func readBytesFromFile(filename string) ([]byte, error) {
 	return buf, nil
 }
 
-func connect2Database(dbURL string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", dbURL)
+func connect2Database(dbURL string) error {
+	var err error
+
+	db, err = sql.Open("postgres", dbURL)
 
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("Can't connect to the database, error: %s", err.Error())
 	}
 
-	return db, nil
+	err = db.Ping()
+
+	if err != nil {
+		return fmt.Errorf("Can't ping the database, error: %s", err.Error())
+	}
+
+	return nil
 }
 
 func prepareCurrencies(db *sql.DB) error {
-	var count int32
+	var found bool
 
 	tx, err := db.Begin()
 
@@ -152,9 +169,9 @@ func prepareCurrencies(db *sql.DB) error {
 
 	defer tx.Rollback()
 
-	query := "select count(*) from currency"
+	query := "SELECT EXISTS(SELECT * FROM currency)"
 
-	err = tx.QueryRow(query).Scan(&count)
+	err = tx.QueryRow(query).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -163,8 +180,8 @@ func prepareCurrencies(db *sql.DB) error {
 		return err
 	}
 
-	if count == 0 {
-		query = "insert into currency (currency) values ($1)"
+	if !found {
+		query = "INSERT INTO currency (currency) VALUES ($1)"
 
 		_, err = tx.Exec(query, "RON")
 
@@ -214,7 +231,7 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 	defer tx.Rollback()
 
 	for _, cube := range q.Body.Cube {
-		fmt.Printf("Importing exchange rates for %s\n", cube.Date)
+		log.WithField("data", cube.Date).Info("Importing exchange rates...")
 
 		for _, rate := range cube.Rate {
 			multiplier := 1.0
@@ -250,14 +267,16 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 
 	tx.Commit()
 
+	log.Info("Import done.")
+
 	return nil
 }
 
 func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exchRate float64) error {
 	var currencyID int32
-	var count int32
+	var found bool
 
-	query := "select currency_id from currency where currency = $1"
+	query := "SELECT currency_id FROM currency WHERE currency = $1"
 
 	err := tx.QueryRow(query, currency).Scan(&currencyID)
 
@@ -269,13 +288,15 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 	}
 
 	query = `
-		select count(*) 
-		  from exchange_rate 
-		where currency_id = $1 
-		  and exchange_date = to_date($2, 'yyyy-mm-dd')
+		SELECT EXISTS(
+			SELECT *
+			FROM exchange_rate 
+		   WHERE currency_id = $1 
+		     AND exchange_date = to_date($2, 'yyyy-mm-dd')
+		)
 	`
 
-	err = tx.QueryRow(query, currencyID, date).Scan(&count)
+	err = tx.QueryRow(query, currencyID, date).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -284,14 +305,14 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		return err
 	}
 
-	if count == 0 {
+	if !found {
 		query = `
-			insert into exchange_rate (
+			INSERT INTO exchange_rate (
 				currency_id,
 				exchange_date,       
 				rate
 			)
-			values (
+			VALUES (
 				$1, to_date($2, 'yyyy-mm-dd'), $3
 			)
 		`

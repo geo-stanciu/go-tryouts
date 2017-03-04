@@ -19,41 +19,36 @@ CREATE TABLE wmeter.request (
 );
 
 CREATE TABLE wmeter.user (
-    user_id         serial PRIMARY KEY,
-    username        varchar(64) not null,
-    name            varchar(64) not null,
-    surname         varchar(64) not null,
-    email           varchar(64) not null,
-    loweredusername varchar(64) not null,
-    loweredemail    varchar(64) not null,
-    valid           int,
-    constraint lower_user_uk unique (loweredusername),
-    constraint lower_email_uk unique (loweredemail)
+    user_id                serial PRIMARY KEY,
+    username               varchar(64) not null,
+    loweredusername        varchar(64) not null,
+    name                   varchar(64) not null,
+    surname                varchar(64) not null,
+    email                  varchar(64) not null,
+    loweredemail           varchar(64) not null,
+    creation_time          timestamp   not null DEFAULT current_timestamp,
+    last_update            timestamp   not null DEFAULT current_timestamp,
+    activated              int         not null DEFAULT 0,
+    activation_time        timestamp,
+    last_password_change   timestamp,
+    failed_password_atmpts int         not null DEFAULT 0,
+    first_failed_password  timestamp,
+    last_failed_password   timestamp,
+    last_connect_time      timestamp,
+    last_connect_ip        varchar(128),
+    valid                  int         not null DEFAULT 1
 );
 
-CREATE UNIQUE INDEX username_uk
-    ON wmeter.user (lower(username));
+/*CREATE UNIQUE INDEX username_uk
+    ON wmeter.user (lower(username));*/
 
 CREATE TABLE wmeter.user_password (
     password_id   serial PRIMARY KEY,
     user_id       int          not null,
     password      varchar(256) not null,
     password_salt varchar(256) not null,
-    valid_from    timestamp    not null DEFAULT statement_timestamp(),
-    valid_until   timestamp,
-    constraint user_password_fk foreign key (user_id)
-        references wmeter.user(user_id)
-);
-
-CREATE TABLE wmeter.user_password_archive (
-    password_id   int PRIMARY KEY,
-    user_id       int          not null,
-    password      varchar(256) not null,
-    password_salt varchar(256) not null,
-    valid_from    timestamp    not null,
-    valid_until   timestamp,
-    constraint user_password_archive_fk foreign key (user_id)
-        references wmeter.user(user_id)
+    valid_from    timestamp    not null DEFAULT current_timestamp,
+    valid_until   timestamp
 );
 
 CREATE TABLE wmeter.audit_log (

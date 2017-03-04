@@ -22,6 +22,32 @@ type MembershipUser struct {
 	NewUsername string
 }
 
+func (u *MembershipUser) UserExists(user string) (bool, error) {
+	u.RLock()
+	defer u.RUnlock()
+
+	found := false
+
+	query := `
+        SELECT EXISTS(
+			SELECT *
+		      FROM wmeter.user
+	         WHERE loweredusername = lower($1)
+		)
+    `
+
+	err := db.QueryRow(query, user).Scan(&found)
+
+	switch {
+	case err == sql.ErrNoRows:
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+
+	return found, nil
+}
+
 func (u *MembershipUser) GetUserByName(user string) error {
 	u.Lock()
 	defer u.Unlock()
@@ -58,10 +84,13 @@ func LoginByUserPassword(user string, pass string) (bool, error) {
 	var passwordSalt string
 
 	query := `
-        SELECT p.password, p.password_salt
+        SELECT COALESCE(p.password, '') AS password,
+		       COALESCE(p.password_salt, '') AS password_salt
           FROM wmeter.user u
           LEFT OUTER JOIN wmeter.user_password p ON (u.user_id = p.user_id)
          WHERE loweredusername = lower($1)
+		   AND p.valid_from >= current_timestamp
+		   AND (p.valid_until is null OR p.valid_until > current_timestamp)
     `
 
 	err := db.QueryRow(query, user).Scan(&hashedPassword, &passwordSalt)
@@ -94,13 +123,15 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 		return fmt.Errorf("cannot create user with empty password")
 	}
 
-	var contor int
+	var found bool
 
 	query := `
-        SELECT COUNT(*)
-         FROM wmeter.user
-        WHERE loweredusername = LOWER($1)
-        AND user_id <> $2
+        SELECT EXISTS(
+			SELECT *
+		      FROM wmeter.user
+			 WHERE loweredusername = LOWER($1)
+			   AND user_id <> $2
+		)
 	`
 
 	stmt, err := tx.Prepare(query)
@@ -111,30 +142,30 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 
 	defer stmt.Close()
 
-	err = stmt.QueryRow(u.Username, u.UserID).Scan(&contor)
+	err = stmt.QueryRow(u.Username, u.UserID).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
-		contor = 0
+		found = false
 	case err != nil:
 		return err
 	}
 
-	if contor > 0 {
+	if found {
 		return fmt.Errorf("duplicate user \"%s\"", u.Username)
 	}
 
 	if len(u.NewUsername) > 0 {
-		err = stmt.QueryRow(u.NewUsername, u.UserID).Scan(&contor)
+		err = stmt.QueryRow(u.NewUsername, u.UserID).Scan(&found)
 
 		switch {
 		case err == sql.ErrNoRows:
-			contor = 0
+			found = false
 		case err != nil:
 			return err
 		}
 
-		if contor > 0 {
+		if found {
 			return fmt.Errorf("duplicate user \"%s\"", u.NewUsername)
 		}
 	}
@@ -170,16 +201,14 @@ func (u *MembershipUser) Save() error {
 				name,
 				surname,
 				email,
-				loweredemail,
-				valid
+				loweredemail
 			)
 			VALUES (
-				$1, $2, $3, $4, $5, $6, $7
+				$1, $2, $3, $4, $5, $6
 			)
-			RETURNING user_id
 		`
 
-		err = tx.QueryRow(
+		_, err = tx.Exec(
 			query,
 			u.Username,
 			strings.ToLower(u.Username),
@@ -187,8 +216,13 @@ func (u *MembershipUser) Save() error {
 			u.Surname,
 			u.Email,
 			strings.ToLower(u.Email),
-			1,
-		).Scan(&u.UserID)
+		)
+
+		query = `
+			SELECT user_id FROM wmeter.user WHERE loweredusername = $1
+		`
+
+		err = tx.QueryRow(query, strings.ToLower(u.Username)).Scan(&u.UserID)
 
 		switch {
 		case err == sql.ErrNoRows:
@@ -214,7 +248,8 @@ func (u *MembershipUser) Save() error {
 			       name            = $3,
 				   surname         = $4,
 				   email           = $5,
-				   loweredemail    = $6
+				   loweredemail    = $6,
+				   last_update     = current_timestamp
 			 WHERE user_id = $7
 		`
 
@@ -297,41 +332,6 @@ func (u *MembershipUser) ChangePassword(tx *sql.Tx) error {
 			   SET valid_until = statement_timestamp()
 			 WHERE password_id = $1
 			   AND valid_until is null
-		`
-
-		_, err = tx.Exec(query, passwordID)
-
-		if err != nil {
-			return err
-		}
-
-		query = `
-			INSERT INTO wmeter.user_password_archive (
-				password_id,
-				user_id,
-				password,
-				password_salt,
-				valid_from,
-				valid_until
-			)
-			SELECT password_id,
-					user_id,
-					password,
-					password_salt,
-					valid_from,
-					valid_until
-				FROM wmeter.user_password
-				WHERE password_id = $1
-		`
-
-		_, err = tx.Exec(query, passwordID)
-
-		if err != nil {
-			return err
-		}
-
-		query = `
-			DELETE FROM wmeter.user_password WHERE password_id = $1
 		`
 
 		_, err = tx.Exec(query, passwordID)
