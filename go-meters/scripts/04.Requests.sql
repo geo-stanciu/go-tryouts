@@ -12,7 +12,7 @@ begin
     FOREACH p SLICE 1 IN ARRAY arr
     LOOP
         select exists(
-            select *
+            select 1
               from wmeter.request
             where request_url = p[1]
         ) into _found;

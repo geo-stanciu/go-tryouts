@@ -30,7 +30,7 @@ func (u *MembershipUser) UserExists(user string) (bool, error) {
 
 	query := `
         SELECT EXISTS(
-			SELECT *
+			SELECT 1
 		      FROM wmeter.user
 	         WHERE loweredusername = lower($1)
 		)
@@ -127,7 +127,7 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 
 	query := `
         SELECT EXISTS(
-			SELECT *
+			SELECT 1
 		      FROM wmeter.user
 			 WHERE loweredusername = LOWER($1)
 			   AND user_id <> $2

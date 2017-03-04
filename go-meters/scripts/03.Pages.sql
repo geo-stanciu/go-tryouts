@@ -14,7 +14,7 @@ begin
     FOREACH p SLICE 1 IN ARRAY arr
     LOOP
         select exists(
-            select *
+            select 1
               from wmeter.page
              where page_url = p[5]
         ) into _found;

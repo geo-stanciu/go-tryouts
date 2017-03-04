@@ -169,7 +169,7 @@ func prepareCurrencies(db *sql.DB) error {
 
 	defer tx.Rollback()
 
-	query := "SELECT EXISTS(SELECT * FROM currency)"
+	query := "SELECT EXISTS(SELECT 1 FROM currency)"
 
 	err = tx.QueryRow(query).Scan(&found)
 
@@ -289,7 +289,7 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 
 	query = `
 		SELECT EXISTS(
-			SELECT *
+			SELECT 1
 			FROM exchange_rate 
 		   WHERE currency_id = $1 
 		     AND exchange_date = to_date($2, 'yyyy-mm-dd')
