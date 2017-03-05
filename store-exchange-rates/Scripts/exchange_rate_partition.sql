@@ -20,6 +20,7 @@ begin
     -- If the partition needed does not yet exist, then we create it:
     if NOT FOUND then
         EXECUTE format('CREATE TABLE %I (
+            PRIMARY KEY (exchange_rate_id),
             CHECK (exchange_date >= DATE %L AND exchange_date <= DATE %L),
             CONSTRAINT %I foreign key (currency_id)
                 references currency (currency_id)

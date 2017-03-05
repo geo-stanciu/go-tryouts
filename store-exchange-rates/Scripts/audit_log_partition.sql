@@ -20,6 +20,7 @@ begin
     -- If the partition needed does not yet exist, then we create it:
     if NOT FOUND then
         EXECUTE format('CREATE TABLE %I (
+            PRIMARY KEY (audit_log_id),
             CHECK (log_time >= TIMESTAMP %L AND log_time <= TIMESTAMP %L)
             ) INHERITS (%I)',
             _tablePartition,

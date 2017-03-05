@@ -39,9 +39,6 @@ CREATE TABLE wmeter.user (
     valid                  int         not null DEFAULT 1
 );
 
-/*CREATE UNIQUE INDEX username_uk
-    ON wmeter.user (lower(username));*/
-
 CREATE TABLE wmeter.user_password (
     password_id   serial PRIMARY KEY,
     user_id       int          not null,
