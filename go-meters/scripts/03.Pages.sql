@@ -7,7 +7,8 @@ declare
         [ 'Index', 'home/index.html', 'Home', 'Index', 'index' ],
         [ 'About', 'home/about.html', 'Home', 'About', 'about' ],
         [ 'Login', 'home/login.html', 'Home', 'Login', 'login' ],
-        [ 'Logout', '-', 'Home', 'Logout', 'logout' ]
+        [ 'Logout', '-', 'Home', 'Logout', 'logout' ],
+        [ 'Register', 'home/register.html', 'Home', 'Register', 'register' ]
     ];
 begin
     

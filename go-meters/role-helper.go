@@ -45,7 +45,7 @@ func (r *MembershipRole) GetRoleByName(role string) error {
 	defer r.Unlock()
 
 	query := `
-        SELECT role_id
+        SELECT role_id,
 		       role
           FROM wmeter.role
          WHERE lower(role) = lower($1)
@@ -70,7 +70,7 @@ func (r *MembershipRole) GetRoleByID(roleID int) error {
 	defer r.Unlock()
 
 	query := `
-        SELECT role_id
+        SELECT role_id,
 		       role
           FROM wmeter.role
          WHERE role_id = $1

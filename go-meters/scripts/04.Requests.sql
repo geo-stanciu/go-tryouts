@@ -5,7 +5,8 @@ declare
     p varchar[];
     arr  varchar[] := array[
         [ 'login', 'Home', 'Login', 'index', 'login' ],
-        [ 'logout', 'Home', 'Logout', 'login', 'login' ]
+        [ 'logout', 'Home', 'Logout', 'login', 'login' ],
+        [ 'register', 'Home', 'Register', 'login', 'register' ]
     ];
 begin
     

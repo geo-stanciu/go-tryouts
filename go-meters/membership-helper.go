@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"fmt"
 	"sync"
 
@@ -53,7 +54,7 @@ func (u *MembershipUser) GetUserByName(user string) error {
 	defer u.Unlock()
 
 	query := `
-        SELECT user_id
+        SELECT user_id,
 		       username,
                name,
                surname,
@@ -84,7 +85,7 @@ func (u *MembershipUser) GetUserByID(userID int) error {
 	defer u.Unlock()
 
 	query := `
-        SELECT user_id
+        SELECT user_id,
 		       username,
                name,
                surname,
@@ -484,7 +485,14 @@ func (u *MembershipUser) ChangePassword(tx *sql.Tx) error {
 	salt := saltBytes.String()
 
 	passwordBytes := []byte(salt + u.Password)
-	password := string(passwordBytes)
+
+	hashedPassword, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
+
+	if err != nil {
+		return err
+	}
+
+	password := base64.StdEncoding.EncodeToString(hashedPassword)
 
 	query := `
 		SELECT password_id,
@@ -495,7 +503,7 @@ func (u *MembershipUser) ChangePassword(tx *sql.Tx) error {
 		 WHERE user_id = $1
 	`
 
-	err := tx.QueryRow(query, u.UserID).Scan(
+	err = tx.QueryRow(query, u.UserID).Scan(
 		&passwordID,
 		&oldPassword,
 		&oldSalt,
@@ -571,7 +579,12 @@ func LoginByUserPassword(user string, pass string) (bool, error) {
 	}
 
 	passBytes := []byte(passwordSalt + pass)
-	hashBytes := []byte(hashedPassword)
+
+	hashBytes, err := base64.StdEncoding.DecodeString(hashedPassword)
+
+	if err != nil {
+		return false, err
+	}
 
 	err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
 

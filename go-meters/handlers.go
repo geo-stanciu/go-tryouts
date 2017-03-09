@@ -76,7 +76,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 
 	session, err := getSessionData(r)
 
-	if (err != nil || !session.LoggedIn) && url != "/login" {
+	if (err != nil || !session.LoggedIn) && url != "/login" && url != "/register" {
 		if err != nil {
 			log.WithError(err).WithFields(logrus.Fields{
 				"url": r.URL.Path,
@@ -85,6 +85,16 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
+	}
+
+	if session.LoggedIn {
+		var u MembershipUser
+		_ = u.GetUserByName("Admin")
+
+		fmt.Println(u)
+
+		roles, _ := u.GetUserRoles()
+		fmt.Println(roles)
 	}
 
 	if session.LoggedIn && strings.HasPrefix(url, "/login") {

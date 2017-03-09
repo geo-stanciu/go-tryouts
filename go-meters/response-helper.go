@@ -50,6 +50,17 @@ func (res *ResponseHelper) getResponse(w http.ResponseWriter, r *http.Request) (
 
 			return r, err
 
+		case "Register":
+			r, err := home.Register(w, r)
+
+			if r.Err() {
+				r.SetURL(res.RedirectOnError)
+			} else {
+				r.SetURL(res.RedirectURL)
+			}
+
+			return r, err
+
 		default:
 			return nil, nil
 		}
