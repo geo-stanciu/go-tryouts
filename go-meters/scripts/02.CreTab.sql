@@ -18,6 +18,13 @@ CREATE TABLE wmeter.request (
     constraint request_url_uk unique (request_url)
 );
 
+CREATE TABLE wmeter.role (
+    role_id   serial PRIMARY KEY,
+    role      varchar(64) not null
+);
+
+CREATE UNIQUE INDEX role_uk ON wmeter.role (lower(role));
+
 CREATE TABLE wmeter.user (
     user_id                serial PRIMARY KEY,
     username               varchar(64) not null,
@@ -46,6 +53,26 @@ CREATE TABLE wmeter.user_password (
     password_salt varchar(256) not null,
     valid_from    timestamp    not null DEFAULT current_timestamp,
     valid_until   timestamp
+);
+
+CREATE TABLE wmeter.user_role (
+    user_role_id serial PRIMARY KEY,
+    user_id      int not null,
+    role_id      int not null,
+    valid_from   timestamp    not null DEFAULT current_timestamp,
+    valid_until  timestamp,
+    constraint  user_role_fk foreign key (role_id)
+        references wmeter.role (role_id)
+);
+
+CREATE TABLE wmeter.user_role_history (
+    user_role_id int PRIMARY KEY,
+    user_id      int not null,
+    role_id      int not null,
+    valid_from   timestamp    not null,
+    valid_until  timestamp,
+    constraint  user_role_history_fk foreign key (role_id)
+        references wmeter.role (role_id)
 );
 
 CREATE TABLE wmeter.audit_log (
