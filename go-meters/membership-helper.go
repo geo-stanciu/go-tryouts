@@ -300,13 +300,12 @@ func (u *MembershipUser) GetUserRoles() ([]MembershipRole, error) {
 	      FROM wmeter.user_role ur
 		  JOIN wmeter.role r ON (ur.role_id = r.role_id)
 		 WHERE ur.user_id =  $1
-		   AND ur.role_id =  $2
 		   AND ur.valid_from     <= current_timestamp
 		   AND (ur.valid_until is null OR ur.valid_until > current_timestamp)
 		 ORDER BY r.role
 	`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, u.UserID)
 
 	if err != nil {
 		return nil, err
@@ -565,7 +564,7 @@ func LoginByUserPassword(user string, pass string) (bool, error) {
           FROM wmeter.user u
           LEFT OUTER JOIN wmeter.user_password p ON (u.user_id = p.user_id)
          WHERE loweredusername = lower($1)
-		   AND p.valid_from >= current_timestamp
+		   AND p.valid_from <= current_timestamp
 		   AND (p.valid_until is null OR p.valid_until > current_timestamp)
     `
 

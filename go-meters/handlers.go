@@ -87,16 +87,6 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if session.LoggedIn {
-		var u MembershipUser
-		_ = u.GetUserByName("Admin")
-
-		fmt.Println(u)
-
-		roles, _ := u.GetUserRoles()
-		fmt.Println(roles)
-	}
-
 	if session.LoggedIn && strings.HasPrefix(url, "/login") {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
