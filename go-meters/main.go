@@ -92,8 +92,8 @@ func main() {
 	log.WithField("port", *addr).Info("Starting listening...")
 
 	// Normal resources
-	http.Handle("/static",
-		http.FileServer(http.Dir("./static/")))
+	http.Handle("/static/",
+		http.StripPrefix("/static/", http.FileServer(http.Dir("public/static"))))
 	http.Handle("/images/",
 		http.StripPrefix("/images/", http.FileServer(http.Dir("public/images"))))
 	http.Handle("/js/",

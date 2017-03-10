@@ -61,6 +61,17 @@ func (res *ResponseHelper) getResponse(w http.ResponseWriter, r *http.Request) (
 
 			return r, err
 
+		case "ChangePassword":
+			r, err := home.ChangePassword(w, r)
+
+			if r.Err() {
+				r.SetURL(res.RedirectOnError)
+			} else {
+				r.SetURL(res.RedirectURL)
+			}
+
+			return r, err
+
 		default:
 			return nil, nil
 		}

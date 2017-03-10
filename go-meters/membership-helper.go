@@ -221,7 +221,7 @@ func (u *MembershipUser) Save() error {
 			return fmt.Errorf("unknown user \"%s\"", u.Username)
 		}
 
-		err = u.ChangePassword(tx)
+		err = u.changePassword(tx)
 
 		if err != nil {
 			return err
@@ -268,7 +268,7 @@ func (u *MembershipUser) Save() error {
 		}
 
 		if len(u.Password) > 0 {
-			err = u.ChangePassword(tx)
+			err = u.changePassword(tx)
 
 			if err != nil {
 				return err
@@ -474,7 +474,7 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 	return nil
 }
 
-func (u *MembershipUser) ChangePassword(tx *sql.Tx) error {
+func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	var passwordID int
 	var oldPassword string
 	var oldSalt string
@@ -554,7 +554,7 @@ func (u *MembershipUser) ChangePassword(tx *sql.Tx) error {
 	return nil
 }
 
-func LoginByUserPassword(user string, pass string) (bool, error) {
+func ValidateUserPassword(user string, pass string) (bool, error) {
 	var hashedPassword string
 	var passwordSalt string
 

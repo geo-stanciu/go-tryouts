@@ -8,7 +8,8 @@ declare
         [ 'About', 'home/about.html', 'Home', 'About', 'about' ],
         [ 'Login', 'home/login.html', 'Home', 'Login', 'login' ],
         [ 'Logout', '-', 'Home', 'Logout', 'logout' ],
-        [ 'Register', 'home/register.html', 'Home', 'Register', 'register' ]
+        [ 'Register', 'home/register.html', 'Home', 'Register', 'register' ],
+        [ 'Change Password', 'home/change-password.html', 'Home', 'ChangePassword', 'change-password' ]
     ];
 begin
     

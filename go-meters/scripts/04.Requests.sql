@@ -6,7 +6,8 @@ declare
     arr  varchar[] := array[
         [ 'login', 'Home', 'Login', 'index', 'login' ],
         [ 'logout', 'Home', 'Logout', 'login', 'login' ],
-        [ 'register', 'Home', 'Register', 'login', 'register' ]
+        [ 'register', 'Home', 'Register', 'login', 'register' ],
+        [ 'change-password', 'Home', 'ChangePassword', 'change-password', 'change-password' ]
     ];
 begin
     

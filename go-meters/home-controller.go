@@ -34,7 +34,7 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*models.Log
 			return &lres, nil
 		}
 
-		success, err := LoginByUserPassword(user, pass)
+		success, err := ValidateUserPassword(user, pass)
 
 		if err != nil || !success {
 			lres.BError = true
@@ -155,6 +155,87 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request) (*models.
 	return &lres, nil
 }
 
+func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request) (*models.GenericResponseModel, error) {
+	var lres models.GenericResponseModel
+
+	session, _ := getSessionData(r)
+
+	if !session.LoggedIn {
+		lres.BError = true
+		lres.SError = "User not logged in."
+		changePassMessage(lres.BError, "", "", lres.SError)
+
+		return &lres, nil
+	}
+
+	var usr MembershipUser
+	err := usr.GetUserByName(session.User.Username)
+
+	if err != nil {
+		lres.BError = true
+		lres.SError = err.Error()
+		changePassMessage(lres.BError, "", "", lres.SError)
+
+		return &lres, nil
+	}
+
+	pass := r.FormValue("password")
+	newPass := r.FormValue("new_password")
+	confirmPass := r.FormValue("confirm_password")
+
+	if len(pass) == 0 {
+		lres.BError = true
+		lres.SError = "Old password cannot be empty"
+		changePassMessage(lres.BError, usr.Username, usr.Email, lres.SError)
+
+		return &lres, nil
+	}
+
+	if len(newPass) == 0 || newPass != confirmPass {
+		lres.BError = true
+		lres.SError = "Password is empty or is different from it's confirmation."
+		changePassMessage(lres.BError, usr.Username, usr.Email, lres.SError)
+
+		return &lres, nil
+	}
+
+	if pass == newPass {
+		lres.BError = true
+		lres.SError = "The new password must be different from the current one."
+		changePassMessage(lres.BError, usr.Username, usr.Email, lres.SError)
+
+		return &lres, nil
+	}
+
+	valid, err := ValidateUserPassword(usr.Username, pass)
+
+	if !valid {
+		lres.BError = true
+		lres.SError = "Old password is not valid."
+		changePassMessage(lres.BError, usr.Username, usr.Email, lres.SError)
+
+		return &lres, nil
+	}
+
+	usr.Password = newPass
+
+	err = usr.Save()
+
+	if err != nil {
+		lres.BError = true
+		lres.SError = err.Error()
+		changePassMessage(lres.BError, usr.Username, usr.Email, lres.SError)
+
+		return &lres, err
+	}
+
+	lres.BError = false
+	lres.SError = "OK"
+	changePassMessage(lres.BError, usr.Username, usr.Email, lres.SError)
+
+	return &lres, nil
+}
+
 func loginMessage(isErr bool, user string, msg string) {
 	if isErr {
 		log.WithFields(logrus.Fields{
@@ -189,6 +270,24 @@ func registerMessage(isErr bool, user string, email string, msg string) {
 	} else {
 		log.WithFields(logrus.Fields{
 			"msg_type": "register",
+			"status":   "successful",
+			"user":     user,
+			"email":    email,
+		}).Info(msg)
+	}
+}
+
+func changePassMessage(isErr bool, user string, email string, msg string) {
+	if isErr {
+		log.WithFields(logrus.Fields{
+			"msg_type": "change-password",
+			"status":   "failed",
+			"user":     user,
+			"email":    email,
+		}).Error(msg)
+	} else {
+		log.WithFields(logrus.Fields{
+			"msg_type": "change-password",
 			"status":   "successful",
 			"user":     user,
 			"email":    email,

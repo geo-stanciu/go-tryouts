@@ -36,6 +36,28 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 	url := strings.ToLower(r.URL.Path)
 
+	session, err := getSessionData(r)
+
+	if (err != nil || !session.LoggedIn) && url != "/login" && url != "/register" {
+		if err != nil {
+			log.WithError(err).WithFields(logrus.Fields{
+				"url": r.URL.Path,
+			}).Error("Failed request")
+		}
+
+		setOperationError(w, r, "Request failed.")
+
+		http.Redirect(w, r, url, http.StatusSeeOther)
+		return
+	}
+
+	if session.LoggedIn && strings.HasPrefix(url, "/login") {
+		setOperationError(w, r, "Request failed.")
+
+		http.Redirect(w, r, url, http.StatusSeeOther)
+		return
+	}
+
 	r.ParseForm()
 
 	helper, err := getResponseHelperByURL(url)

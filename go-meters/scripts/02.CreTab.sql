@@ -52,7 +52,8 @@ CREATE TABLE wmeter.user_password (
     password      varchar(256) not null,
     password_salt varchar(256) not null,
     valid_from    timestamp    not null DEFAULT current_timestamp,
-    valid_until   timestamp
+    valid_until   timestamp,
+    temporary     int          not null DEFAULT 0
 );
 
 CREATE TABLE wmeter.user_role (
