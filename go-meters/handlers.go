@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 type template0Data struct {
@@ -40,9 +38,7 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 
 	if (err != nil || !session.LoggedIn) && url != "/login" && url != "/register" {
 		if err != nil {
-			log.WithError(err).WithFields(logrus.Fields{
-				"url": r.URL.Path,
-			}).Error("Failed request")
+			Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 		}
 
 		setOperationError(w, r, "Request failed.")
@@ -63,9 +59,7 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 	helper, err := getResponseHelperByURL(url)
 
 	if err != nil {
-		log.WithError(err).WithFields(logrus.Fields{
-			"url": r.URL.Path,
-		}).Error("Failed request")
+		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 	}
 
 	if helper == nil {
@@ -76,9 +70,7 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 	model, err := helper.getResponse(w, r)
 
 	if err != nil {
-		log.WithError(err).WithFields(logrus.Fields{
-			"url": r.URL.Path,
-		}).Error("Failed request")
+		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 	}
 
 	if model == nil {
@@ -100,9 +92,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 
 	if (err != nil || !session.LoggedIn) && url != "/login" && url != "/register" {
 		if err != nil {
-			log.WithError(err).WithFields(logrus.Fields{
-				"url": r.URL.Path,
-			}).Error("Failed request")
+			Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 		}
 
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -122,9 +112,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 	bErr, sErr, err := getLastOperationError(w, r)
 
 	if err != nil {
-		log.WithError(err).WithFields(logrus.Fields{
-			"url": r.URL.Path,
-		}).Error("Failed request")
+		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 	}
 
 	t := time.Now().Unix()
@@ -143,9 +131,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 	page, err := getPageByURL(url)
 
 	if err != nil {
-		log.WithError(err).WithFields(logrus.Fields{
-			"url": r.URL.Path,
-		}).Error("Failed request")
+		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 
 		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return
@@ -159,9 +145,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 	model, err := page.getModel(w, r)
 
 	if err != nil {
-		log.WithError(err).WithFields(logrus.Fields{
-			"url": r.URL.Path,
-		}).Error("Failed request")
+		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 
 		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return
@@ -179,9 +163,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 	err = executeTemplate(w, page.Template, passedObj)
 
 	if err != nil {
-		log.WithError(err).WithFields(logrus.Fields{
-			"url": r.URL.Path,
-		}).Error("Failed request")
+		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 
 		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return

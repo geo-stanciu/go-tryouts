@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -227,11 +226,7 @@ func (u *MembershipUser) Save() error {
 			return err
 		}
 
-		log.WithFields(logrus.Fields{
-			"msg_type": "add-user",
-			"status":   "successful",
-			"new":      u,
-		}).Info("Add new user.")
+		Log(false, nil, "add-user", "Add new user.", "new", u)
 	} else {
 		var old MembershipUser
 		err = old.GetUserByID(u.UserID)
@@ -275,12 +270,7 @@ func (u *MembershipUser) Save() error {
 			}
 		}
 
-		log.WithFields(logrus.Fields{
-			"msg_type": "update-user",
-			"status":   "successful",
-			"old":      old,
-			"new":      u,
-		}).Info("Update user.")
+		Log(false, nil, "update-user", "Update user.", "old", old, "new", u)
 	}
 
 	tx.Commit()
@@ -372,12 +362,7 @@ func (u *MembershipUser) AddToRole(role string) error {
 		return err
 	}
 
-	log.WithFields(logrus.Fields{
-		"msg_type": "add-user-role",
-		"status":   "successful",
-		"user":     u.Username,
-		"role":     r.Rolename,
-	}).Info("Add user to role.")
+	Log(false, nil, "add-user-role", "Add user to role.", "user", u.Username, "role", r.Rolename)
 
 	return nil
 }
@@ -464,12 +449,7 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 
 	tx.Commit()
 
-	log.WithFields(logrus.Fields{
-		"msg_type": "remove-user-role",
-		"status":   "successful",
-		"user":     u.Username,
-		"role":     r.Rolename,
-	}).Info("Remove user from role.")
+	Log(false, nil, "remove-user-role", "Remove user from role.", "user", u.Username, "role", r.Rolename)
 
 	return nil
 }

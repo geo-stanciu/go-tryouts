@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"sync"
-
-	"github.com/sirupsen/logrus"
 )
 
 type MembershipRole struct {
@@ -180,11 +178,7 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		log.WithFields(logrus.Fields{
-			"msg_type": "add-role",
-			"status":   "successful",
-			"new":      r,
-		}).Info("Add new role.")
+		Log(false, nil, "add-role", "Add new role.", "new", r)
 	} else {
 		var old MembershipRole
 		err = old.GetRoleByID(r.RoleID)
@@ -207,12 +201,7 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		log.WithFields(logrus.Fields{
-			"msg_type": "update-role",
-			"status":   "successful",
-			"old":      old,
-			"new":      r,
-		}).Info("Update role.")
+		Log(false, nil, "update-role", "Add new role.", "old", old, "new", r)
 	}
 
 	tx.Commit()
