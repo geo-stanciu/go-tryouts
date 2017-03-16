@@ -1,3 +1,11 @@
+CREATE TABLE wmeter.system_params (
+    system_params_id serial PRIMARY KEY,
+    param            varchar(64),
+    val              varchar(64)
+);
+
+CREATE UNIQUE INDEX system_params_uk ON wmeter.system_params (lower(param));
+
 CREATE TABLE wmeter.page (
     page_id       serial PRIMARY KEY,
     page_title    varchar(64)  not null,

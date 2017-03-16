@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"sync"
+	"time"
 
 	"strings"
 
@@ -501,6 +502,18 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		return err
 	}
 
+	query = `
+		UPDATE wmeter.user
+		   SET last_password_change = current_timestamp
+		 WHERE user_id = $1
+	`
+
+	_, err = tx.Exec(query, u.UserID)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -520,12 +533,18 @@ func (u *MembershipUser) Equals(usr *MembershipUser) bool {
 }
 
 func ValidateUserPassword(user string, pass string) (bool, error) {
+	var userID int
 	var hashedPassword string
 	var passwordSalt string
+	var activated int
+	var valid int
 
 	query := `
-        SELECT COALESCE(p.password, '') AS password,
-		       COALESCE(p.password_salt, '') AS password_salt
+        SELECT u.user_id,
+		       COALESCE(p.password, '') AS password,
+		       COALESCE(p.password_salt, '') AS password_salt,
+			   activated,
+			   valid
           FROM wmeter.user u
           LEFT OUTER JOIN wmeter.user_password p ON (u.user_id = p.user_id)
          WHERE loweredusername = lower($1)
@@ -533,13 +552,27 @@ func ValidateUserPassword(user string, pass string) (bool, error) {
 		   AND (p.valid_until is null OR p.valid_until > current_timestamp)
     `
 
-	err := db.QueryRow(query, user).Scan(&hashedPassword, &passwordSalt)
+	err := db.QueryRow(query, user).Scan(
+		&userID,
+		&hashedPassword,
+		&passwordSalt,
+		&activated,
+		&valid,
+	)
 
 	switch {
 	case err == sql.ErrNoRows:
 		return false, fmt.Errorf("username \"%s\" not found", user)
 	case err != nil:
 		return false, err
+	}
+
+	if activated <= 0 {
+		return false, fmt.Errorf("username \"%s\" is not activated", user)
+	}
+
+	if valid <= 0 {
+		return false, fmt.Errorf("username \"%s\" is not valid", user)
 	}
 
 	passBytes := []byte(passwordSalt + pass)
@@ -553,8 +586,112 @@ func ValidateUserPassword(user string, pass string) (bool, error) {
 	err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
 
 	if err != nil {
+		failedUserPasswordValidation(userID, user)
 		return false, err
 	}
 
 	return true, nil
+}
+
+var passFailLock sync.Mutex
+
+func failedUserPasswordValidation(userID int, user string) {
+	passFailLock.Lock()
+	defer passFailLock.Unlock()
+
+	var failedPasswordAtempts int
+	var firstFailedPassword time.Time
+	var maxAllowedFailedAtmpts int
+	var passwordFailInterval int
+	var passwordStartInterval time.Time
+	newFail := 0
+
+	passwordFailInterval = getSystemParamAsInt("password-fail-interval", "10")
+	maxAllowedFailedAtmpts = getSystemParamAsInt("max-allowed-failed-atmpts", "3")
+
+	tx, err := db.Begin()
+
+	if err != nil {
+		Log(true, err, "failed-login", "Operation error.", "user", user)
+		return
+	}
+
+	defer tx.Rollback()
+
+	passwordStartInterval = time.Now().Add(time.Duration(-1*passwordFailInterval) * time.Minute)
+
+	query := `
+		SELECT failed_password_atmpts,
+		       COALESCE(first_failed_password, to_timestamp('1970-01-01', 'yyyy-mm-dd')) AS first_failed_password
+		  FROM wmeter.user u
+		 WHERE user_id = $1
+	`
+
+	err = tx.QueryRow(query, userID).Scan(
+		&failedPasswordAtempts,
+		&firstFailedPassword,
+	)
+
+	switch {
+	case err == sql.ErrNoRows:
+		err1 := fmt.Sprintf("username \"%s\" not found", user)
+		Log(true, err, "failed-login", err1, "user", user)
+		return
+	case err != nil:
+		err1 := fmt.Sprintf("username \"%s\" not found", user)
+		Log(true, err, "failed-login", err1, "user", user)
+		return
+	}
+
+	if firstFailedPassword.Before(passwordStartInterval) {
+		newFail = 1
+	}
+
+	if failedPasswordAtempts >= maxAllowedFailedAtmpts-1 {
+		query = `
+			UPDATE wmeter.user_password p
+			   SET valid_until = current_timestamp
+			 WHERE user_id = $1
+			   AND valid_from <= current_timestamp
+		       AND (valid_until is null OR valid_until > current_timestamp)
+		`
+
+		_, err = tx.Exec(query, userID)
+
+		if err != nil {
+			Log(true, err, "failed-login", "Failed to invalidate user password.", "user", user)
+			// return // commented on purpose - Geo 17.03.2017
+		}
+
+		msg := "password invalidated for multiple failed attempts"
+
+		Log(true, nil, "failed-login", msg, "user", user)
+	}
+
+	query = `
+		UPDATE wmeter.user u
+		   SET failed_password_atmpts = CASE WHEN $1 = 1 THEN
+		                                    1
+										ELSE
+										    failed_password_atmpts + 1
+		                                END,
+		       first_failed_password  = CASE WHEN $2 = 1 THEN
+			   			                    current_timestamp
+										ELSE
+										    first_failed_password
+			                            END,
+		       last_failed_password   = current_timestamp
+		 WHERE user_id = $3
+	`
+
+	_, err = tx.Exec(query, newFail, newFail, userID)
+
+	if err != nil {
+		Log(true, err, "failed-login", "Failed to setup failed password params.", "user", user)
+		return
+	}
+
+	tx.Commit()
+
+	Log(false, nil, "failed-login", "Wrong password", "user", user)
 }
