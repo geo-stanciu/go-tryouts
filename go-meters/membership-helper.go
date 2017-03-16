@@ -19,7 +19,7 @@ type MembershipUser struct {
 	Name     string
 	Surname  string
 	Email    string
-	Password string
+	Password string `json:"-"`
 }
 
 func (u *MembershipUser) UserExists(user string) (bool, error) {
@@ -235,31 +235,35 @@ func (u *MembershipUser) Save() error {
 			return err
 		}
 
-		query = `
-			UPDATE wmeter.user
-			   SET username        = $1,
-			       loweredusername = $2,
-			       name            = $3,
-				   surname         = $4,
-				   email           = $5,
-				   loweredemail    = $6,
-				   last_update     = current_timestamp
-			 WHERE user_id = $7
-		`
+		if !u.Equals(&old) {
+			query = `
+				UPDATE wmeter.user
+				SET username        = $1,
+					loweredusername = $2,
+					name            = $3,
+					surname         = $4,
+					email           = $5,
+					loweredemail    = $6,
+					last_update     = current_timestamp
+				WHERE user_id = $7
+			`
 
-		_, err = tx.Exec(
-			query,
-			u.Username,
-			strings.ToLower(u.Username),
-			u.Name,
-			u.Surname,
-			u.Email,
-			strings.ToLower(u.Email),
-			u.UserID,
-		)
+			_, err = tx.Exec(
+				query,
+				u.Username,
+				strings.ToLower(u.Username),
+				u.Name,
+				u.Surname,
+				u.Email,
+				strings.ToLower(u.Email),
+				u.UserID,
+			)
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
+
+			Log(false, nil, "update-user", "Update user.", "old", old, "new", u)
 		}
 
 		if len(u.Password) > 0 {
@@ -269,8 +273,6 @@ func (u *MembershipUser) Save() error {
 				return err
 			}
 		}
-
-		Log(false, nil, "update-user", "Update user.", "old", old, "new", u)
 	}
 
 	tx.Commit()
@@ -455,11 +457,6 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 }
 
 func (u *MembershipUser) changePassword(tx *sql.Tx) error {
-	var passwordID int
-	var oldPassword string
-	var oldSalt string
-	var validityDate NullTime
-
 	saltBytes := uuid.NewV4()
 	salt := saltBytes.String()
 
@@ -474,44 +471,17 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	password := base64.StdEncoding.EncodeToString(hashedPassword)
 
 	query := `
-		SELECT password_id,
-		       password,
-			   password_salt,
-			   valid_until
-		  FROM wmeter.user_password
+		UPDATE wmeter.user_password p
+		   SET valid_until = current_timestamp
 		 WHERE user_id = $1
+		   AND p.valid_from <= current_timestamp
+		   AND (p.valid_until is null OR p.valid_until > current_timestamp)
 	`
 
-	err = tx.QueryRow(query, u.UserID).Scan(
-		&passwordID,
-		&oldPassword,
-		&oldSalt,
-		&validityDate)
+	_, err = tx.Exec(query, u.UserID)
 
-	switch {
-	case err == sql.ErrNoRows:
-		passwordID = -1
-	case err != nil:
+	if err != nil {
 		return err
-	}
-
-	if passwordID > 0 {
-		if oldPassword == password && oldSalt == salt {
-			return nil
-		}
-
-		query = `
-			UPDATE wmeter.user_password
-			   SET valid_until = statement_timestamp()
-			 WHERE password_id = $1
-			   AND valid_until is null
-		`
-
-		_, err = tx.Exec(query, passwordID)
-
-		if err != nil {
-			return err
-		}
 	}
 
 	query = `
@@ -532,6 +502,21 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	}
 
 	return nil
+}
+
+func (u *MembershipUser) Equals(usr *MembershipUser) bool {
+	if u == nil && usr != nil ||
+		u != nil && usr == nil ||
+		u.UserID != usr.UserID ||
+		u.Username != usr.Username ||
+		u.Name != usr.Name ||
+		u.Surname != usr.Surname ||
+		u.Email != usr.Email {
+
+		return false
+	}
+
+	return true
 }
 
 func ValidateUserPassword(user string, pass string) (bool, error) {
