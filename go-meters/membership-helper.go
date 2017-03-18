@@ -457,7 +457,73 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 	return nil
 }
 
+func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx) (bool, int, error) {
+	notRepeatPasswords := getSystemParamAsInt("not-repeat-last-x-passwords", "5")
+
+	if notRepeatPasswords <= 0 {
+		return false, notRepeatPasswords, nil
+	}
+
+	var hashedPassword string
+	var passwordSalt string
+
+	query := `
+		SELECT COALESCE(password, '') AS password,
+		       COALESCE(password_salt, '') AS password_salt
+		  FROM wmeter.user_password
+		 WHERE user_id = $1
+		 ORDER BY password_id DESC
+		 LIMIT $2
+	`
+
+	rows, err := tx.Query(query, u.UserID, notRepeatPasswords)
+
+	if err != nil {
+		return true, notRepeatPasswords, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.Scan(&hashedPassword, &passwordSalt)
+
+		if err != nil {
+			return true, notRepeatPasswords, err
+		}
+
+		passBytes := []byte(passwordSalt + u.Password)
+
+		hashBytes, err := base64.StdEncoding.DecodeString(hashedPassword)
+
+		if err != nil {
+			return true, notRepeatPasswords, err
+		}
+
+		err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
+
+		if err == nil {
+			return true, notRepeatPasswords, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return true, notRepeatPasswords, err
+	}
+
+	return false, notRepeatPasswords, nil
+}
+
 func (u *MembershipUser) changePassword(tx *sql.Tx) error {
+	alreadyUsed, notRepeatPasswords, err := u.passwordAlreadyUsed(tx)
+
+	if err != nil {
+		return err
+	}
+
+	if alreadyUsed {
+		return fmt.Errorf("Password already used. Can't use the last %d passwords", notRepeatPasswords)
+	}
+
 	saltBytes := uuid.NewV4()
 	salt := saltBytes.String()
 
@@ -537,6 +603,7 @@ func ValidateUserPassword(user string, pass string) (bool, error) {
 	var hashedPassword string
 	var passwordSalt string
 	var activated int
+	var lockedOut int
 	var valid int
 
 	query := `
@@ -544,6 +611,7 @@ func ValidateUserPassword(user string, pass string) (bool, error) {
 		       COALESCE(p.password, '') AS password,
 		       COALESCE(p.password_salt, '') AS password_salt,
 			   activated,
+			   locked_out,
 			   valid
           FROM wmeter.user u
           LEFT OUTER JOIN wmeter.user_password p ON (u.user_id = p.user_id)
@@ -557,6 +625,7 @@ func ValidateUserPassword(user string, pass string) (bool, error) {
 		&hashedPassword,
 		&passwordSalt,
 		&activated,
+		&lockedOut,
 		&valid,
 	)
 
@@ -565,6 +634,10 @@ func ValidateUserPassword(user string, pass string) (bool, error) {
 		return false, fmt.Errorf("username \"%s\" not found", user)
 	case err != nil:
 		return false, err
+	}
+
+	if lockedOut > 0 {
+		return false, fmt.Errorf("username \"%s\" is locked out", user)
 	}
 
 	if activated <= 0 {
@@ -649,6 +722,19 @@ func failedUserPasswordValidation(userID int, user string) {
 
 	if failedPasswordAtempts >= maxAllowedFailedAtmpts-1 {
 		query = `
+			UPDATE wmeter.user
+			   SET locked_out = 1
+			 WHERE user_id = $1
+		`
+
+		_, err = tx.Exec(query, userID)
+
+		if err != nil {
+			Log(true, err, "failed-login", "User locked out.", "user", user)
+			// return // commented on purpose - Geo 18.03.2017
+		}
+
+		query = `
 			UPDATE wmeter.user_password p
 			   SET valid_until = current_timestamp
 			 WHERE user_id = $1
@@ -663,7 +749,7 @@ func failedUserPasswordValidation(userID int, user string) {
 			// return // commented on purpose - Geo 17.03.2017
 		}
 
-		msg := "password invalidated for multiple failed attempts"
+		msg := "User password invalidated for multiple failed attempts"
 
 		Log(true, nil, "failed-login", msg, "user", user)
 	}

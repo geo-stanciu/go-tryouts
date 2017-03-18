@@ -51,7 +51,8 @@ CREATE TABLE wmeter.user (
     last_failed_password   timestamp,
     last_connect_time      timestamp,
     last_connect_ip        varchar(128),
-    valid                  int         not null DEFAULT 1
+    valid                  int         not null DEFAULT 1,
+    locked_out             int         not null DEFAULT 0
 );
 
 CREATE TABLE wmeter.user_password (
