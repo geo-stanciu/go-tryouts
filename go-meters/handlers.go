@@ -80,6 +80,8 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 
 	if model.Err() {
 		setOperationError(w, r, model.SErr())
+	} else {
+		setOperationSuccess(w, r, model.SErr())
 	}
 
 	http.Redirect(w, r, model.Url(), http.StatusSeeOther)

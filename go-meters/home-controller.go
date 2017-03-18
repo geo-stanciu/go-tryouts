@@ -147,7 +147,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request) (*models.
 	}
 
 	lres.BError = false
-	lres.SError = "OK"
+	lres.SError = "User registered"
 	Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
 
 	return &lres, nil
@@ -228,7 +228,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request) (*m
 	}
 
 	lres.BError = false
-	lres.SError = "OK"
+	lres.SError = "User password changed"
 	Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 	return &lres, nil

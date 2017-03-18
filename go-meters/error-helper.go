@@ -6,6 +6,29 @@ import (
 	"github.com/gorilla/sessions"
 )
 
+func setOperationSuccess(w http.ResponseWriter, r *http.Request, msg string) error {
+	session, _ := cookieStore.Get(r, cookieStoreName)
+
+	session.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   0,
+		HttpOnly: true,
+		//Secure: true // for https
+	}
+
+	session.Values["Err"] = false
+	session.Values["SErr"] = msg
+
+	//save the session
+	err := session.Save(r, w)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func setOperationError(w http.ResponseWriter, r *http.Request, sError string) error {
 	session, _ := cookieStore.Get(r, cookieStoreName)
 

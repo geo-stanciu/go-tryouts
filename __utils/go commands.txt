@@ -1,0 +1,3 @@
+-- for update all 3rd packages
+go get -u all
+
