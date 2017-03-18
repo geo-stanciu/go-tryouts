@@ -1,0 +1,20 @@
+1. password rules for register + change password
+    - (done) do not use the last x passwords
+    - use at least x characters
+    - use at least x letters
+    - use at least x numbers
+    - use at least x uppercase
+    - use at least x non alphanumerics
+    - do not use repetitive letters
+    - do not use common words
+    - settings to activate each one of the options above
+
+-----------------------------
+
+2. categories for settings
+    - one for password complexity rules + password fail rules
+
+-----------------------------
+
+3. method to retrieve all settings from a category
+    - get all rules in a struct for each category
