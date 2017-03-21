@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"./models"
 )
 
 type Page struct {
@@ -14,7 +16,7 @@ type Page struct {
 	Action     string
 }
 
-func (p *Page) getModel(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (p *Page) getModel(w http.ResponseWriter, r *http.Request) (models.ResponseModel, error) {
 	switch p.Controller {
 	case "Home":
 		home := HomeController{}
@@ -25,7 +27,7 @@ func (p *Page) getModel(w http.ResponseWriter, r *http.Request) (interface{}, er
 	}
 }
 
-func (p *Page) getModelValue(controller interface{}, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (p *Page) getModelValue(controller interface{}, w http.ResponseWriter, r *http.Request) (models.ResponseModel, error) {
 	if len(p.Action) == 0 || p.Action == "-" {
 		return nil, nil
 	}
@@ -33,14 +35,14 @@ func (p *Page) getModelValue(controller interface{}, w http.ResponseWriter, r *h
 	response := InvokeMethodByName(controller, p.Action, w, r, &ResponseHelper{})
 
 	if len(response) >= 2 {
-		i1 := response[0].Interface()
+		r := response[0].Interface().(models.ResponseModel)
 		i2 := response[1].Interface()
 
 		if i2 != nil {
-			return i1, i2.(error)
+			return r, i2.(error)
 		}
 
-		return i1, nil
+		return r, nil
 	}
 
 	return nil, fmt.Errorf("Function does not return the requested number of values.")

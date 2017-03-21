@@ -5,15 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-)
 
-type ResponseModel interface {
-	Err() bool
-	SErr() string
-	Url() string
-	SetURL(string)
-	HasURL() bool
-}
+	"./models"
+)
 
 type ResponseHelper struct {
 	Controller      string
@@ -22,7 +16,7 @@ type ResponseHelper struct {
 	RedirectOnError string
 }
 
-func (res *ResponseHelper) getResponse(w http.ResponseWriter, r *http.Request) (ResponseModel, error) {
+func (res *ResponseHelper) getResponse(w http.ResponseWriter, r *http.Request) (models.ResponseModel, error) {
 	switch res.Controller {
 	case "Home":
 		home := HomeController{}
@@ -33,7 +27,7 @@ func (res *ResponseHelper) getResponse(w http.ResponseWriter, r *http.Request) (
 	}
 }
 
-func (res *ResponseHelper) getResponseValue(controller interface{}, w http.ResponseWriter, r *http.Request) (ResponseModel, error) {
+func (res *ResponseHelper) getResponseValue(controller interface{}, w http.ResponseWriter, r *http.Request) (models.ResponseModel, error) {
 	if len(res.Action) == 0 || res.Action == "-" {
 		return nil, nil
 	}
@@ -41,7 +35,7 @@ func (res *ResponseHelper) getResponseValue(controller interface{}, w http.Respo
 	response := InvokeMethodByName(controller, res.Action, w, r, res)
 
 	if len(response) >= 2 {
-		r := response[0].Interface().(ResponseModel)
+		r := response[0].Interface().(models.ResponseModel)
 		i2 := response[1].Interface()
 
 		if i2 != nil {

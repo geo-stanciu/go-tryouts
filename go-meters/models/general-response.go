@@ -1,5 +1,13 @@
 package models
 
+type ResponseModel interface {
+	Err() bool
+	SErr() string
+	Url() string
+	SetURL(string)
+	HasURL() bool
+}
+
 type GenericResponseModel struct {
 	BError      bool
 	SError      string
