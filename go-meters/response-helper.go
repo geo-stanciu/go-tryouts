@@ -12,6 +12,7 @@ type ResponseModel interface {
 	SErr() string
 	Url() string
 	SetURL(string)
+	HasURL() bool
 }
 
 type ResponseHelper struct {
@@ -28,49 +29,16 @@ func (res *ResponseHelper) getResponse(w http.ResponseWriter, r *http.Request) (
 
 		switch res.Action {
 		case "Login":
-			r, err := home.Login(w, r)
-
-			if r.Err() {
-				r.SetURL(res.RedirectOnError)
-			} else {
-				r.SetURL(res.RedirectURL)
-			}
-
-			return r, err
+			return home.Login(w, r, res)
 
 		case "Logout":
-
-			r, err := home.Logout(w, r)
-
-			if r.Err() {
-				r.SetURL(res.RedirectOnError)
-			} else {
-				r.SetURL(res.RedirectURL)
-			}
-
-			return r, err
+			return home.Logout(w, r, res)
 
 		case "Register":
-			r, err := home.Register(w, r)
-
-			if r.Err() {
-				r.SetURL(res.RedirectOnError)
-			} else {
-				r.SetURL(res.RedirectURL)
-			}
-
-			return r, err
+			return home.Register(w, r, res)
 
 		case "ChangePassword":
-			r, err := home.ChangePassword(w, r)
-
-			if r.Err() {
-				r.SetURL(res.RedirectOnError)
-			} else {
-				r.SetURL(res.RedirectURL)
-			}
-
-			return r, err
+			return home.ChangePassword(w, r, res)
 
 		default:
 			return nil, nil

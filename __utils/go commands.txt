@@ -1,3 +1,5 @@
--- for update all 3rd packages
+-- update all 3rd party packages
 go get -u all
 
+-- update 3rd party packages for current proj
+go get -d

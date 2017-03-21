@@ -22,16 +22,17 @@ import (
 )
 
 var (
-	log             = logrus.New()
-	templateDelims  = []string{"{{%", "%}}"}
-	templates       *template.Template
-	addr            *string
-	db              *sql.DB
-	config          = Configuration{}
-	appName         = "GoMeters"
-	appVersion      = "0.0.0.1"
-	cookieStoreName = strings.Replace(appName, " ", "", -1)
-	cookieStore     *sessions.CookieStore
+	log                 = logrus.New()
+	templateDelims      = []string{"{{%", "%}}"}
+	templates           *template.Template
+	addr                *string
+	db                  *sql.DB
+	config              = Configuration{}
+	appName             = "GoMeters"
+	appVersion          = "0.0.0.1"
+	authCookieStoreName = strings.Replace(appName, " ", "", -1)
+	errCookieStoreName  = strings.Replace(appName, " ", "", -1) + "Err"
+	cookieStore         *sessions.CookieStore
 )
 
 func init() {

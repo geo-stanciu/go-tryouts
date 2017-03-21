@@ -2,19 +2,10 @@ package main
 
 import (
 	"net/http"
-
-	"github.com/gorilla/sessions"
 )
 
 func setOperationSuccess(w http.ResponseWriter, r *http.Request, msg string) error {
-	session, _ := cookieStore.Get(r, cookieStoreName)
-
-	session.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   0,
-		HttpOnly: true,
-		//Secure: true // for https
-	}
+	session, _ := cookieStore.Get(r, errCookieStoreName)
 
 	session.Values["Err"] = false
 	session.Values["SErr"] = msg
@@ -30,14 +21,7 @@ func setOperationSuccess(w http.ResponseWriter, r *http.Request, msg string) err
 }
 
 func setOperationError(w http.ResponseWriter, r *http.Request, sError string) error {
-	session, _ := cookieStore.Get(r, cookieStoreName)
-
-	session.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   0,
-		HttpOnly: true,
-		//Secure: true // for https
-	}
+	session, _ := cookieStore.Get(r, errCookieStoreName)
 
 	session.Values["Err"] = true
 	session.Values["SErr"] = sError
@@ -53,7 +37,7 @@ func setOperationError(w http.ResponseWriter, r *http.Request, sError string) er
 }
 
 func getLastOperationError(w http.ResponseWriter, r *http.Request) (bool, string, error) {
-	session, _ := cookieStore.Get(r, cookieStoreName)
+	session, _ := cookieStore.Get(r, errCookieStoreName)
 
 	vErr := session.Values["Err"]
 	bErr, ok := vErr.(bool)

@@ -24,7 +24,7 @@ func (p *Page) getModel(w http.ResponseWriter, r *http.Request) (interface{}, er
 			return home.Index()
 
 		case "Logout":
-			return home.Logout(w, r)
+			return home.Logout(w, r, nil)
 
 		default:
 			return nil, nil

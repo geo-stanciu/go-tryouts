@@ -15,8 +15,13 @@ func (HomeController) Index() (interface{}, error) {
 	return nil, nil
 }
 
-func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*models.LoginResponse, error) {
-	var lres models.LoginResponse
+func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
+	var lres models.GenericResponseModel
+
+	if res != nil {
+		lres.SSuccessURL = res.RedirectURL
+		lres.SErrorURL = res.RedirectOnError
+	}
 
 	session, _ := getSessionData(r)
 
@@ -58,9 +63,14 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request) (*models.Log
 	return &lres, nil
 }
 
-func (HomeController) Logout(w http.ResponseWriter, r *http.Request) (*models.GenericResponseModel, error) {
+func (HomeController) Logout(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	var lres models.GenericResponseModel
 	var user string
+
+	if res != nil {
+		lres.SSuccessURL = res.RedirectURL
+		lres.SErrorURL = res.RedirectOnError
+	}
 
 	session, _ := getSessionData(r)
 
@@ -81,8 +91,13 @@ func (HomeController) Logout(w http.ResponseWriter, r *http.Request) (*models.Ge
 	return &lres, nil
 }
 
-func (HomeController) Register(w http.ResponseWriter, r *http.Request) (*models.GenericResponseModel, error) {
+func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	var lres models.GenericResponseModel
+
+	if res != nil {
+		lres.SSuccessURL = res.RedirectURL
+		lres.SErrorURL = res.RedirectOnError
+	}
 
 	user := r.FormValue("username")
 	pass := r.FormValue("password")
@@ -153,8 +168,13 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request) (*models.
 	return &lres, nil
 }
 
-func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request) (*models.GenericResponseModel, error) {
+func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	var lres models.GenericResponseModel
+
+	if res != nil {
+		lres.SSuccessURL = res.RedirectURL
+		lres.SErrorURL = res.RedirectOnError
+	}
 
 	session, _ := getSessionData(r)
 

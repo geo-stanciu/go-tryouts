@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -84,7 +85,15 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 		setOperationSuccess(w, r, model.SErr())
 	}
 
-	http.Redirect(w, r, model.Url(), http.StatusSeeOther)
+	if model.HasURL() {
+		http.Redirect(w, r, model.Url(), http.StatusSeeOther)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(model)
+	setOperationError(w, r, err.Error())
 }
 
 func handleGetRequest(w http.ResponseWriter, r *http.Request) {

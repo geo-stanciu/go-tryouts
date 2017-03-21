@@ -24,7 +24,7 @@ type SessionData struct {
 }
 
 func clearSession(w http.ResponseWriter, r *http.Request) error {
-	session, _ := cookieStore.Get(r, cookieStoreName)
+	session, _ := cookieStore.Get(r, authCookieStoreName)
 	sessionData := SessionData{}
 
 	session.Values["SessionData"] = sessionData
@@ -40,14 +40,7 @@ func clearSession(w http.ResponseWriter, r *http.Request) error {
 }
 
 func createSession(w http.ResponseWriter, r *http.Request, user string) (*SessionData, error) {
-	session, _ := cookieStore.Get(r, cookieStoreName)
-
-	session.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   0,
-		HttpOnly: true,
-		//Secure: true // for https
-	}
+	session, _ := cookieStore.Get(r, authCookieStoreName)
 
 	sessionID := uuid.NewV4()
 
@@ -74,7 +67,7 @@ func createSession(w http.ResponseWriter, r *http.Request, user string) (*Sessio
 }
 
 func getSessionData(r *http.Request) (*SessionData, error) {
-	session, _ := cookieStore.Get(r, cookieStoreName)
+	session, _ := cookieStore.Get(r, authCookieStoreName)
 
 	// Retrieve our struct and type-assert it
 	val := session.Values["SessionData"]
@@ -135,6 +128,13 @@ func getNewCookieStore() (*sessions.CookieStore, error) {
 		)
 	} else {
 		cookieStore = sessions.NewCookieStore(encodeKeys[0])
+	}
+
+	cookieStore.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   0,
+		HttpOnly: true,
+		//Secure: true // for https
 	}
 
 	return cookieStore, nil
