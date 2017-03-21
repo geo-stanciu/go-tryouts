@@ -5,11 +5,11 @@ declare
     p varchar[];
     arr  varchar[] := array[
         [ 'Index', 'home/index.html', 'Home', 'Index', 'index' ],
-        [ 'About', 'home/about.html', 'Home', 'About', 'about' ],
-        [ 'Login', 'home/login.html', 'Home', 'Login', 'login' ],
+        [ 'About', 'home/about.html', 'Home', '-', 'about' ],
+        [ 'Login', 'home/login.html', 'Home', '-', 'login' ],
         [ 'Logout', '-', 'Home', 'Logout', 'logout' ],
-        [ 'Register', 'home/register.html', 'Home', 'Register', 'register' ],
-        [ 'Change Password', 'home/change-password.html', 'Home', 'ChangePassword', 'change-password' ]
+        [ 'Register', 'home/register.html', 'Home', '-', 'register' ],
+        [ 'Change Password', 'home/change-password.html', 'Home', '-', 'change-password' ]
     ];
 begin
     

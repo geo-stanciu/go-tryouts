@@ -26,27 +26,32 @@ func (res *ResponseHelper) getResponse(w http.ResponseWriter, r *http.Request) (
 	switch res.Controller {
 	case "Home":
 		home := HomeController{}
-
-		switch res.Action {
-		case "Login":
-			return home.Login(w, r, res)
-
-		case "Logout":
-			return home.Logout(w, r, res)
-
-		case "Register":
-			return home.Register(w, r, res)
-
-		case "ChangePassword":
-			return home.ChangePassword(w, r, res)
-
-		default:
-			return nil, nil
-		}
+		return res.getResponseValue(home, w, r)
 
 	default:
 		return nil, nil
 	}
+}
+
+func (res *ResponseHelper) getResponseValue(controller interface{}, w http.ResponseWriter, r *http.Request) (ResponseModel, error) {
+	if len(res.Action) == 0 || res.Action == "-" {
+		return nil, nil
+	}
+
+	response := InvokeMethodByName(controller, res.Action, w, r, res)
+
+	if len(response) >= 2 {
+		r := response[0].Interface().(ResponseModel)
+		i2 := response[1].Interface()
+
+		if i2 != nil {
+			return r, i2.(error)
+		}
+
+		return r, nil
+	}
+
+	return nil, fmt.Errorf("Function does not return the requested number of values.")
 }
 
 func getResponseHelperByURL(url string) (*ResponseHelper, error) {

@@ -11,7 +11,7 @@ import (
 type HomeController struct {
 }
 
-func (HomeController) Index() (interface{}, error) {
+func (HomeController) Index(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	return nil, nil
 }
 
