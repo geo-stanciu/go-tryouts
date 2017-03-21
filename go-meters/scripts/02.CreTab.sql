@@ -6,23 +6,15 @@ CREATE TABLE wmeter.system_params (
 
 CREATE UNIQUE INDEX system_params_uk ON wmeter.system_params (lower(param));
 
-CREATE TABLE wmeter.page (
-    page_id       serial PRIMARY KEY,
-    page_title    varchar(64)  not null,
-    page_template varchar(64)  not null,
-    controller    varchar(64)  not null,
-    action        varchar(64)  not null,
-    page_url      varchar(256) not null,
-    constraint page_url_uk unique (page_url)
-);
-
 CREATE TABLE wmeter.request (
     request_id        serial PRIMARY KEY,
-    request_url       varchar(256) not null,
-    controller        varchar(64)  not null,
-    action            varchar(64)  not null,
-    redirect_url      varchar(256) not null,
-    redirect_on_error varchar(256) not null,
+    request_title     varchar(64)  not null DEFAULT '-',
+    request_template  varchar(64)  not null DEFAULT '-',
+    request_url       varchar(256) not null DEFAULT '-',
+    controller        varchar(64)  not null DEFAULT '-',
+    action            varchar(64)  not null DEFAULT '-',
+    redirect_url      varchar(256) not null DEFAULT '-',
+    redirect_on_error varchar(256) not null DEFAULT '-',
     constraint request_url_uk unique (request_url)
 );
 

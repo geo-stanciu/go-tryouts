@@ -10,6 +10,8 @@ import (
 )
 
 type ResponseHelper struct {
+	Title           string
+	Template        string
 	Controller      string
 	Action          string
 	RedirectURL     string
@@ -59,7 +61,9 @@ func getResponseHelperByURL(url string) (*ResponseHelper, error) {
 	}
 
 	query := `
-        select controller,
+        select request_title,
+		       request_template,
+		       controller,
                action,
 			   redirect_url,
 			   redirect_on_error
@@ -67,7 +71,14 @@ func getResponseHelperByURL(url string) (*ResponseHelper, error) {
          where request_url = $1
     `
 
-	err := db.QueryRow(query, sURL).Scan(&res.Controller, &res.Action, &res.RedirectURL, &res.RedirectOnError)
+	err := db.QueryRow(query, sURL).Scan(
+		&res.Title,
+		&res.Template,
+		&res.Controller,
+		&res.Action,
+		&res.RedirectURL,
+		&res.RedirectOnError,
+	)
 
 	switch {
 	case err == sql.ErrNoRows:

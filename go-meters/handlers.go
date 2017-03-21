@@ -37,7 +37,7 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 
 	session, err := getSessionData(r)
 
-	if (err != nil || !session.LoggedIn) && url != "/login" && url != "/register" {
+	if (err != nil || !session.LoggedIn) && url != "/perform-login" && url != "/perform-register" {
 		if err != nil {
 			Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 		}
@@ -48,7 +48,7 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if session.LoggedIn && strings.HasPrefix(url, "/login") {
+	if session.LoggedIn && strings.HasPrefix(url, "/perform-login") {
 		setOperationError(w, r, "Request failed.")
 
 		http.Redirect(w, r, url, http.StatusSeeOther)
@@ -136,10 +136,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		Date:    t,
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Cache-Control", "private, max-age=600, no-store")
-
-	page, err := getPageByURL(url)
+	response, err := getResponseHelperByURL(url)
 
 	if err != nil {
 		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
@@ -148,12 +145,12 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if page == nil {
+	if response == nil {
 		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return
 	}
 
-	model, err := page.getModel(w, r)
+	model, err := response.getResponse(w, r)
 
 	if err != nil {
 		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
@@ -162,23 +159,41 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if page.Template == "-" {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	passedObj.Title = page.Title
+	passedObj.Title = response.Title
 	passedObj.Model = model
 	passedObj.Session = *session
 
-	err = executeTemplate(w, page.Template, passedObj)
+	if response.Template != "-" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "private, max-age=600, no-store")
 
-	if err != nil {
-		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
+		err = executeTemplate(w, response.Template, passedObj)
 
-		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
+		if err != nil {
+			Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
+
+			http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
+			return
+		}
+
 		return
 	}
+
+	if model.Err() {
+		setOperationError(w, r, model.SErr())
+	} else {
+		setOperationSuccess(w, r, model.SErr())
+	}
+
+	if model.HasURL() {
+		http.Redirect(w, r, model.Url(), http.StatusSeeOther)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(model)
+	setOperationError(w, r, err.Error())
 }
 
 func executeTemplate(w io.Writer, tmplName string, data interface{}) error {
