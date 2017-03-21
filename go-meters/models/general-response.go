@@ -16,7 +16,7 @@ func (r *GenericResponseModel) SErr() string {
 	return r.SError
 }
 
-func (r *GenericResponseModel) Url() string {
+func (r *GenericResponseModel) getUrl() string {
 	if len(r.SUrl) > 0 {
 		return r.SUrl
 	}
@@ -26,6 +26,16 @@ func (r *GenericResponseModel) Url() string {
 	}
 
 	return r.SSuccessURL
+}
+
+func (r *GenericResponseModel) Url() string {
+	url := r.getUrl()
+
+	if url == "-" {
+		return ""
+	}
+
+	return url
 }
 
 func (r *GenericResponseModel) SetURL(url string) {
