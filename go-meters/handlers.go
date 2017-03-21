@@ -93,7 +93,10 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	err = json.NewEncoder(w).Encode(model)
-	setOperationError(w, r, err.Error())
+
+	if err != nil {
+		setOperationError(w, r, err.Error())
+	}
 }
 
 func handleGetRequest(w http.ResponseWriter, r *http.Request) {
@@ -193,7 +196,10 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	err = json.NewEncoder(w).Encode(model)
-	setOperationError(w, r, err.Error())
+
+	if err != nil {
+		setOperationError(w, r, err.Error())
+	}
 }
 
 func executeTemplate(w io.Writer, tmplName string, data interface{}) error {

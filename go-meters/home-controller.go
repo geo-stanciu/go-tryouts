@@ -253,3 +253,42 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 
 	return &lres, nil
 }
+
+func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.ExchangeRatesResponseModel, error) {
+	var lres models.ExchangeRatesResponseModel
+
+	query := `
+		select c.currency, r.exchange_date, r.rate
+		  from exchange_rate r
+		  join currency c on (r.currency_id = c.currency_id)
+		 where exchange_date = (
+			 select max(exchange_date) from exchange_rate
+		 )
+		 order by c.currency, r.exchange_date
+	`
+
+	rows, err := db.Query(query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var r models.Rate
+		err = rows.Scan(&r.Currency, &r.Date, &r.Value)
+
+		if err != nil {
+			return nil, err
+		}
+
+		lres.Rates = append(lres.Rates, r)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &lres, nil
+}

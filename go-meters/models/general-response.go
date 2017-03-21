@@ -9,8 +9,8 @@ type ResponseModel interface {
 }
 
 type GenericResponseModel struct {
-	BError      bool
-	SError      string
+	BError      bool   `json:"err"`
+	SError      string `json:"serr"`
 	SUrl        string `json:"-"`
 	SSuccessURL string `json:"-"`
 	SErrorURL   string `json:"-"`

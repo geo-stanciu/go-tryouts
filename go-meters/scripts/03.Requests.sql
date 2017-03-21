@@ -4,18 +4,22 @@ declare
     
     p varchar[];
     arr  varchar[] := array[
+        -- pages
+        [ 'Index',           'home/index.html',           'index',                   'Home', 'Index',            '-',               '-' ],
+        [ 'About',           'home/about.html',           'about',                   'Home', '-',                '-',               '-' ],
+        [ 'Login',           'home/login.html',           'login',                   'Home', '-',                '-',               '-' ],
+        [ 'Register',        'home/register.html',        'register',                'Home', '-',                '-',               '-' ],
+        [ 'Change Password', 'home/change-password.html', 'change-password',         'Home', '-',                '-',               '-' ],
+        
         -- gets
-        [ 'Index',           'home/index.html',           'index',                   'Home', 'Index',          '-',               '-' ],
-        [ 'About',           'home/about.html',           'about',                   'Home', '-',              '-',               '-' ],
-        [ 'Login',           'home/login.html',           'login',                   'Home', '-',              '-',               '-' ],
-        [ 'Logout',          '-',                         'logout',                  'Home', 'Logout',         '/',               '-' ],
-        [ 'Register',        'home/register.html',        'register',                'Home', '-',              '-',               '-' ],
-        [ 'Change Password', 'home/change-password.html', 'change-password',         'Home', '-',              '-',               '-' ],
+        [ 'Logout',          '-',                         'logout',                  'Home', 'Logout',           '/',               '-' ],
+        [ 'Exchange Rates',  '-',                         'exchange-rates',          'Home', 'GetExchangeRates', '-',               '-' ],
+        
         -- posts
-        [ 'Login',           '-',                         'perform-login',           'Home', 'Login',          'index',           'login' ],
-        [ 'Logout',          '-',                         'perform-logout',          'Home', 'Logout',         'login',           'login' ],
-        [ 'Register',        '-',                         'perform-register',        'Home', 'Register',       'login',           'register' ],
-        [ 'Change Password', '-',                         'perform-change-password', 'Home', 'ChangePassword', 'change-password', 'change-password' ]
+        [ 'Login',           '-',                         'perform-login',           'Home', 'Login',            'index',           'login' ],
+        [ 'Logout',          '-',                         'perform-logout',          'Home', 'Logout',           'login',           'login' ],
+        [ 'Register',        '-',                         'perform-register',        'Home', 'Register',         'login',           'register' ],
+        [ 'Change Password', '-',                         'perform-change-password', 'Home', 'ChangePassword',   'change-password', 'change-password' ]
     ];
 begin
     
@@ -24,7 +28,7 @@ begin
         select exists(
             select 1
               from wmeter.request
-            where request_url = p[1]
+            where request_url = p[3]
         ) into _found;
         
         if _found = FALSE then
