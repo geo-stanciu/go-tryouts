@@ -44,59 +44,20 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 
 		setOperationError(w, r, "Request failed.")
 
-		http.Redirect(w, r, url, http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	if session.LoggedIn && strings.HasPrefix(url, "/perform-login") {
 		setOperationError(w, r, "Request failed.")
 
-		http.Redirect(w, r, url, http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	r.ParseForm()
 
-	helper, err := getResponseHelperByURL(url)
-
-	if err != nil {
-		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
-	}
-
-	if helper == nil {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	model, err := helper.getResponse(w, r)
-
-	if err != nil {
-		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
-	}
-
-	if model == nil {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	if model.Err() {
-		setOperationError(w, r, model.SErr())
-	} else {
-		setOperationSuccess(w, r, model.SErr())
-	}
-
-	if model.HasURL() {
-		http.Redirect(w, r, model.Url(), http.StatusSeeOther)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-
-	err = json.NewEncoder(w).Encode(model)
-
-	if err != nil {
-		setOperationError(w, r, err.Error())
-	}
+	handleRequest(w, r, url, session)
 }
 
 func handleGetRequest(w http.ResponseWriter, r *http.Request) {
@@ -123,6 +84,10 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	handleRequest(w, r, url, session)
+}
+
+func handleRequest(w http.ResponseWriter, r *http.Request, url string, session *SessionData) {
 	bErr, sErr, err := getLastOperationError(w, r)
 
 	if err != nil {
