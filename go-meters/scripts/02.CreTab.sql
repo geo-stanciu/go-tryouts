@@ -5,7 +5,8 @@ CREATE TABLE wmeter.system_params (
     val              varchar(64)
 );
 
-CREATE UNIQUE INDEX system_params_uk ON wmeter.system_params (lower(param));
+CREATE UNIQUE INDEX system_params_uk
+    ON wmeter.system_params (lower(param_group), lower(param));
 
 CREATE TABLE wmeter.request (
     request_id        serial PRIMARY KEY,

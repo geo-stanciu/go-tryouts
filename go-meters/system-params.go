@@ -9,10 +9,10 @@ func getAllParamsByGroup(group string) (map[string]string, error) {
 	rez := make(map[string]string)
 
 	query := `
-		SELECT key, val FROM wmeter.system_params WHERE param_group = $1
+		SELECT param, val FROM wmeter.system_params WHERE param_group = $1
 	`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, strings.ToLower(group))
 
 	if err != nil {
 		return rez, err
