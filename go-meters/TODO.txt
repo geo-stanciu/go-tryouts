@@ -12,9 +12,9 @@
 -----------------------------
 
 2. categories for settings
-    - one for password complexity rules + password fail rules
+    - (done) one for password complexity rules + password fail rules
 
 -----------------------------
 
 3. method to retrieve all settings from a category
-    - get all rules in a struct for each category
+    - (done - a map was used) get all rules in a struct for each category

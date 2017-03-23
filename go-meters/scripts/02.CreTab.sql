@@ -1,5 +1,6 @@
 CREATE TABLE wmeter.system_params (
     system_params_id serial PRIMARY KEY,
+    param_group      varchar(64),
     param            varchar(64),
     val              varchar(64)
 );

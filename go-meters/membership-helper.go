@@ -458,7 +458,13 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 }
 
 func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx) (bool, int, error) {
-	notRepeatPasswords := getSystemParamAsInt("not-repeat-last-x-passwords", "5")
+	params, err := getAllParamsByGroup("password-rules")
+
+	if err != nil {
+		return true, 1, err
+	}
+
+	notRepeatPasswords := string2int(params["not-repeat-last-x-passwords"])
 
 	if notRepeatPasswords <= 0 {
 		return false, notRepeatPasswords, nil
@@ -679,8 +685,15 @@ func failedUserPasswordValidation(userID int, user string) {
 	var passwordStartInterval time.Time
 	newFail := 0
 
-	passwordFailInterval = getSystemParamAsInt("password-fail-interval", "10")
-	maxAllowedFailedAtmpts = getSystemParamAsInt("max-allowed-failed-atmpts", "3")
+	params, err := getAllParamsByGroup("password-rules")
+
+	if err != nil {
+		Log(true, err, "failed-login", "Operation error.", "user", user)
+		return
+	}
+
+	passwordFailInterval = string2int(params["password-fail-interval"])
+	maxAllowedFailedAtmpts = string2int(params["max-allowed-failed-atmpts"])
 
 	tx, err := db.Begin()
 

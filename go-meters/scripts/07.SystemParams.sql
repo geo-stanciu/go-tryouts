@@ -4,9 +4,9 @@ declare
     
     p varchar[];
     arr  varchar[] := array[
-        [ 'password-fail-interval', '10' ],
-        [ 'max-allowed-failed-atmpts', '3' ],
-        [ 'not-repeat-last-x-passwords', '5' ]
+        [ 'password-rules', 'password-fail-interval', '10' ],
+        [ 'password-rules', 'max-allowed-failed-atmpts', '3' ],
+        [ 'password-rules', 'not-repeat-last-x-passwords', '5' ]
     ];
 begin
     
@@ -15,17 +15,20 @@ begin
         select exists(
             select 1
               from wmeter.system_params
-             where param = p[1]
+             where param_group = p[1]
+               and param       = p[2]
         ) into _found;
         
         if _found = FALSE then
             insert into wmeter.system_params (
+                param_group,
                 param,
                 val
             )
             values (
                 p[1],
-                p[2]
+                p[2],
+                p[3]
             );
         end if;
     

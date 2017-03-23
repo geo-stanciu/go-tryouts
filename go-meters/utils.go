@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -16,4 +17,15 @@ func InvokeMethodByName(any interface{}, name string, args ...interface{}) []ref
 	}
 
 	return reflect.ValueOf(any).MethodByName(name).Call(inputs)
+}
+
+func string2int(sval string) int {
+	val, err := strconv.Atoi(sval)
+
+	if err != nil {
+		Log(true, err, "conversion", "Conversion error.", "val", val)
+		return 0
+	}
+
+	return val
 }
