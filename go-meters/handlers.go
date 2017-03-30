@@ -122,9 +122,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, session *
 
 	if err != nil {
 		Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
-
-		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
-		return
 	}
 
 	passedObj.Title = response.Title

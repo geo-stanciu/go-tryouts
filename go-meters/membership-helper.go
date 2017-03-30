@@ -531,6 +531,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		return fmt.Errorf("Password already used. Can't use the last %d passwords", notRepeatPasswords)
 	}
 
+	changeInterval := params.GetInt("change-interval")
 	minCharacters := params.GetInt("min-characters")
 
 	if minCharacters > 0 && len(u.Password) < minCharacters {
@@ -564,18 +565,30 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		return err
 	}
 
-	query = `
+	query = fmt.Sprintf(`
 		INSERT INTO wmeter.user_password (
 			user_id,
 			password,
-			password_salt
+			password_salt,
+			valid_until
 		)
-		VALUES (
-			$1, $2, $3
-		)
-	`
+		SELECT $1,
+		       $2,
+			   $3,
+			   CASE WHEN $4 > 0 THEN
+			       current_timestamp + interval '%d' day
+			   ELSE
+			       null
+			   END
+	`, changeInterval)
 
-	_, err = tx.Exec(query, u.UserID, password, salt)
+	_, err = tx.Exec(
+		query,
+		u.UserID,
+		password,
+		salt,
+		changeInterval,
+	)
 
 	if err != nil {
 		return err

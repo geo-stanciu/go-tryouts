@@ -4,6 +4,7 @@ declare
     
     p varchar[];
     arr  varchar[] := array[
+        [ 'password-rules', 'change-interval', '30' ],
         [ 'password-rules', 'password-fail-interval', '10' ],
         [ 'password-rules', 'max-allowed-failed-atmpts', '3' ],
         [ 'password-rules', 'not-repeat-last-x-passwords', '5' ],
