@@ -457,14 +457,8 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 	return nil
 }
 
-func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx) (bool, int, error) {
-	params, err := getAllParamsByGroup("password-rules")
-
-	if err != nil {
-		return true, 1, err
-	}
-
-	notRepeatPasswords := string2int(params["not-repeat-last-x-passwords"])
+func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (bool, int, error) {
+	notRepeatPasswords := params.GetInt("not-repeat-last-x-passwords")
 
 	if notRepeatPasswords <= 0 {
 		return false, notRepeatPasswords, nil
@@ -520,7 +514,14 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx) (bool, int, error) {
 }
 
 func (u *MembershipUser) changePassword(tx *sql.Tx) error {
-	alreadyUsed, notRepeatPasswords, err := u.passwordAlreadyUsed(tx)
+	params := SystemParams{}
+	err := params.LoadByGroup("password-rules")
+
+	if err != nil {
+		return err
+	}
+
+	alreadyUsed, notRepeatPasswords, err := u.passwordAlreadyUsed(tx, &params)
 
 	if err != nil {
 		return err
@@ -528,6 +529,12 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 
 	if alreadyUsed {
 		return fmt.Errorf("Password already used. Can't use the last %d passwords", notRepeatPasswords)
+	}
+
+	minCharacters := params.GetInt("min-characters")
+
+	if minCharacters > 0 && len(u.Password) < minCharacters {
+		return fmt.Errorf("Password must have at least %d characters", minCharacters)
 	}
 
 	saltBytes := uuid.NewV4()
@@ -685,15 +692,16 @@ func failedUserPasswordValidation(userID int, user string) {
 	var passwordStartInterval time.Time
 	newFail := 0
 
-	params, err := getAllParamsByGroup("password-rules")
+	params := SystemParams{}
+	err := params.LoadByGroup("password-rules")
 
 	if err != nil {
 		Log(true, err, "failed-login", "Operation error.", "user", user)
 		return
 	}
 
-	passwordFailInterval = string2int(params["password-fail-interval"])
-	maxAllowedFailedAtmpts = string2int(params["max-allowed-failed-atmpts"])
+	passwordFailInterval = params.GetInt("password-fail-interval")
+	maxAllowedFailedAtmpts = params.GetInt("max-allowed-failed-atmpts")
 
 	tx, err := db.Begin()
 

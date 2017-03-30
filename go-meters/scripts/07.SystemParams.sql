@@ -6,7 +6,8 @@ declare
     arr  varchar[] := array[
         [ 'password-rules', 'password-fail-interval', '10' ],
         [ 'password-rules', 'max-allowed-failed-atmpts', '3' ],
-        [ 'password-rules', 'not-repeat-last-x-passwords', '5' ]
+        [ 'password-rules', 'not-repeat-last-x-passwords', '5' ],
+        [ 'password-rules', 'min-characters', '8' ]
     ];
 begin
     

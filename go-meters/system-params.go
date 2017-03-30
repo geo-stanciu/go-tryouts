@@ -1,21 +1,26 @@
 package main
 
 import (
-	"database/sql"
 	"strings"
 )
 
-func getAllParamsByGroup(group string) (map[string]string, error) {
-	rez := make(map[string]string)
+type SystemParams struct {
+	Group  string
+	Params map[string]string
+}
+
+func (p *SystemParams) LoadByGroup(group string) error {
+	p.Group = strings.ToLower(group)
+	p.Params = make(map[string]string)
 
 	query := `
 		SELECT param, val FROM wmeter.system_params WHERE param_group = $1
 	`
 
-	rows, err := db.Query(query, strings.ToLower(group))
+	rows, err := db.Query(query, p.Group)
 
 	if err != nil {
-		return rez, err
+		return err
 	}
 
 	defer rows.Close()
@@ -27,40 +32,23 @@ func getAllParamsByGroup(group string) (map[string]string, error) {
 		err = rows.Scan(&key, &val)
 
 		if err != nil {
-			return rez, err
+			return err
 		}
 
-		rez[key] = val
+		p.Params[key] = val
 	}
 
 	if err := rows.Err(); err != nil {
-		return rez, err
+		return err
 	}
 
-	return rez, nil
+	return nil
 }
 
-func getSystemParam(group string, key string, defaultVal string) string {
-	var rez string
+func (p SystemParams) GetString(key string) string {
+	return p.Params[key]
+}
 
-	query := `
-		SELECT val FROM wmeter.system_params WHERE param_group = $1, param = $2
-	`
-
-	err := db.QueryRow(
-		query,
-		strings.ToLower(group),
-		strings.ToLower(key),
-	).Scan(&rez)
-
-	switch {
-	case err == sql.ErrNoRows:
-		Log(true, nil, "system-params", "param not found", "group", group, "param", key)
-		return defaultVal
-	case err != nil:
-		Log(true, nil, "system-params", "error getting param value", "group", group, "param", key)
-		return defaultVal
-	}
-
-	return rez
+func (p SystemParams) GetInt(key string) int {
+	return string2int(p.Params[key])
 }
