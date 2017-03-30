@@ -1,8 +1,7 @@
 DO $$
 declare
-    _user_id wmeter.user.user_id%type;
-    _user    wmeter.user.loweredusername%type;
-
+    _user_id       wmeter.user.user_id%type;
+    _user          wmeter.user.loweredusername%type;
     _password      wmeter.user_password.password%type;
     _password_salt wmeter.user_password.password_salt%type;
 begin
@@ -32,12 +31,15 @@ begin
         user_id,
         password,
         password_salt,
-        valid_until
+        valid_until,
+        temporary
     )
     select _user_id,
            _password,
            _password_salt,
-           current_timestamp + interval '30' day;
+           current_timestamp + interval '30' day,
+           0 -- temporary
+           ;
 
     UPDATE wmeter.user
        SET last_password_change = current_timestamp

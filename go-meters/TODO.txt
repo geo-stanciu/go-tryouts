@@ -5,11 +5,12 @@
     - use at least x numbers
     - use at least x uppercase
     - use at least x non alphanumerics
-    - param for validity period
-    - set the date when the password expires at password creation
+    - (done) param for validity period
+    - (done) set the date when the password expires at password creation
     - do not use repetitive letters
     - do not use common words
     - settings to activate each one of the options above
+    - redirect user to change his password if password is temporary
 
 -----------------------------
 
