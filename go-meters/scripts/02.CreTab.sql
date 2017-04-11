@@ -35,15 +35,15 @@ CREATE TABLE wmeter.user (
     surname                varchar(64) not null,
     email                  varchar(64) not null,
     loweredemail           varchar(64) not null,
-    creation_time          timestamp   not null DEFAULT current_timestamp,
-    last_update            timestamp   not null DEFAULT current_timestamp,
+    creation_time          timestamp with time zone not null DEFAULT current_timestamp,
+    last_update            timestamp with time zone not null DEFAULT current_timestamp,
     activated              int         not null DEFAULT 0,
-    activation_time        timestamp,
-    last_password_change   timestamp,
+    activation_time        timestamp with time zone,
+    last_password_change   timestamp with time zone,
     failed_password_atmpts int         not null DEFAULT 0,
-    first_failed_password  timestamp,
-    last_failed_password   timestamp,
-    last_connect_time      timestamp,
+    first_failed_password  timestamp with time zone,
+    last_failed_password   timestamp with time zone,
+    last_connect_time      timestamp with time zone,
     last_connect_ip        varchar(128),
     valid                  int         not null DEFAULT 1,
     locked_out             int         not null DEFAULT 0
@@ -54,8 +54,8 @@ CREATE TABLE wmeter.user_password (
     user_id       int          not null,
     password      varchar(256) not null,
     password_salt varchar(256) not null,
-    valid_from    timestamp    not null DEFAULT current_timestamp,
-    valid_until   timestamp,
+    valid_from    timestamp with time zone not null DEFAULT current_timestamp,
+    valid_until   timestamp with time zone,
     temporary     int          not null DEFAULT 0
 );
 
@@ -63,8 +63,8 @@ CREATE TABLE wmeter.user_role (
     user_role_id serial PRIMARY KEY,
     user_id      int not null,
     role_id      int not null,
-    valid_from   timestamp    not null DEFAULT current_timestamp,
-    valid_until  timestamp,
+    valid_from   timestamp with time zone not null DEFAULT current_timestamp,
+    valid_until  timestamp with time zone,
     constraint  user_role_fk foreign key (role_id)
         references wmeter.role (role_id)
 );
@@ -73,21 +73,21 @@ CREATE TABLE wmeter.user_role_history (
     user_role_id int PRIMARY KEY,
     user_id      int not null,
     role_id      int not null,
-    valid_from   timestamp    not null,
-    valid_until  timestamp,
+    valid_from   timestamp with time zone not null,
+    valid_until  timestamp with time zone,
     constraint  user_role_history_fk foreign key (role_id)
         references wmeter.role (role_id)
 );
 
 CREATE TABLE wmeter.audit_log (
     audit_log_id   bigserial PRIMARY KEY,
-    log_time       timestamp   not null DEFAULT statement_timestamp(),
+    log_time       timestamp with time zone not null DEFAULT statement_timestamp(),
     audit_msg      jsonb       not null
 );
 
 CREATE TABLE wmeter.cookie_encode_key (
     cookie_encode_key_id serial       PRIMARY KEY,
     encode_key           varchar(256) not null,
-    valid_from           timestamp    not null DEFAULT statement_timestamp(),
-    valid_until          timestamp    not null DEFAULT statement_timestamp() + interval '30' day
+    valid_from           timestamp with time zone not null DEFAULT statement_timestamp(),
+    valid_until          timestamp with time zone not null DEFAULT statement_timestamp() + interval '30' day
 );

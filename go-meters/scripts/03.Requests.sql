@@ -5,21 +5,24 @@ declare
     p varchar[];
     arr  varchar[] := array[
         -- pages
-        [ 'Index',           'home/index.html',           'index',                   'Home', 'Index',            '-',               '-' ],
-        [ 'About',           'home/about.html',           'about',                   'Home', '-',                '-',               '-' ],
-        [ 'Login',           'home/login.html',           'login',                   'Home', '-',                '-',               '-' ],
-        [ 'Register',        'home/register.html',        'register',                'Home', '-',                '-',               '-' ],
-        [ 'Change Password', 'home/change-password.html', 'change-password',         'Home', '-',                '-',               '-' ],
+        -- request_title     request_template             request_url                controller   action              redirect_url       redirect_on_error
+        [ 'Index',           'home/index.html',           'index',                   'Home',      'Index',            '-',               '-' ],
+        [ 'About',           'home/about.html',           'about',                   'Home',      '-',                '-',               '-' ],
+        [ 'Login',           'home/login.html',           'login',                   'Home',      '-',                '-',               '-' ],
+        [ 'Register',        'home/register.html',        'register',                'Home',      '-',                '-',               '-' ],
+        [ 'Change Password', 'home/change-password.html', 'change-password',         'Home',      '-',                '-',               '-' ],
         
         -- gets
-        [ 'Logout',          '-',                         'logout',                  'Home', 'Logout',           '/',               '-' ],
-        [ 'Exchange Rates',  '-',                         'exchange-rates',          'Home', 'GetExchangeRates', '-',               '-' ],
+        -- request_title     request_template             request_url                controller   action              redirect_url       redirect_on_error
+        [ 'Logout',          '-',                         'logout',                  'Home',      'Logout',           '/',               '-' ],
+        [ 'Exchange Rates',  '-',                         'exchange-rates',          'Home',      'GetExchangeRates', '-',               '-' ],
         
         -- posts
-        [ 'Login',           '-',                         'perform-login',           'Home', 'Login',            'index',           'login' ],
-        [ 'Logout',          '-',                         'perform-logout',          'Home', 'Logout',           'login',           'login' ],
-        [ 'Register',        '-',                         'perform-register',        'Home', 'Register',         'login',           'register' ],
-        [ 'Change Password', '-',                         'perform-change-password', 'Home', 'ChangePassword',   'change-password', 'change-password' ]
+        -- request_title     request_template             request_url                controller   action              redirect_url       redirect_on_error
+        [ 'Login',           '-',                         'perform-login',           'Home',      'Login',            'index',           'login' ],
+        [ 'Logout',          '-',                         'perform-logout',          'Home',      'Logout',           'login',           'login' ],
+        [ 'Register',        '-',                         'perform-register',        'Home',      'Register',         'login',           'register' ],
+        [ 'Change Password', '-',                         'perform-change-password', 'Home',      'ChangePassword',   'change-password', 'change-password' ]
     ];
 begin
     

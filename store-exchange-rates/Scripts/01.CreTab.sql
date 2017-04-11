@@ -15,6 +15,6 @@ create table if not exists exchange_rate (
 
 create table if not exists audit_log (
     audit_log_id   bigserial PRIMARY KEY,
-    log_time       timestamp not null DEFAULT statement_timestamp(),
+    log_time       timestamp with time zone not null DEFAULT statement_timestamp(),
     audit_msg      jsonb     not null
 );
