@@ -48,7 +48,6 @@ func init() {
 	basePath := "templates/"
 
 	err := filepath.Walk(basePath, parseTemplate(basePath))
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,26 +59,22 @@ func main() {
 
 	cfgFile := "./conf.json"
 	err = config.ReadFromFile(cfgFile)
-
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 
 	err = connect2Database(config.DbURL)
-
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-
 	defer db.Close()
 
 	mw := io.MultiWriter(os.Stdout, auditLog)
 	log.Out = mw
 
 	cookieStore, err = getNewCookieStore()
-
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
@@ -107,7 +102,6 @@ func main() {
 	http.HandleFunc("/", handler)
 
 	err = http.ListenAndServe(*addr, nil)
-
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
@@ -120,13 +114,11 @@ func connect2Database(dbURL string) error {
 	var err error
 
 	db, err = sql.Open("postgres", dbURL)
-
 	if err != nil {
 		return errors.New("Can't connect to the database, go error " + fmt.Sprintf("%s", err))
 	}
 
 	err = db.Ping()
-
 	if err != nil {
 		return errors.New("Can't ping the database, go error " + fmt.Sprintf("%s", err))
 	}

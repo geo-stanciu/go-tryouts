@@ -132,11 +132,9 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 	`
 
 	stmt, err := tx.Prepare(query)
-
 	if err != nil {
 		return err
 	}
-
 	defer stmt.Close()
 
 	err = stmt.QueryRow(u.Username, u.UserID).Scan(&found)
@@ -162,15 +160,12 @@ func (u *MembershipUser) Save() error {
 	defer u.Unlock()
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		return err
 	}
-
 	defer tx.Rollback()
 
 	err = u.testSaveUser(tx)
-
 	if err != nil {
 		return err
 	}
@@ -222,7 +217,6 @@ func (u *MembershipUser) Save() error {
 		}
 
 		err = u.changePassword(tx)
-
 		if err != nil {
 			return err
 		}
@@ -231,7 +225,6 @@ func (u *MembershipUser) Save() error {
 	} else {
 		var old MembershipUser
 		err = old.GetUserByID(u.UserID)
-
 		if err != nil {
 			return err
 		}
@@ -269,7 +262,6 @@ func (u *MembershipUser) Save() error {
 
 		if len(u.Password) > 0 {
 			err = u.changePassword(tx)
-
 			if err != nil {
 				return err
 			}
@@ -299,17 +291,14 @@ func (u *MembershipUser) GetUserRoles() ([]MembershipRole, error) {
 	`
 
 	rows, err := db.Query(query, u.UserID)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
 		var r MembershipRole
 		err = rows.Scan(&r.RoleID, &r.Rolename)
-
 		if err != nil {
 			return nil, err
 		}
@@ -330,13 +319,11 @@ func (u *MembershipUser) AddToRole(role string) error {
 
 	var r MembershipRole
 	err := r.GetRoleByName(role)
-
 	if err != nil {
 		return err
 	}
 
 	found, err := r.HasMemberID(u.UserID)
-
 	if err != nil {
 		return err
 	}
@@ -376,13 +363,11 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 
 	var r MembershipRole
 	err := r.GetRoleByName(role)
-
 	if err != nil {
 		return err
 	}
 
 	found, err := r.HasMemberID(u.UserID)
-
 	if err != nil {
 		return err
 	}
@@ -392,11 +377,9 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 	}
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		return err
 	}
-
 	defer tx.Rollback()
 
 	query := `
@@ -477,30 +460,24 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 	`
 
 	rows, err := tx.Query(query, u.UserID, notRepeatPasswords)
-
 	if err != nil {
 		return true, notRepeatPasswords, err
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
 		err = rows.Scan(&hashedPassword, &passwordSalt)
-
 		if err != nil {
 			return true, notRepeatPasswords, err
 		}
 
 		passBytes := []byte(passwordSalt + u.Password)
-
 		hashBytes, err := base64.StdEncoding.DecodeString(hashedPassword)
-
 		if err != nil {
 			return true, notRepeatPasswords, err
 		}
 
 		err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
-
 		if err == nil {
 			return true, notRepeatPasswords, err
 		}
@@ -516,13 +493,11 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	params := SystemParams{}
 	err := params.LoadByGroup("password-rules")
-
 	if err != nil {
 		return err
 	}
 
 	alreadyUsed, notRepeatPasswords, err := u.passwordAlreadyUsed(tx, &params)
-
 	if err != nil {
 		return err
 	}
@@ -542,9 +517,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	salt := saltBytes.String()
 
 	passwordBytes := []byte(salt + u.Password)
-
 	hashedPassword, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
-
 	if err != nil {
 		return err
 	}
@@ -560,7 +533,6 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	`
 
 	_, err = tx.Exec(query, u.UserID)
-
 	if err != nil {
 		return err
 	}
@@ -601,7 +573,6 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	`
 
 	_, err = tx.Exec(query, u.UserID)
-
 	if err != nil {
 		return err
 	}
@@ -675,15 +646,12 @@ func ValidateUserPassword(user string, pass string) (bool, error) {
 	}
 
 	passBytes := []byte(passwordSalt + pass)
-
 	hashBytes, err := base64.StdEncoding.DecodeString(hashedPassword)
-
 	if err != nil {
 		return false, err
 	}
 
 	err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
-
 	if err != nil {
 		failedUserPasswordValidation(userID, user)
 		return false, err
@@ -707,7 +675,6 @@ func failedUserPasswordValidation(userID int, user string) {
 
 	params := SystemParams{}
 	err := params.LoadByGroup("password-rules")
-
 	if err != nil {
 		Log(true, err, "failed-login", "Operation error.", "user", user)
 		return
@@ -717,12 +684,10 @@ func failedUserPasswordValidation(userID int, user string) {
 	maxAllowedFailedAtmpts = params.GetInt("max-allowed-failed-atmpts")
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		Log(true, err, "failed-login", "Operation error.", "user", user)
 		return
 	}
-
 	defer tx.Rollback()
 
 	query := `
@@ -821,7 +786,6 @@ func failedUserPasswordValidation(userID int, user string) {
 		`
 
 		_, err = tx.Exec(query, userID)
-
 		if err != nil {
 			Log(true, err, "failed-login", "Failed to invalidate user password.", "user", user)
 			// return // commented on purpose - Geo 17.03.2017

@@ -21,7 +21,6 @@ func (a AuditLog) Write(p []byte) (n int, err error) {
 	msg := string(p)
 
 	_, err = db.Exec(query, msg)
-
 	if err != nil {
 		return 0, err
 	}

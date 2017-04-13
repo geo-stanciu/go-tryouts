@@ -158,7 +158,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, session *
 	w.Header().Set("Content-Type", "application/json")
 
 	err = json.NewEncoder(w).Encode(model)
-
 	if err != nil {
 		setOperationError(w, r, err.Error())
 	}
@@ -168,27 +167,23 @@ func executeTemplate(w io.Writer, tmplName string, data interface{}) error {
 	var err error
 
 	t := templates.Lookup(tmplName)
-
 	if t == nil {
 		errNoLayout := fmt.Errorf("%s not found", tmplName)
 		return errNoLayout
 	}
 
 	layout := templates.Lookup("layout")
-
 	if layout == nil {
 		errNoLayout := errors.New("layout.html not found")
 		return errNoLayout
 	}
 
 	page, err := layout.Clone()
-
 	if err != nil {
 		return err
 	}
 
 	_, err = page.AddParseTree("content", t.Tree)
-
 	if err != nil {
 		return err
 	}

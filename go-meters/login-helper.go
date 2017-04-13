@@ -31,7 +31,6 @@ func clearSession(w http.ResponseWriter, r *http.Request) error {
 
 	//save the session
 	err := session.Save(r, w)
-
 	if err != nil {
 		return err
 	}
@@ -58,7 +57,6 @@ func createSession(w http.ResponseWriter, r *http.Request, user string) (*Sessio
 
 	//save the session
 	err := session.Save(r, w)
-
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +98,6 @@ func getNewCookieStore() (*sessions.CookieStore, error) {
 		encodeKeys = append(encodeKeys, key2)
 
 		err = saveCookieEncodeKeys(encodeKeys)
-
 		if err != nil {
 			return nil, err
 		}
@@ -151,24 +148,23 @@ func saveCookieEncodeKeys(keys [][]byte) error {
 	`
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		return err
 	}
-
 	defer tx.Rollback()
 
 	stmt, err := tx.Prepare(query)
-
 	if err != nil {
 		return err
 	}
-
 	defer stmt.Close()
 
 	for _, key := range keys {
 		sKey := base64.StdEncoding.EncodeToString(key)
 		_, err = stmt.Exec(sKey)
+		if err != nil {
+			return err
+		}
 	}
 
 	tx.Commit()
@@ -189,23 +185,20 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 	`
 
 	rows, err := db.Query(query)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
 		var encodeKey string
-		err = rows.Scan(&encodeKey)
 
+		err = rows.Scan(&encodeKey)
 		if err != nil {
 			return nil, err
 		}
 
 		key, err := base64.StdEncoding.DecodeString(encodeKey)
-
 		if err != nil {
 			return nil, err
 		}

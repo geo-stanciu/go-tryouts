@@ -14,11 +14,13 @@ func (p *SystemParams) LoadByGroup(group string) error {
 	p.Params = make(map[string]string)
 
 	query := `
-		SELECT param, val FROM wmeter.system_params WHERE param_group = $1
+		SELECT param, val
+		  FROM wmeter.system_params
+		 WHERE param_group = $1
+		 ORDER BY param
 	`
 
 	rows, err := db.Query(query, p.Group)
-
 	if err != nil {
 		return err
 	}
@@ -30,7 +32,6 @@ func (p *SystemParams) LoadByGroup(group string) error {
 		var val string
 
 		err = rows.Scan(&key, &val)
-
 		if err != nil {
 			return err
 		}

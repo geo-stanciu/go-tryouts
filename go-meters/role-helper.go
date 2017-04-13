@@ -105,11 +105,9 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 	`
 
 	stmt, err := tx.Prepare(query)
-
 	if err != nil {
 		return err
 	}
-
 	defer stmt.Close()
 
 	err = stmt.QueryRow(r.Rolename, r.RoleID).Scan(&found)
@@ -133,15 +131,12 @@ func (r *MembershipRole) Save() error {
 	defer r.Unlock()
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		return err
 	}
-
 	defer tx.Rollback()
 
 	err = r.testSaveRole(tx)
-
 	if err != nil {
 		return err
 	}
@@ -182,7 +177,6 @@ func (r *MembershipRole) Save() error {
 	} else {
 		var old MembershipRole
 		err = old.GetRoleByID(r.RoleID)
-
 		if err != nil {
 			return err
 		}

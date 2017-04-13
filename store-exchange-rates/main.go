@@ -63,26 +63,22 @@ func main() {
 
 	cfgFile := "./conf.json"
 	err = config.ReadFromFile(cfgFile)
-
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 
 	err = connect2Database(config.DbURL)
-
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-
 	defer db.Close()
 
 	mw := io.MultiWriter(os.Stdout, auditLog)
 	log.Out = mw
 
 	err = prepareCurrencies(db)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,7 +94,6 @@ func main() {
 	}
 
 	err = dealWithXML(db, xmlBytes)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,15 +101,12 @@ func main() {
 
 func readBytesFromURL(url string) ([]byte, error) {
 	response, err := http.Get(url)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer response.Body.Close()
 
 	buf, err := ioutil.ReadAll(response.Body)
-
 	if err != nil {
 		return nil, err
 	}
@@ -124,15 +116,12 @@ func readBytesFromURL(url string) ([]byte, error) {
 
 func readBytesFromFile(filename string) ([]byte, error) {
 	f, err := os.Open(filename)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer f.Close()
 
 	buf, err := ioutil.ReadAll(f)
-
 	if err != nil {
 		return nil, err
 	}
@@ -144,13 +133,11 @@ func connect2Database(dbURL string) error {
 	var err error
 
 	db, err = sql.Open("postgres", dbURL)
-
 	if err != nil {
 		return fmt.Errorf("Can't connect to the database, error: %s", err.Error())
 	}
 
 	err = db.Ping()
-
 	if err != nil {
 		return fmt.Errorf("Can't ping the database, error: %s", err.Error())
 	}
@@ -162,11 +149,9 @@ func prepareCurrencies(db *sql.DB) error {
 	var found bool
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		return err
 	}
-
 	defer tx.Rollback()
 
 	query := "SELECT EXISTS(SELECT 1 FROM currency)"
@@ -184,25 +169,21 @@ func prepareCurrencies(db *sql.DB) error {
 		query = "INSERT INTO currency (currency) VALUES ($1)"
 
 		_, err = tx.Exec(query, "RON")
-
 		if err != nil {
 			return err
 		}
 
 		_, err = tx.Exec(query, "EUR")
-
 		if err != nil {
 			return err
 		}
 
 		_, err = tx.Exec(query, "USD")
-
 		if err != nil {
 			return err
 		}
 
 		_, err = tx.Exec(query, "CHF")
-
 		if err != nil {
 			return err
 		}
@@ -217,17 +198,14 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 	var q Query
 
 	err := xml.Unmarshal(xmlBytes, &q)
-
 	if err != nil {
 		return err
 	}
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		return err
 	}
-
 	defer tx.Rollback()
 
 	for _, cube := range q.Body.Cube {
@@ -241,7 +219,6 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 				multiplier = 1.0
 			} else if len(rate.Multiplier) > 0 {
 				multiplier, err = strconv.ParseFloat(rate.Multiplier, 64)
-
 				if err != nil {
 					return err
 				}
@@ -251,14 +228,12 @@ func dealWithXML(db *sql.DB, xmlBytes []byte) error {
 				continue
 			} else {
 				exchRate, err = strconv.ParseFloat(rate.Rate, 64)
-
 				if err != nil {
 					return err
 				}
 			}
 
 			err = storeRate(tx, cube.Date, rate.Currency, multiplier, exchRate)
-
 			if err != nil {
 				return err
 			}
@@ -318,7 +293,6 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		`
 
 		_, err = tx.Exec(query, currencyID, date, exchRate/multiplier)
-
 		if err != nil {
 			return err
 		}

@@ -12,7 +12,6 @@ func setOperationSuccess(w http.ResponseWriter, r *http.Request, msg string) err
 
 	//save the session
 	err := session.Save(r, w)
-
 	if err != nil {
 		return err
 	}
@@ -28,7 +27,6 @@ func setOperationError(w http.ResponseWriter, r *http.Request, sError string) er
 
 	//save the session
 	err := session.Save(r, w)
-
 	if err != nil {
 		return err
 	}
@@ -59,7 +57,6 @@ func getLastOperationError(w http.ResponseWriter, r *http.Request) (bool, string
 
 	//save the session
 	err := session.Save(r, w)
-
 	if err != nil {
 		return false, "", err
 	}

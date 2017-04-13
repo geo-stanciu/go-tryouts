@@ -17,17 +17,14 @@ func (c *Configuration) ReadFromFile(cfgFile string) error {
 	}
 
 	file, err := os.Open(cfgFile)
-
 	if err != nil {
 		return err
 	}
-
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
 
 	err = decoder.Decode(&c)
-
 	if err != nil {
 		return err
 	}

@@ -268,17 +268,14 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 	`
 
 	rows, err := db.Query(query)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
 		var r models.Rate
 		err = rows.Scan(&r.Currency, &r.Date, &r.Value)
-
 		if err != nil {
 			return nil, err
 		}
