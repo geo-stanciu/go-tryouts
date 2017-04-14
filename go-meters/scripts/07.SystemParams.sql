@@ -8,7 +8,11 @@ declare
         [ 'password-rules', 'password-fail-interval', '10' ],
         [ 'password-rules', 'max-allowed-failed-atmpts', '3' ],
         [ 'password-rules', 'not-repeat-last-x-passwords', '5' ],
-        [ 'password-rules', 'min-characters', '8' ]
+        [ 'password-rules', 'min-characters', '8' ],
+        [ 'password-rules', 'min-letters', '2' ],
+        [ 'password-rules', 'min-capitals', '1' ],
+        [ 'password-rules', 'min-digits', '1' ],
+        [ 'password-rules', 'min-non-alpha-numerics', '1' ]
     ];
 begin
     

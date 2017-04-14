@@ -17,49 +17,70 @@ func (HomeController) Index(w http.ResponseWriter, r *http.Request, res *Respons
 
 func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	var lres models.GenericResponseModel
+	var ip string
+	var user string
+	var pass string
+	var err error
+	throwErr2Client := true
 
 	if res != nil {
 		lres.SSuccessURL = res.RedirectURL
 		lres.SErrorURL = res.RedirectOnError
 	}
 
+	ip = getClientIP(r)
+
 	session, _ := getSessionData(r)
 
 	if !session.LoggedIn {
-		user := r.FormValue("username")
-		pass := r.FormValue("password")
+		user = r.FormValue("username")
+		pass = r.FormValue("password")
 
 		if len(user) == 0 || len(pass) == 0 {
-			lres.BError = true
-			lres.SError = "Unknown user or wrong password."
-			Log(lres.BError, nil, "login", lres.SError, "user", user)
-
-			return &lres, nil
+			throwErr2Client = false
+			goto loginerr
 		}
 
 		success, err := ValidateUserPassword(user, pass)
-
 		if err != nil || !success {
-			lres.BError = true
-			lres.SError = "Unknown user or wrong password."
-			Log(lres.BError, nil, "login", lres.SError, "user", user)
-
-			return &lres, err
+			throwErr2Client = false
+			goto loginerr
 		}
 
 		session, err = createSession(w, r, user)
-
 		if err != nil {
-			lres.BError = true
-			lres.SError = err.Error()
-			Log(lres.BError, err, "login", lres.SError, "user", user)
+			goto loginerr
+		}
 
-			return &lres, err
+		query := `
+			UPDATE wmeter.user
+			   SET last_connect_time = current_timestamp,
+			       last_connect_ip   = $1
+			 WHERE loweredusername = lower($2)
+		`
+
+		_, err = db.Exec(query, ip, user)
+		if err != nil {
+			goto loginerr
 		}
 	}
 
 	lres.BError = false
-	Log(lres.BError, nil, "login", "User logged in.", "user", session.User.Username)
+	Log(lres.BError, nil, "login", "User logged in.", "user", session.User.Username, "ip", ip)
+	return &lres, nil
+
+loginerr:
+	lres.BError = true
+
+	if err != nil || throwErr2Client {
+		lres.SError = err.Error()
+		Log(lres.BError, err, "login", lres.SError, "user", user)
+		return &lres, err
+	}
+
+	lres.SError = "Unknown user or wrong password."
+
+	Log(lres.BError, nil, "login", lres.SError, "user", user)
 	return &lres, nil
 }
 

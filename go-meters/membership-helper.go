@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	"unicode"
 
 	"strings"
 
@@ -508,9 +509,47 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 
 	changeInterval := params.GetInt("change-interval")
 	minCharacters := params.GetInt("min-characters")
+	minLetters := params.GetInt("min-letters")
+	minCapitals := params.GetInt("min-capitals")
+	minDigits := params.GetInt("min-digits")
+	minNonAlphaNumerics := params.GetInt("min-non-alpha-numerics")
 
 	if minCharacters > 0 && len(u.Password) < minCharacters {
 		return fmt.Errorf("Password must have at least %d characters", minCharacters)
+	}
+
+	letters := 0
+	capitals := 0
+	digits := 0
+	nonalphanumerics := 0
+
+	for _, c := range u.Password {
+		if c >= 65 && c <= 90 {
+			letters++
+			capitals++
+		} else if c >= 97 && c <= 122 {
+			letters++
+		} else if unicode.IsNumber(c) {
+			digits++
+		} else {
+			nonalphanumerics++
+		}
+	}
+
+	if minLetters > 0 && letters < minLetters {
+		return fmt.Errorf("Password must contain at least %d letter(s)", minLetters)
+	}
+
+	if minCapitals > 0 && capitals < minCapitals {
+		return fmt.Errorf("Password must contain at least %d capital letter(s)", minCapitals)
+	}
+
+	if minDigits > 0 && digits < minDigits {
+		return fmt.Errorf("Password must contain at least %d digit(s)", minDigits)
+	}
+
+	if minNonAlphaNumerics > 0 && nonalphanumerics < minNonAlphaNumerics {
+		return fmt.Errorf("Password must contain at least %d non alpha-numeric character(s)", minNonAlphaNumerics)
 	}
 
 	saltBytes := uuid.NewV4()
