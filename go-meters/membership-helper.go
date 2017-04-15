@@ -442,7 +442,7 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 }
 
 func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (bool, int, error) {
-	notRepeatPasswords := params.GetInt("not-repeat-last-x-passwords")
+	notRepeatPasswords := params.GetInt(NotRepeatLastXPasswords)
 
 	if notRepeatPasswords <= 0 {
 		return false, notRepeatPasswords, nil
@@ -493,7 +493,7 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 
 func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	params := SystemParams{}
-	err := params.LoadByGroup("password-rules")
+	err := params.LoadByGroup(PasswordRules)
 	if err != nil {
 		return err
 	}
@@ -507,14 +507,14 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		return fmt.Errorf("Password already used. Can't use the last %d passwords", notRepeatPasswords)
 	}
 
-	changeInterval := params.GetInt("change-interval")
-	minCharacters := params.GetInt("min-characters")
-	minLetters := params.GetInt("min-letters")
-	minCapitals := params.GetInt("min-capitals")
-	minDigits := params.GetInt("min-digits")
-	minNonAlphaNumerics := params.GetInt("min-non-alpha-numerics")
-	allowRepetitiveCharacters := params.GetInt("allow-repetitive-characters")
-	canContainUsername := params.GetInt("can-contain-username")
+	changeInterval := params.GetInt(ChangeInterval)
+	minCharacters := params.GetInt(MinCharacters)
+	minLetters := params.GetInt(MinLetters)
+	minCapitals := params.GetInt(MinCapitals)
+	minDigits := params.GetInt(MinDigits)
+	minNonAlphaNumerics := params.GetInt(MinNonAlphaNumerics)
+	allowRepetitiveCharacters := params.GetInt(AllowRepetitiveCharacters)
+	canContainUsername := params.GetInt(CanContainUsername)
 
 	if minCharacters > 0 && len(u.Password) < minCharacters {
 		return fmt.Errorf("Password must have at least %d characters", minCharacters)
@@ -729,14 +729,14 @@ func failedUserPasswordValidation(userID int, user string) {
 	newFail := 0
 
 	params := SystemParams{}
-	err := params.LoadByGroup("password-rules")
+	err := params.LoadByGroup(PasswordRules)
 	if err != nil {
 		Log(true, err, "failed-login", "Operation error.", "user", user)
 		return
 	}
 
-	passwordFailInterval = params.GetInt("password-fail-interval")
-	maxAllowedFailedAtmpts = params.GetInt("max-allowed-failed-atmpts")
+	passwordFailInterval = params.GetInt(PasswordFailInterval)
+	maxAllowedFailedAtmpts = params.GetInt(MaxAllowedFailedAtmpts)
 
 	tx, err := db.Begin()
 	if err != nil {

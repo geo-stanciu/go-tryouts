@@ -4,6 +4,21 @@ import (
 	"strings"
 )
 
+const (
+	PasswordRules             string = "password-rules"
+	ChangeInterval            string = "change-interval"
+	PasswordFailInterval      string = "password-fail-interval"
+	MaxAllowedFailedAtmpts    string = "max-allowed-failed-atmpts"
+	NotRepeatLastXPasswords   string = "not-repeat-last-x-passwords"
+	MinCharacters             string = "min-characters"
+	MinLetters                string = "min-letters"
+	MinCapitals               string = "min-capitals"
+	MinDigits                 string = "min-digits"
+	MinNonAlphaNumerics       string = "min-non-alpha-numerics"
+	AllowRepetitiveCharacters string = "allow-repetitive-characters"
+	CanContainUsername        string = "can-contain-username"
+)
+
 type SystemParams struct {
 	Group  string
 	Params map[string]string
