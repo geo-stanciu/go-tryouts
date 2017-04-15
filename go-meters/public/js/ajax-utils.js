@@ -9,7 +9,35 @@ function getHttpRequest() {
     return xmlhttp;
 }
 
-function sendAJAX(path, params, callback) {
+function getAJAX(path, params, callback) {
+    var method = "GET";
+    var url = path + "?lrt=" + (new Date().getTime());
+    
+    var str = [];
+
+    for (var key in params) {
+        if (params.hasOwnProperty(key)) {
+            str.push(encodeURIComponent(key) + "=" + encodeURIComponent(params[key]));
+        }
+    }
+
+    url += "&" + str.join("&");
+
+    var xhr = getHttpRequest();
+    xhr.open(method, url, true);
+
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            if (callback != null && callback != undefined) {
+                callback(xhr.responseText);
+            }
+        }
+    }
+
+    xhr.send();
+}
+
+function postAJAX(path, params, callback) {
     var method = "POST";
     var url = path + "?lrt=" + (new Date().getTime());
     
@@ -25,9 +53,9 @@ function sendAJAX(path, params, callback) {
     xhr.open(method, url, true);
 
     xhr.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
+        if (xhr.readyState == 4 && xhr.status == 200) {
             if (callback != null && callback != undefined) {
-                callback(this.responseText);
+                callback(xhr.responseText);
             }
         }
     }

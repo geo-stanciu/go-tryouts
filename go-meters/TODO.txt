@@ -9,6 +9,7 @@
     - (done) set the date when the password expires at password creation
     - do not use repetitive letters
     - do not use common words
+    - (done) must not contain the username
     - settings to activate each one of the options above
     - redirect user to change his password if password is temporary
 

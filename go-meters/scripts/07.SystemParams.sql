@@ -12,7 +12,9 @@ declare
         [ 'password-rules', 'min-letters', '2' ],
         [ 'password-rules', 'min-capitals', '1' ],
         [ 'password-rules', 'min-digits', '1' ],
-        [ 'password-rules', 'min-non-alpha-numerics', '1' ]
+        [ 'password-rules', 'min-non-alpha-numerics', '1' ],
+        [ 'password-rules', 'allow-repetitive-characters', '0' ],
+        [ 'password-rules', 'can-contain-username', '0' ]
     ];
 begin
     

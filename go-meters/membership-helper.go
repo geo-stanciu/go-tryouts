@@ -513,6 +513,8 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	minCapitals := params.GetInt("min-capitals")
 	minDigits := params.GetInt("min-digits")
 	minNonAlphaNumerics := params.GetInt("min-non-alpha-numerics")
+	allowRepetitiveCharacters := params.GetInt("allow-repetitive-characters")
+	canContainUsername := params.GetInt("can-contain-username")
 
 	if minCharacters > 0 && len(u.Password) < minCharacters {
 		return fmt.Errorf("Password must have at least %d characters", minCharacters)
@@ -522,6 +524,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	capitals := 0
 	digits := 0
 	nonalphanumerics := 0
+	hasRepetitiveCharacters := false
 
 	for _, c := range u.Password {
 		if c >= 65 && c <= 90 {
@@ -550,6 +553,19 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 
 	if minNonAlphaNumerics > 0 && nonalphanumerics < minNonAlphaNumerics {
 		return fmt.Errorf("Password must contain at least %d non alpha-numeric character(s)", minNonAlphaNumerics)
+	}
+
+	if allowRepetitiveCharacters <= 0 && hasRepetitiveCharacters {
+		return fmt.Errorf("Password must not contain repetitive groups of characters")
+	}
+
+	if canContainUsername <= 0 {
+		lowerUsername := strings.ToLower(u.Username)
+		lowerPass := strings.ToLower(u.Password)
+
+		if strings.Contains(lowerPass, lowerUsername) {
+			return fmt.Errorf("Password must not contain the username")
+		}
 	}
 
 	saltBytes := uuid.NewV4()
