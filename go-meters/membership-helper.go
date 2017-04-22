@@ -524,7 +524,6 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	capitals := 0
 	digits := 0
 	nonalphanumerics := 0
-	hasRepetitiveCharacters := false
 
 	for _, c := range u.Password {
 		if c >= 65 && c <= 90 {
@@ -555,7 +554,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		return fmt.Errorf("Password must contain at least %d non alpha-numeric character(s)", minNonAlphaNumerics)
 	}
 
-	if allowRepetitiveCharacters <= 0 && hasRepetitiveCharacters {
+	if allowRepetitiveCharacters <= 0 && containsRepeatingGroups(u.Password) {
 		return fmt.Errorf("Password must not contain repetitive groups of characters")
 	}
 

@@ -29,3 +29,28 @@ func string2int(sval string) int {
 
 	return val
 }
+
+func containsRepeatingGroups(str string) bool {
+	groupSize := 1
+	length := len(str) - 1
+
+	for i := groupSize; i < length; i++ {
+		if testRepeatingGroups(str, length, i) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func testRepeatingGroups(str string, length int, groupSize int) bool {
+	for i := 0; i < length; i = i + groupSize {
+		for j := i + groupSize; j < length-groupSize; j = j + groupSize {
+			if str[i:i+groupSize] == str[j:j+groupSize] {
+				return true
+			}
+		}
+	}
+
+	return false
+}
