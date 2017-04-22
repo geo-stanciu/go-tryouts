@@ -7,7 +7,7 @@
     - (done) use at least x non alphanumerics
     - (done) param for validity period
     - (done) set the date when the password expires at password creation
-    - (done) do not use repetitive letters or groups
+    - (done) do not use repetitive groups of letters
     - do not use common words
     - (done) must not contain the username
     - settings to activate each one of the options above

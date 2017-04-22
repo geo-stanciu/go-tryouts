@@ -31,7 +31,7 @@ func string2int(sval string) int {
 }
 
 func containsRepeatingGroups(str string) bool {
-	groupSize := 1
+	groupSize := 2
 	length := len(str) - 1
 
 	for i := groupSize; i < length; i++ {
