@@ -33,8 +33,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePostRequest(w http.ResponseWriter, r *http.Request) {
-	url := strings.ToLower(r.URL.Path)
-
+	url := getBaseURL(r)
 	session, err := getSessionData(r)
 
 	if (err != nil || !session.LoggedIn) && url != "/perform-login" && url != "/perform-register" {
@@ -61,8 +60,7 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetRequest(w http.ResponseWriter, r *http.Request) {
-	url := strings.ToLower(r.URL.Path)
-
+	url := getBaseURL(r)
 	session, err := getSessionData(r)
 
 	if (err != nil || !session.LoggedIn) && url != "/login" && url != "/register" {
@@ -189,4 +187,41 @@ func executeTemplate(w io.Writer, tmplName string, data interface{}) error {
 	}
 
 	return page.Execute(w, data)
+}
+
+func getBaseURL(r *http.Request) string {
+	url := strings.ToLower(r.URL.Path)
+	idx := getEndIdxOfBaseURL(url)
+
+	if len(url) > 0 && idx > 0 {
+		url = url[0:idx]
+	}
+
+	return url
+}
+
+func getEndIdxOfBaseURL(url string) int {
+	lastSlash := strings.LastIndex(url, "/")
+	lastQ := strings.LastIndex(url, "?")
+	lastHash := strings.LastIndex(url, "#")
+
+	idx := getMinGreaterThanZero(lastSlash, lastQ)
+	idx = getMinGreaterThanZero(idx, lastHash)
+
+	return idx
+}
+
+func getMinGreaterThanZero(a, b int) int {
+	if a > 0 && b > 0 {
+		if a <= b {
+			return a
+		}
+		return b
+	} else if a > 0 {
+		return a
+	} else if b > 0 {
+		return b
+	}
+
+	return -1
 }
