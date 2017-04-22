@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -22,6 +23,8 @@ type template0Data struct {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
 	if r.Method == "GET" {
 		handleGetRequest(w, r)
 	} else if r.Method == "POST" {
@@ -53,8 +56,6 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-
-	r.ParseForm()
 
 	handleRequest(w, r, url, session)
 }
@@ -142,22 +143,27 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, session *
 		return
 	}
 
-	if model.Err() {
-		setOperationError(w, r, model.SErr())
+	if model != nil && !reflect.ValueOf(model).IsNil() {
+		if model.Err() {
+			setOperationError(w, r, model.SErr())
+		} else {
+			setOperationSuccess(w, r, model.SErr())
+		}
+
+		if model.HasURL() {
+			http.Redirect(w, r, model.Url(), http.StatusSeeOther)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+
+		err = json.NewEncoder(w).Encode(model)
+		if err != nil {
+			setOperationError(w, r, err.Error())
+		}
 	} else {
-		setOperationSuccess(w, r, model.SErr())
-	}
-
-	if model.HasURL() {
-		http.Redirect(w, r, model.Url(), http.StatusSeeOther)
+		http.Error(w, fmt.Sprintf("%s - Response has empty model", r.URL.Path), 500)
 		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-
-	err = json.NewEncoder(w).Encode(model)
-	if err != nil {
-		setOperationError(w, r, err.Error())
 	}
 }
 
@@ -193,8 +199,14 @@ func getBaseURL(r *http.Request) string {
 	url := strings.ToLower(r.URL.Path)
 	idx := getEndIdxOfBaseURL(url)
 
-	if len(url) > 0 && idx > 0 {
+	// empty url is / so we don't take that / in consideration
+	if len(url) > 1 && idx > 0 {
 		url = url[0:idx]
+	}
+
+	// empty url is / so we don't take that / in consideration
+	if len(url) > 1 && url[len(url)-1:] == "/" {
+		url = url[0 : len(url)-1]
 	}
 
 	return url

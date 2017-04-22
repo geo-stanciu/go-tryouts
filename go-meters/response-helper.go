@@ -37,14 +37,18 @@ func (res *ResponseHelper) getResponseValue(controller interface{}, w http.Respo
 	response := InvokeMethodByName(controller, res.Action, w, r, res)
 
 	if len(response) >= 2 {
-		r := response[0].Interface().(models.ResponseModel)
+		r := response[0].Interface()
 		i2 := response[1].Interface()
 
-		if i2 != nil {
-			return r, i2.(error)
+		if r == nil && i2 != nil {
+			return nil, i2.(error)
 		}
 
-		return r, nil
+		if i2 != nil {
+			return r.(models.ResponseModel), i2.(error)
+		}
+
+		return r.(models.ResponseModel), nil
 	}
 
 	return nil, fmt.Errorf("Function does not return the requested number of values.")

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"net/http"
 
 	"./models"
@@ -277,18 +278,38 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 
 func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.ExchangeRatesResponseModel, error) {
 	var lres models.ExchangeRatesResponseModel
+	var date string
+
+	if val, ok := r.Form["date"]; ok {
+		date = val[0]
+	}
+
+	if !isISODate(date) {
+		date = ""
+	}
+
+	queryAux := "select max(exchange_date) from exchange_rate"
+
+	if len(date) > 0 {
+		queryAux += " where exchange_date <= to_date($1, 'yyyy-mm-dd')"
+	}
 
 	query := `
 		select c.currency, r.exchange_date, r.rate
 		  from exchange_rate r
 		  join currency c on (r.currency_id = c.currency_id)
-		 where exchange_date = (
-			 select max(exchange_date) from exchange_rate
-		 )
+		 where exchange_date = (` + queryAux + `)
 		 order by c.currency, r.exchange_date
 	`
 
-	rows, err := db.Query(query)
+	var err error
+	var rows *sql.Rows
+
+	if len(date) > 0 {
+		rows, err = db.Query(query, date)
+	} else {
+		rows, err = db.Query(query)
+	}
 	if err != nil {
 		return nil, err
 	}
