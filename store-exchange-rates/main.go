@@ -31,7 +31,7 @@ type Cube struct {
 	Rate []Rate
 }
 
-type ParseXmlSourceFunc func(source io.Reader) error
+type ParseSourceStream func(source io.Reader) error
 
 func init() {
 	// Log as JSON instead of the default ASCII formatter.
@@ -66,9 +66,9 @@ func main() {
 	}
 
 	if len(os.Args) >= 2 {
-		err = readBytesFromFile(os.Args[1], parseXmlSource)
+		err = getStreamFromFile(os.Args[1], parseXmlSource)
 	} else {
-		err = readBytesFromURL(config.RatesXMLUrl, parseXmlSource)
+		err = getStreamFromURL(config.RatesXMLUrl, parseXmlSource)
 	}
 
 	if err != nil {
@@ -79,7 +79,7 @@ func main() {
 	log.Info("Import done.")
 }
 
-func readBytesFromURL(url string, callback ParseXmlSourceFunc) error {
+func getStreamFromURL(url string, callback ParseSourceStream) error {
 	response, err := http.Get(url)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func readBytesFromURL(url string, callback ParseXmlSourceFunc) error {
 	return nil
 }
 
-func readBytesFromFile(filename string, callback ParseXmlSourceFunc) error {
+func getStreamFromFile(filename string, callback ParseSourceStream) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		return err
