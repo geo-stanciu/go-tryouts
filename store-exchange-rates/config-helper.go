@@ -6,9 +6,10 @@ import (
 )
 
 type Configuration struct {
-	Port  string `json:"Port"`
-	DbURL string `json:"DbURL"`
-	Db    string `json:"DB"`
+	Port        string `json:"Port"`
+	DbURL       string `json:"DbURL"`
+	Db          string `json:"DB"`
+	RatesXMLUrl string `json:"RatesXMLUrl"`
 }
 
 func (c *Configuration) ReadFromFile(cfgFile string) error {

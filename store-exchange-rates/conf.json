@@ -1,5 +1,6 @@
 {
   "Port": "8080",
   "DbURL": "postgres://geo:geo@localhost:5432/devel?sslmode=disable&application_name=GoGetExchRates",
-  "DB": "devel"
+  "DB": "devel",
+  "RatesXMLUrl": "http://bnro.ro/nbrfxrates.xml"
 }

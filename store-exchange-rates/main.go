@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -32,23 +31,7 @@ type Cube struct {
 	Rate []Rate
 }
 
-type Header struct {
-	Publisher      string `xml:"Publisher"`
-	PublishingDate string `xml:"PublishingDate"`
-	MessageType    string `xml:"MessageType"`
-}
-
-type Body struct {
-	Subject      string `xml:"Subject"`
-	OrigCurrency string `xml:"OrigCurrency"`
-	Cube         []Cube
-}
-
-type Query struct {
-	XMLName xml.Name `xml:"DataSet"`
-	Header  Header   `xml:"Header"`
-	Body    Body     `xml:"Body"`
-}
+type ParseXmlSourceFunc func(source io.Reader) error
 
 func init() {
 	// Log as JSON instead of the default ASCII formatter.
@@ -58,7 +41,6 @@ func init() {
 
 func main() {
 	var auditLog AuditLog
-	var xmlBytes []byte
 	var err error
 
 	cfgFile := "./conf.json"
@@ -78,55 +60,87 @@ func main() {
 	mw := io.MultiWriter(os.Stdout, auditLog)
 	log.Out = mw
 
-	err = prepareCurrencies(db)
+	err = prepareCurrencies()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if len(os.Args) >= 2 {
-		xmlBytes, err = readBytesFromFile(os.Args[1])
+		err = readBytesFromFile(os.Args[1], parseXmlSource)
 	} else {
-		xmlBytes, err = readBytesFromURL("http://bnro.ro/nbrfxrates.xml")
+		err = readBytesFromURL(config.RatesXMLUrl, parseXmlSource)
 	}
 
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
 
-	err = dealWithXML(db, xmlBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Info("Import done.")
 }
 
-func readBytesFromURL(url string) ([]byte, error) {
+func readBytesFromURL(url string, callback ParseXmlSourceFunc) error {
 	response, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer response.Body.Close()
 
-	buf, err := ioutil.ReadAll(response.Body)
+	err = callback(response.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return buf, nil
+	return nil
 }
 
-func readBytesFromFile(filename string) ([]byte, error) {
+func readBytesFromFile(filename string, callback ParseXmlSourceFunc) error {
 	f, err := os.Open(filename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer f.Close()
 
-	buf, err := ioutil.ReadAll(f)
+	err = callback(f)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return buf, nil
+	return nil
+}
+
+func parseXmlSource(source io.Reader) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	decoder := xml.NewDecoder(source)
+
+	for {
+		t, _ := decoder.Token()
+		if t == nil {
+			break
+		}
+
+		switch se := t.(type) {
+		case xml.StartElement:
+			if se.Name.Local == "Cube" {
+				var cube Cube
+				decoder.DecodeElement(&cube, &se)
+
+				err := storeRates(tx, cube)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	tx.Commit()
+
+	return nil
 }
 
 func connect2Database(dbURL string) error {
@@ -145,7 +159,7 @@ func connect2Database(dbURL string) error {
 	return nil
 }
 
-func prepareCurrencies(db *sql.DB) error {
+func prepareCurrencies() error {
 	var found bool
 
 	tx, err := db.Begin()
@@ -194,55 +208,38 @@ func prepareCurrencies(db *sql.DB) error {
 	return nil
 }
 
-func dealWithXML(db *sql.DB, xmlBytes []byte) error {
-	var q Query
+func storeRates(tx *sql.Tx, cube Cube) error {
+	var err error
 
-	err := xml.Unmarshal(xmlBytes, &q)
-	if err != nil {
-		return err
-	}
+	log.WithField("data", cube.Date).Info("Importing exchange rates...")
 
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+	for _, rate := range cube.Rate {
+		multiplier := 1.0
+		exchRate := 1.0
 
-	for _, cube := range q.Body.Cube {
-		log.WithField("data", cube.Date).Info("Importing exchange rates...")
-
-		for _, rate := range cube.Rate {
-			multiplier := 1.0
-			exchRate := 1.0
-
-			if rate.Multiplier == "-" {
-				multiplier = 1.0
-			} else if len(rate.Multiplier) > 0 {
-				multiplier, err = strconv.ParseFloat(rate.Multiplier, 64)
-				if err != nil {
-					return err
-				}
-			}
-
-			if rate.Rate == "-" {
-				continue
-			} else {
-				exchRate, err = strconv.ParseFloat(rate.Rate, 64)
-				if err != nil {
-					return err
-				}
-			}
-
-			err = storeRate(tx, cube.Date, rate.Currency, multiplier, exchRate)
+		if rate.Multiplier == "-" {
+			multiplier = 1.0
+		} else if len(rate.Multiplier) > 0 {
+			multiplier, err = strconv.ParseFloat(rate.Multiplier, 64)
 			if err != nil {
 				return err
 			}
 		}
+
+		if rate.Rate == "-" {
+			continue
+		} else {
+			exchRate, err = strconv.ParseFloat(rate.Rate, 64)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = storeRate(tx, cube.Date, rate.Currency, multiplier, exchRate)
+		if err != nil {
+			return err
+		}
 	}
-
-	tx.Commit()
-
-	log.Info("Import done.")
 
 	return nil
 }

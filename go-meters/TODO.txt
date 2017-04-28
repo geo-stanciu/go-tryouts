@@ -22,3 +22,7 @@
 
 3. method to retrieve all settings from a category
     - (done - a map was used) get all rules in a struct for each category
+
+-----------------------------
+
+4. application roles + menus allocation on roles.
