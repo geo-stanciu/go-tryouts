@@ -16,8 +16,8 @@ func (HomeController) Index(w http.ResponseWriter, r *http.Request, res *Respons
 	return nil, nil
 }
 
-func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
-	var lres models.GenericResponseModel
+func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.LoginResponseModel, error) {
+	var lres models.LoginResponseModel
 	var ip string
 	var user string
 	var pass string
@@ -43,12 +43,16 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 		}
 
 		success, err := ValidateUserPassword(user, pass)
-		if err != nil || !success {
+		if err != nil || (success != ValidationOK && success != ValidationTemporaryPassword) {
 			throwErr2Client = false
 			goto loginerr
 		}
 
-		session, err = createSession(w, r, user)
+		if success == ValidationTemporaryPassword {
+			lres.TemporaryPassword = true
+		}
+
+		session, err = createSession(w, r, user, lres.TemporaryPassword)
 		if err != nil {
 			goto loginerr
 		}
@@ -67,7 +71,10 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 	}
 
 	lres.BError = false
-	Log(lres.BError, nil, "login", "User logged in.", "user", session.User.Username, "ip", ip)
+	Log(lres.BError, nil, "login", "User logged in.",
+		"user", session.User.Username,
+		"ip", ip,
+		"Temporary Password", lres.TemporaryPassword)
 	return &lres, nil
 
 loginerr:
@@ -75,13 +82,19 @@ loginerr:
 
 	if err != nil || throwErr2Client {
 		lres.SError = err.Error()
-		Log(lres.BError, err, "login", lres.SError, "user", user)
+		Log(lres.BError, err, "login", lres.SError,
+			"user", user,
+			"Temporary Password", lres.TemporaryPassword,
+		)
 		return &lres, err
 	}
 
 	lres.SError = "Unknown user or wrong password."
 
-	Log(lres.BError, nil, "login", lres.SError, "user", user)
+	Log(lres.BError, nil, "login", lres.SError,
+		"user", user,
+		"Temporary Password", lres.TemporaryPassword,
+	)
 	return &lres, nil
 }
 
@@ -247,9 +260,9 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 		return &lres, nil
 	}
 
-	valid, err := ValidateUserPassword(usr.Username, pass)
+	success, err := ValidateUserPassword(usr.Username, pass)
 
-	if !valid {
+	if success != ValidationOK && success != ValidationTemporaryPassword {
 		lres.BError = true
 		lres.SError = "Old password is not valid."
 		Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
@@ -267,6 +280,19 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 		Log(lres.BError, err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, err
+	}
+
+	if session.User.TempPassword {
+		session.User.TempPassword = false
+
+		err = refreshSessionData(w, r, *session)
+		if err != nil {
+			lres.BError = true
+			lres.SError = err.Error()
+			Log(lres.BError, err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+
+			return &lres, err
+		}
 	}
 
 	lres.BError = false

@@ -20,6 +20,12 @@ var (
 	config = Configuration{}
 )
 
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	log.Formatter = new(logrus.JSONFormatter)
+	log.Level = logrus.DebugLevel
+}
+
 type Rate struct {
 	Currency   string `xml:"currency,attr"`
 	Multiplier string `xml:"multiplier,attr"`
@@ -32,12 +38,6 @@ type Cube struct {
 }
 
 type ParseSourceStream func(source io.Reader) error
-
-func init() {
-	// Log as JSON instead of the default ASCII formatter.
-	log.Formatter = new(logrus.JSONFormatter)
-	log.Level = logrus.DebugLevel
-}
 
 func main() {
 	var auditLog AuditLog

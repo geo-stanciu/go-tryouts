@@ -83,6 +83,11 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if session.User.TempPassword && url != "/change-password" && url != "/logout" {
+		http.Redirect(w, r, "/change-password", http.StatusSeeOther)
+		return
+	}
+
 	handleRequest(w, r, url, session)
 }
 
@@ -205,20 +210,22 @@ func getBaseURL(r *http.Request) string {
 	}
 
 	// empty url is / so we don't take that / in consideration
-	if len(url) > 1 && url[len(url)-1:] == "/" {
-		url = url[0 : len(url)-1]
+	for {
+		if len(url) > 1 && (url[len(url)-1:] == "/" || url[len(url)-1:] == "#" || url[len(url)-1:] == "?") {
+			url = url[0 : len(url)-1]
+		} else {
+			break
+		}
 	}
 
 	return url
 }
 
 func getEndIdxOfBaseURL(url string) int {
-	lastSlash := strings.LastIndex(url, "/")
-	lastQ := strings.LastIndex(url, "?")
+	firstQ := strings.Index(url, "?")
 	lastHash := strings.LastIndex(url, "#")
 
-	idx := getMinGreaterThanZero(lastSlash, lastQ)
-	idx = getMinGreaterThanZero(idx, lastHash)
+	idx := getMinGreaterThanZero(firstQ, lastHash)
 
 	return idx
 }

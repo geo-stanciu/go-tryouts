@@ -14,6 +14,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	ValidationFailed            int = 0
+	ValidationOK                int = 1
+	ValidationTemporaryPassword int = 2
+)
+
 type MembershipUser struct {
 	sync.RWMutex
 	UserID   int
@@ -649,13 +655,14 @@ func (u *MembershipUser) Equals(usr *MembershipUser) bool {
 	return true
 }
 
-func ValidateUserPassword(user string, pass string) (bool, error) {
+func ValidateUserPassword(user string, pass string) (int, error) {
 	var userID int
 	var hashedPassword string
 	var passwordSalt string
 	var activated int
 	var lockedOut int
 	var valid int
+	var temporary int
 
 	query := `
         SELECT u.user_id,
@@ -663,7 +670,8 @@ func ValidateUserPassword(user string, pass string) (bool, error) {
 		       COALESCE(p.password_salt, '') AS password_salt,
 			   activated,
 			   locked_out,
-			   valid
+			   valid,
+			   p.temporary
           FROM wmeter.user u
           LEFT OUTER JOIN wmeter.user_password p ON (u.user_id = p.user_id)
          WHERE loweredusername = lower($1)
@@ -678,40 +686,45 @@ func ValidateUserPassword(user string, pass string) (bool, error) {
 		&activated,
 		&lockedOut,
 		&valid,
+		&temporary,
 	)
 
 	switch {
 	case err == sql.ErrNoRows:
-		return false, fmt.Errorf("username \"%s\" not found", user)
+		return ValidationFailed, fmt.Errorf("username \"%s\" not found", user)
 	case err != nil:
-		return false, err
+		return ValidationFailed, err
 	}
 
 	if lockedOut > 0 {
-		return false, fmt.Errorf("username \"%s\" is locked out", user)
+		return ValidationFailed, fmt.Errorf("username \"%s\" is locked out", user)
 	}
 
 	if activated <= 0 {
-		return false, fmt.Errorf("username \"%s\" is not activated", user)
+		return ValidationFailed, fmt.Errorf("username \"%s\" is not activated", user)
 	}
 
 	if valid <= 0 {
-		return false, fmt.Errorf("username \"%s\" is not valid", user)
+		return ValidationFailed, fmt.Errorf("username \"%s\" is not valid", user)
 	}
 
 	passBytes := []byte(passwordSalt + pass)
 	hashBytes, err := base64.StdEncoding.DecodeString(hashedPassword)
 	if err != nil {
-		return false, err
+		return ValidationFailed, err
 	}
 
 	err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
 	if err != nil {
 		failedUserPasswordValidation(userID, user)
-		return false, err
+		return ValidationFailed, err
 	}
 
-	return true, nil
+	if temporary > 0 {
+		return ValidationTemporaryPassword, nil
+	}
+
+	return ValidationOK, nil
 }
 
 var passFailLock sync.Mutex

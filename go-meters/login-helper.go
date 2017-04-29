@@ -12,9 +12,10 @@ import (
 )
 
 type User struct {
-	Name     string
-	Surname  string
-	Username string
+	Name         string
+	Surname      string
+	Username     string
+	TempPassword bool
 }
 
 type SessionData struct {
@@ -38,7 +39,7 @@ func clearSession(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func createSession(w http.ResponseWriter, r *http.Request, user string) (*SessionData, error) {
+func createSession(w http.ResponseWriter, r *http.Request, user string, tempPassword bool) (*SessionData, error) {
 	session, _ := cookieStore.Get(r, authCookieStoreName)
 
 	sessionID := uuid.NewV4()
@@ -47,21 +48,44 @@ func createSession(w http.ResponseWriter, r *http.Request, user string) (*Sessio
 		LoggedIn:  true,
 		SessionID: sessionID.String(),
 		User: User{
-			Name:     "name1",
-			Surname:  "surname1",
-			Username: user,
+			Name:         "name1",
+			Surname:      "surname1",
+			Username:     user,
+			TempPassword: tempPassword,
 		},
 	}
+
+	err := saveSessionData(w, r, session, sessionData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sessionData, nil
+}
+
+func refreshSessionData(w http.ResponseWriter, r *http.Request, sessionData SessionData) error {
+	session, _ := cookieStore.Get(r, authCookieStoreName)
+
+	err := saveSessionData(w, r, session, sessionData)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func saveSessionData(w http.ResponseWriter, r *http.Request,
+	session *sessions.Session, sessionData SessionData) error {
 
 	session.Values["SessionData"] = sessionData
 
 	//save the session
 	err := session.Save(r, w)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &sessionData, nil
+	return nil
 }
 
 func getSessionData(r *http.Request) (*SessionData, error) {
