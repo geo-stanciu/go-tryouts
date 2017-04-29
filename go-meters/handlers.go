@@ -37,9 +37,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 	url := getBaseURL(r)
-	session, err := getSessionData(r)
+	sessionData, err := getSessionData(r)
 
-	if (err != nil || !session.LoggedIn) && url != "/perform-login" && url != "/perform-register" {
+	if (err != nil || !sessionData.LoggedIn) && url != "/perform-login" && url != "/perform-register" {
 		if err != nil {
 			Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 		}
@@ -50,21 +50,21 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if session.LoggedIn && strings.HasPrefix(url, "/perform-login") {
+	if sessionData.LoggedIn && strings.HasPrefix(url, "/perform-login") {
 		setOperationError(w, r, "Request failed.")
 
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
-	handleRequest(w, r, url, session)
+	handleRequest(w, r, url, sessionData)
 }
 
 func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 	url := getBaseURL(r)
-	session, err := getSessionData(r)
+	sessionData, err := getSessionData(r)
 
-	if (err != nil || !session.LoggedIn) && url != "/login" && url != "/register" {
+	if (err != nil || !sessionData.LoggedIn) && url != "/login" && url != "/register" {
 		if err != nil {
 			Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
 		}
@@ -73,7 +73,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if session.LoggedIn && strings.HasPrefix(url, "/login") {
+	if sessionData.LoggedIn && strings.HasPrefix(url, "/login") {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -83,15 +83,15 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if session.User.TempPassword && url != "/change-password" && url != "/logout" {
+	if sessionData.User.TempPassword && url != "/change-password" && url != "/logout" {
 		http.Redirect(w, r, "/change-password", http.StatusSeeOther)
 		return
 	}
 
-	handleRequest(w, r, url, session)
+	handleRequest(w, r, url, sessionData)
 }
 
-func handleRequest(w http.ResponseWriter, r *http.Request, url string, session *SessionData) {
+func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionData *SessionData) {
 	bErr, sErr, err := getLastOperationError(w, r)
 
 	if err != nil {
@@ -130,7 +130,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, session *
 
 	passedObj.Title = response.Title
 	passedObj.Model = model
-	passedObj.Session = *session
+	passedObj.Session = *sessionData
 
 	if response.Template != "-" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")

@@ -31,9 +31,9 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 
 	ip = getClientIP(r)
 
-	session, _ := getSessionData(r)
+	sessionData, _ := getSessionData(r)
 
-	if !session.LoggedIn {
+	if !sessionData.LoggedIn {
 		user = r.FormValue("username")
 		pass = r.FormValue("password")
 
@@ -52,7 +52,7 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 			lres.TemporaryPassword = true
 		}
 
-		session, err = createSession(w, r, user, lres.TemporaryPassword)
+		sessionData, err = createSession(w, r, user, lres.TemporaryPassword)
 		if err != nil {
 			goto loginerr
 		}
@@ -72,7 +72,7 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 
 	lres.BError = false
 	Log(lres.BError, nil, "login", "User logged in.",
-		"user", session.User.Username,
+		"user", sessionData.User.Username,
 		"ip", ip,
 		"Temporary Password", lres.TemporaryPassword)
 	return &lres, nil
@@ -107,10 +107,10 @@ func (HomeController) Logout(w http.ResponseWriter, r *http.Request, res *Respon
 		lres.SErrorURL = res.RedirectOnError
 	}
 
-	session, _ := getSessionData(r)
+	sessionData, _ := getSessionData(r)
 
-	if session.LoggedIn {
-		user = session.User.Username
+	if sessionData.LoggedIn {
+		user = sessionData.User.Username
 		err := clearSession(w, r)
 
 		if err != nil {
@@ -211,9 +211,9 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 		lres.SErrorURL = res.RedirectOnError
 	}
 
-	session, _ := getSessionData(r)
+	sessionData, _ := getSessionData(r)
 
-	if !session.LoggedIn {
+	if !sessionData.LoggedIn {
 		lres.BError = true
 		lres.SError = "User not logged in."
 		Log(lres.BError, nil, "change-password", lres.SError, "user", "", "email", "")
@@ -222,7 +222,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	}
 
 	var usr MembershipUser
-	err := usr.GetUserByName(session.User.Username)
+	err := usr.GetUserByName(sessionData.User.Username)
 
 	if err != nil {
 		lres.BError = true
@@ -282,10 +282,10 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 		return &lres, err
 	}
 
-	if session.User.TempPassword {
-		session.User.TempPassword = false
+	if sessionData.User.TempPassword {
+		sessionData.User.TempPassword = false
 
-		err = refreshSessionData(w, r, *session)
+		err = refreshSessionData(w, r, *sessionData)
 		if err != nil {
 			lres.BError = true
 			lres.SError = err.Error()
