@@ -1,21 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"time"
-)
-
-type Configuration struct {
-	DbName string `json:"DbName"`
-}
-
-var (
-	config = Configuration{}
 )
 
 func main() {
@@ -33,22 +24,24 @@ func main() {
 
 	log.SetOutput(mw)
 
-	cfgFile := "./conf.json"
-	err = config.readFromFile(cfgFile)
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
-	}
+	/*
+		On Windows:
 
-	out, err := exec.Command(
-		"psql",
-		"-U",
-		"postgres",
-		"-d",
-		config.DbName,
-		"-c",
-		"vacuum analyse verbose;",
-	).Output()
+		 You must edit C:\Users\geo\AppData\Roaming\postgresql\pgpass.conf on Windows
+		 (1 row for each database !):
+
+		 #hostname:port:database:username:password
+
+		 On Linux:
+
+		 su - postgres      //this will land in the home directory set for postgres user
+		 vi .pgpass         //enter all users entries
+		 chmod 0600 .pgpass // change the ownership to 0600 to avoid errors
+
+		 #hostname:port:database:username:password
+	*/
+
+	out, err := exec.Command("vacuumdb", "-avzwU", "postgres").Output()
 
 	if err != nil {
 		log.Fatal(err)
@@ -56,25 +49,4 @@ func main() {
 	log.Println(string(out))
 
 	log.Printf("*******************\nend vacuum\n")
-}
-
-func (c *Configuration) readFromFile(cfgFile string) error {
-	if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
-		return err
-	}
-
-	file, err := os.Open(cfgFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	decoder := json.NewDecoder(file)
-
-	err = decoder.Decode(&c)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
