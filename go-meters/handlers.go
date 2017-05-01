@@ -135,6 +135,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 	if response.Template != "-" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "private, max-age=600, no-store")
+		w.Header().Set("X-Frame-Options", "DENY")
+		//w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
 		err = executeTemplate(w, response.Template, passedObj)
 

@@ -46,7 +46,7 @@ func main() {
 
 	log.Printf("start dump backup \"%s\"\n", dumpFile)
 
-	dump, err := os.OpenFile(dumpFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	dump, err := os.OpenFile(dumpFile, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
