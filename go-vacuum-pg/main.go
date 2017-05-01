@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -41,12 +42,18 @@ func main() {
 		 #hostname:port:database:username:password
 	*/
 
-	out, err := exec.Command("vacuumdb", "-avzwU", "postgres").Output()
+	var outb, errb bytes.Buffer
 
+	cmd := exec.Command("vacuumdb", "-avzwU", "postgres")
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+	err = cmd.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(string(out))
+
+	log.Println(outb.String())
+	log.Println("Error:", errb.String())
 
 	log.Printf("*******************\nend vacuum\n")
 }
