@@ -40,17 +40,19 @@ func prepareQuery(query string) string {
 		prefix = "$"
 	}
 
-	for {
-		idx := strings.Index(q, "?")
+	if dbType != "mysql" {
+		for {
+			idx := strings.Index(q, "?")
 
-		if idx < 0 {
-			break
+			if idx < 0 {
+				break
+			}
+
+			prm := fmt.Sprintf("%s%d", prefix, i)
+			i++
+
+			q = strings.Replace(q, "?", prm, 1)
 		}
-
-		prm := fmt.Sprintf("%s%d", prefix, i)
-		i++
-
-		q = strings.Replace(q, "?", prm, 1)
 	}
 
 	return q
