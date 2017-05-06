@@ -1,6 +1,6 @@
 {
   "Port": "8080",
   "DbType": "postgres",
-  "DbURL": "postgres://geo:geo@localhost:5432/devel?sslmode=disable&application_name=GoMeters&options=--search_path%3Dwmeter",
+  "DbURL": "postgres://geo:geo@localhost:5432/devel?sslmode=disable&application_name=GoMeters&options=--search_path%3Dwmeter&timezone=UTC",
   "DB": "devel"
 }

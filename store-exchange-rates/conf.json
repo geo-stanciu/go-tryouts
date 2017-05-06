@@ -1,5 +1,5 @@
 {
   "DbType": "postgres",
-  "DbURL": "postgres://geo:geo@localhost:5432/devel?sslmode=disable&application_name=GoGetExchRates&options=--search_path%3Dwmeter",
+  "DbURL": "postgres://geo:geo@localhost:5432/devel?sslmode=disable&application_name=GoGetExchRates&options=--search_path%3Dwmeter&timezone=UTC",
   "RatesXMLUrl": "http://bnro.ro/nbrfxrates.xml"
 }
