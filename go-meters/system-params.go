@@ -28,12 +28,12 @@ func (p *SystemParams) LoadByGroup(group string) error {
 	p.Group = strings.ToLower(group)
 	p.Params = make(map[string]string)
 
-	query := `
+	query := prepareQuery(`
 		SELECT param, val
-		  FROM wmeter.system_params
-		 WHERE param_group = $1
+		  FROM system_params
+		 WHERE param_group = ?
 		 ORDER BY param
-	`
+	`)
 
 	rows, err := db.Query(query, p.Group)
 	if err != nil {

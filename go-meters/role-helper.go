@@ -18,13 +18,13 @@ func (r *MembershipRole) RoleExists(role string) (bool, error) {
 
 	found := false
 
-	query := `
+	query := prepareQuery(`
 		SELECT EXISTS(
 			SELECT 1
-			  FROM wmeter.role
-			 WHERE lower(role) = lower($1)
+			  FROM role
+			 WHERE lower(role) = lower(?)
 		)
-	`
+	`)
 
 	err := db.QueryRow(query, role).Scan(&found)
 
@@ -42,12 +42,12 @@ func (r *MembershipRole) GetRoleByName(role string) error {
 	r.Lock()
 	defer r.Unlock()
 
-	query := `
+	query := prepareQuery(`
         SELECT role_id,
 		       role
-          FROM wmeter.role
-         WHERE lower(role) = lower($1)
-    `
+          FROM role
+         WHERE lower(role) = lower(?)
+    `)
 
 	err := db.QueryRow(query, role).Scan(
 		&r.RoleID,
@@ -67,12 +67,12 @@ func (r *MembershipRole) GetRoleByID(roleID int) error {
 	r.Lock()
 	defer r.Unlock()
 
-	query := `
+	query := prepareQuery(`
         SELECT role_id,
 		       role
-          FROM wmeter.role
-         WHERE role_id = $1
-    `
+          FROM role
+         WHERE role_id = ?
+    `)
 
 	err := db.QueryRow(query, roleID).Scan(
 		&r.RoleID,
@@ -95,14 +95,14 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 
 	var found bool
 
-	query := `
+	query := prepareQuery(`
         SELECT EXISTS(
 			SELECT 1
-		      FROM wmeter.role
-			 WHERE lower(role) = lower($1)
-			   AND role_id <> $2
+		      FROM role
+			 WHERE lower(role) = lower(?)
+			   AND role_id <> ?
 		)
-	`
+	`)
 
 	stmt, err := tx.Prepare(query)
 	if err != nil {
@@ -142,14 +142,12 @@ func (r *MembershipRole) Save() error {
 	}
 
 	if r.RoleID < 0 {
-		query := `
-			INSERT INTO wmeter.role (
+		query := prepareQuery(`
+			INSERT INTO role (
 				role
 			)
-			VALUES (
-				$1
-			)
-		`
+			VALUES (?)
+		`)
 
 		_, err = tx.Exec(
 			query,
@@ -160,9 +158,9 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		query = `
-			SELECT role_id FROM wmeter.role WHERE lower(role) = lower($1)
-		`
+		query = prepareQuery(`
+			SELECT role_id FROM role WHERE lower(role) = lower(?)
+		`)
 
 		err = tx.QueryRow(query, r.Rolename).Scan(&r.RoleID)
 
@@ -181,9 +179,9 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		query := `
-			UPDATE wmeter.role SET role = $1 WHERE role_id = $2
-		`
+		query := prepareQuery(`
+			UPDATE role SET role = ? WHERE role_id = ?
+		`)
 
 		_, err = tx.Exec(
 			query,
@@ -206,17 +204,17 @@ func (r *MembershipRole) Save() error {
 func (r *MembershipRole) HasMember(user string) (bool, error) {
 	found := false
 
-	query := `
+	query := prepareQuery(`
 		SELECT EXISTS(
 			SELECT 1
-			  FROM wmeter.user_role ur
-			  JOIN wmeter.user u ON (ur.user_id = u.user_id)
-			 WHERE u.loweredusername =  lower($1)
-			   AND ur.role_id        =  $2
+			  FROM user_role ur
+			  JOIN user u ON (ur.user_id = u.user_id)
+			 WHERE u.loweredusername =  lower(?)
+			   AND ur.role_id        =  ?
 			   AND ur.valid_from     <= current_timestamp
 			   AND (ur.valid_until is null OR ur.valid_until > current_timestamp)
 		)
-	`
+	`)
 
 	err := db.QueryRow(query, user, r.RoleID).Scan(&found)
 
@@ -233,16 +231,16 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 	found := false
 
-	query := `
+	query := prepareQuery(`
 		SELECT EXISTS(
 			SELECT 1
-			  FROM wmeter.user_role ur
-			 WHERE ur.user_id =  $1
-			   AND ur.role_id =  $2
+			  FROM user_role ur
+			 WHERE ur.user_id =  ?
+			   AND ur.role_id =  ?
 			   AND ur.valid_from     <= current_timestamp
 			   AND (ur.valid_until is null OR ur.valid_until > current_timestamp)
 		)
-	`
+	`)
 
 	err := db.QueryRow(query, userID, r.RoleID).Scan(&found)
 
@@ -259,18 +257,18 @@ func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 func IsUserInRole(user string, role string) (bool, error) {
 	found := false
 
-	query := `
+	query := prepareQuery(`
 		SELECT EXISTS(
 			SELECT 1
-			  FROM wmeter.user_role ur
-			  JOIN wmeter.user u ON (ur.user_id = u.user_id)
-			  JOIN wmeter.role r ON (ur.role_id = r.role_id)
-			 WHERE u.loweredusername =  lower($1)
-			   AND lower(r.role)     =  lower($2)
+			  FROM user_role ur
+			  JOIN user u ON (ur.user_id = u.user_id)
+			  JOIN role r ON (ur.role_id = r.role_id)
+			 WHERE u.loweredusername =  lower(?)
+			   AND lower(r.role)     =  lower(?)
 			   AND ur.valid_from     <= current_timestamp
 			   AND (ur.valid_until is null OR ur.valid_until > current_timestamp)
 		)
-	`
+	`)
 
 	err := db.QueryRow(query, user, role).Scan(&found)
 

@@ -14,6 +14,7 @@ import (
 )
 
 type Configuration struct {
+	DbType               string `json:"DbType"`
 	DbURL                string `json:"DbURL"`
 	PgDataDir            string `json:"PG-data-dir"`
 	PgBackupDir          string `json:"PG-backup-dir"`
@@ -174,15 +175,15 @@ func getBkFileName(tx *sql.Tx, sData string) (string, string, int, error) {
 	var bkFile string
 	var bkLabel string
 
-	query := `
+	query := prepareQuery(`
 		select CAST(last_file_index AS integer)
 		  from backup_log
 		 where backup_log_id = (
 			 select max(backup_log_id)
 			   from backup_log
-			  where backup_time::date = to_date($1, 'yyyymmdd')
+			  where backup_time::date = to_date(?, 'yyyymmdd')
 		 )
-	`
+	`)
 
 	err := tx.QueryRow(query, sData).Scan(&i)
 
@@ -211,7 +212,7 @@ func getBkFileName(tx *sql.Tx, sData string) (string, string, int, error) {
 func startBk(tx *sql.Tx, bkLabel string) (string, error) {
 	var startBk string
 
-	query := "SELECT pg_start_backup($1)::text"
+	query := prepareQuery("SELECT pg_start_backup(?)::text")
 
 	err := tx.QueryRow(query, bkLabel).Scan(&startBk)
 
@@ -243,13 +244,13 @@ func finishBk(tx *sql.Tx) (string, error) {
 }
 
 func logBackup(tx *sql.Tx, bkFile string, archFile string, lastFileIndex int) error {
-	query := `
+	query := prepareQuery(`
 		insert into backup_log (
 		    backup_file,
 			arch_file,
 			last_file_index
-		) values ($1, $2, $3)
-	`
+		) values (?, ?, ?)
+	`)
 
 	sIndex := fmt.Sprintf("%02d", lastFileIndex)
 
@@ -265,13 +266,13 @@ func getLastNeededArchFile(tx *sql.Tx, nrBackups2Keep int) (string, int, error) 
 	var archFile string
 	var logID int
 
-	query := `
+	query := prepareQuery(`
 		select arch_file,
 			   backup_log_id
 		  from backup_log
 		 order by backup_log_id desc
-		 limit $1
-	`
+		 limit ?
+	`)
 
 	rows, err := tx.Query(query, nrBackups2Keep)
 	if err != nil {
@@ -305,12 +306,12 @@ func getLastNeededArchFile(tx *sql.Tx, nrBackups2Keep int) (string, int, error) 
 func deleteOldBackups(tx *sql.Tx, logID int, archFile2Keep string) error {
 	var bkFile string
 
-	query := `
+	query := prepareQuery(`
 		select backup_file
 		  from backup_log
-		 where backup_log_id < $1
+		 where backup_log_id < ?
 		 order by backup_log_id
-	`
+	`)
 
 	rows, err := tx.Query(query, logID)
 	if err != nil {
@@ -342,7 +343,7 @@ func deleteOldBackups(tx *sql.Tx, logID int, archFile2Keep string) error {
 		return err
 	}
 
-	query = "delete from backup_log where backup_log_id < $1"
+	query = prepareQuery("delete from backup_log where backup_log_id < ?")
 
 	_, err = tx.Exec(query, logID)
 	if err != nil {

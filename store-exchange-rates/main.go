@@ -11,6 +11,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 )
 
@@ -50,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = connect2Database(config.DbURL)
+	err = connect2Database()
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
@@ -143,10 +144,10 @@ func parseXmlSource(source io.Reader) error {
 	return nil
 }
 
-func connect2Database(dbURL string) error {
+func connect2Database() error {
 	var err error
 
-	db, err = sql.Open("postgres", dbURL)
+	db, err = sql.Open(config.DbType, config.DbURL)
 	if err != nil {
 		return fmt.Errorf("Can't connect to the database, error: %s", err.Error())
 	}
@@ -180,7 +181,7 @@ func prepareCurrencies() error {
 	}
 
 	if !found {
-		query = "INSERT INTO currency (currency) VALUES ($1)"
+		query = prepareQuery("INSERT INTO currency (currency) VALUES (?)")
 
 		_, err = tx.Exec(query, "RON")
 		if err != nil {
@@ -248,7 +249,7 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 	var currencyID int32
 	var found bool
 
-	query := "SELECT currency_id FROM currency WHERE currency = $1"
+	query := prepareQuery("SELECT currency_id FROM currency WHERE currency = ?")
 
 	err := tx.QueryRow(query, currency).Scan(&currencyID)
 
@@ -259,16 +260,21 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		return err
 	}
 
-	query = `
+	dData, err := string2date(date, ISODate)
+	if err != nil {
+		return err
+	}
+
+	query = prepareQuery(`
 		SELECT EXISTS(
 			SELECT 1
 			FROM exchange_rate 
-		   WHERE currency_id = $1 
-		     AND exchange_date = to_date($2, 'yyyy-mm-dd')
+		   WHERE currency_id = ? 
+		     AND exchange_date = ?
 		)
-	`
+	`)
 
-	err = tx.QueryRow(query, currencyID, date).Scan(&found)
+	err = tx.QueryRow(query, currencyID, dData).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -278,18 +284,16 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 	}
 
 	if !found {
-		query = `
+		query = prepareQuery(`
 			INSERT INTO exchange_rate (
 				currency_id,
 				exchange_date,       
 				rate
 			)
-			VALUES (
-				$1, to_date($2, 'yyyy-mm-dd'), $3
-			)
-		`
+			VALUES (?, ?, ?)
+		`)
 
-		_, err = tx.Exec(query, currencyID, date, exchRate/multiplier)
+		_, err = tx.Exec(query, currencyID, dData, exchRate/multiplier)
 		if err != nil {
 			return err
 		}

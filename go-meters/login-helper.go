@@ -162,14 +162,12 @@ func getNewCookieStore() (*sessions.CookieStore, error) {
 }
 
 func saveCookieEncodeKeys(keys [][]byte) error {
-	query := `
-		INSERT INTO wmeter.cookie_encode_key (
+	query := prepareQuery(`
+		INSERT INTO cookie_encode_key (
 			encode_key
 		)
-		VALUES (
-			$1
-		)
-	`
+		VALUES (?)
+	`)
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -201,7 +199,7 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 
 	query := `
 		SELECT encode_key
-		  FROM wmeter.cookie_encode_key
+		  FROM cookie_encode_key
 		 WHERE valid_from  <= current_timestamp
 		   AND valid_until >= current_timestamp
 		 ORDER BY cookie_encode_key_id

@@ -57,12 +57,12 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 			goto loginerr
 		}
 
-		query := `
-			UPDATE wmeter.user
+		query := prepareQuery(`
+			UPDATE user
 			   SET last_connect_time = current_timestamp,
-			       last_connect_ip   = $1
-			 WHERE loweredusername = lower($2)
-		`
+			       last_connect_ip   = ?
+			 WHERE loweredusername = lower(?)
+		`)
 
 		_, err = db.Exec(query, ip, user)
 		if err != nil {
@@ -317,16 +317,16 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 	queryAux := "select max(exchange_date) from exchange_rate"
 
 	if len(date) > 0 {
-		queryAux += " where exchange_date <= to_date($1, 'yyyy-mm-dd')"
+		queryAux += " where exchange_date <= to_date(?, 'yyyy-mm-dd')"
 	}
 
-	query := `
+	query := prepareQuery(`
 		select c.currency, r.exchange_date, r.rate
 		  from exchange_rate r
 		  join currency c on (r.currency_id = c.currency_id)
 		 where exchange_date = (` + queryAux + `)
 		 order by c.currency, r.exchange_date
-	`
+	`)
 
 	var err error
 	var rows *sql.Rows

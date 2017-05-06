@@ -2,6 +2,7 @@ package main
 
 import (
 	"sync"
+	"time"
 )
 
 type AuditLog struct {
@@ -9,18 +10,18 @@ type AuditLog struct {
 }
 
 func (a AuditLog) Write(p []byte) (n int, err error) {
-	query := `
-        INSERT INTO wmeter.audit_log (
-            audit_msg
+	query := prepareQuery(`
+        INSERT INTO audit_log (
+            log_time, audit_msg
         )
-        VALUES (
-            $1
-        )
-    `
+        VALUES (?, ?)
+    `)
 
+	logTime := time.Now().UTC()
 	msg := string(p)
 
-	_, err = db.Exec(query, msg)
+	_, err = db.Exec(query, logTime, msg)
+
 	if err != nil {
 		return 0, err
 	}

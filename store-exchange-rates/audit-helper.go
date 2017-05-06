@@ -1,24 +1,24 @@
 package main
 
 import "sync"
+import "time"
 
 type AuditLog struct {
 	sync.RWMutex
 }
 
 func (a AuditLog) Write(p []byte) (n int, err error) {
-	query := `
+	query := prepareQuery(`
         INSERT INTO audit_log (
-            audit_msg
+            log_time, audit_msg
         )
-        VALUES (
-            $1
-        )
-    `
+        VALUES (?, ?)
+    `)
 
+	logTime := time.Now().UTC()
 	msg := string(p)
 
-	_, err = db.Exec(query, msg)
+	_, err = db.Exec(query, logTime, msg)
 
 	if err != nil {
 		return 0, err

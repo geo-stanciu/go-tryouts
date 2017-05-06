@@ -64,16 +64,16 @@ func getResponseHelperByURL(url string) (*ResponseHelper, error) {
 		sURL = strings.Replace(url[1:], ".html", "", 1)
 	}
 
-	query := `
+	query := prepareQuery(`
         select request_title,
 		       request_template,
 		       controller,
                action,
 			   redirect_url,
 			   redirect_on_error
-          from wmeter.request
-         where request_url = $1
-    `
+          from request
+         where request_url = ?
+    `)
 
 	err := db.QueryRow(query, sURL).Scan(
 		&res.Title,

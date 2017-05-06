@@ -81,7 +81,7 @@ CREATE TABLE wmeter.user_role_history (
 
 CREATE TABLE wmeter.audit_log (
     audit_log_id   bigserial PRIMARY KEY,
-    log_time       timestamp with time zone not null DEFAULT statement_timestamp(),
+    log_time       timestamp not null DEFAULT (current_timestamp at time zone 'UTC'),
     audit_msg      jsonb       not null
 );
 

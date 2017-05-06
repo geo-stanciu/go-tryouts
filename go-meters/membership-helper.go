@@ -36,13 +36,13 @@ func (u *MembershipUser) UserExists(user string) (bool, error) {
 
 	found := false
 
-	query := `
+	query := prepareQuery(`
         SELECT EXISTS(
 			SELECT 1
-		      FROM wmeter.user
-	         WHERE loweredusername = lower($1)
+		      FROM user
+	         WHERE loweredusername = lower(?)
 		)
-    `
+    `)
 
 	err := db.QueryRow(query, user).Scan(&found)
 
@@ -60,15 +60,15 @@ func (u *MembershipUser) GetUserByName(user string) error {
 	u.Lock()
 	defer u.Unlock()
 
-	query := `
+	query := prepareQuery(`
         SELECT user_id,
 		       username,
                name,
                surname,
                email
-          FROM wmeter.user
-         WHERE loweredusername = lower($1)
-    `
+          FROM user
+         WHERE loweredusername = lower(?)
+    `)
 
 	err := db.QueryRow(query, user).Scan(
 		&u.UserID,
@@ -91,15 +91,15 @@ func (u *MembershipUser) GetUserByID(userID int) error {
 	u.Lock()
 	defer u.Unlock()
 
-	query := `
+	query := prepareQuery(`
         SELECT user_id,
 		       username,
                name,
                surname,
                email
-          FROM wmeter.user
-         WHERE user_id = $1
-    `
+          FROM user
+         WHERE user_id = ?
+    `)
 
 	err := db.QueryRow(query, userID).Scan(
 		&u.UserID,
@@ -129,14 +129,14 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 
 	var found bool
 
-	query := `
+	query := prepareQuery(`
         SELECT EXISTS(
 			SELECT 1
-		      FROM wmeter.user
-			 WHERE loweredusername = LOWER($1)
-			   AND user_id <> $2
+		      FROM user
+			 WHERE loweredusername = LOWER(?)
+			   AND user_id <> ?
 		)
-	`
+	`)
 
 	stmt, err := tx.Prepare(query)
 	if err != nil {
@@ -178,8 +178,8 @@ func (u *MembershipUser) Save() error {
 	}
 
 	if u.UserID <= 0 {
-		query := `
-			INSERT INTO wmeter.user (
+		query := prepareQuery(`
+			INSERT INTO user (
 				username,
 				loweredusername,
 				name,
@@ -187,10 +187,8 @@ func (u *MembershipUser) Save() error {
 				email,
 				loweredemail
 			)
-			VALUES (
-				$1, $2, $3, $4, $5, $6
-			)
-		`
+			VALUES (?, ?, ?, ?, ?, ?)
+		`)
 
 		_, err = tx.Exec(
 			query,
@@ -206,9 +204,9 @@ func (u *MembershipUser) Save() error {
 			return err
 		}
 
-		query = `
-			SELECT user_id FROM wmeter.user WHERE loweredusername = $1
-		`
+		query = prepareQuery(`
+			SELECT user_id FROM user WHERE loweredusername = ?
+		`)
 
 		err = tx.QueryRow(query, strings.ToLower(u.Username)).Scan(&u.UserID)
 
@@ -237,17 +235,17 @@ func (u *MembershipUser) Save() error {
 		}
 
 		if !u.Equals(&old) {
-			query = `
-				UPDATE wmeter.user
-				SET username        = $1,
-					loweredusername = $2,
-					name            = $3,
-					surname         = $4,
-					email           = $5,
-					loweredemail    = $6,
+			query = prepareQuery(`
+				UPDATE user
+				SET username        = ?,
+					loweredusername = ?,
+					name            = ?,
+					surname         = ?,
+					email           = ?,
+					loweredemail    = ?,
 					last_update     = current_timestamp
-				WHERE user_id = $7
-			`
+				WHERE user_id = ?
+			`)
 
 			_, err = tx.Exec(
 				query,
@@ -286,16 +284,16 @@ func (u *MembershipUser) GetUserRoles() ([]MembershipRole, error) {
 
 	var roles []MembershipRole
 
-	query := `
+	query := prepareQuery(`
 		SELECT r.role_id,
 		       r.role
-	      FROM wmeter.user_role ur
-		  JOIN wmeter.role r ON (ur.role_id = r.role_id)
-		 WHERE ur.user_id =  $1
+	      FROM user_role ur
+		  JOIN role r ON (ur.role_id = r.role_id)
+		 WHERE ur.user_id =  ?
 		   AND ur.valid_from     <= current_timestamp
 		   AND (ur.valid_until is null OR ur.valid_until > current_timestamp)
 		 ORDER BY r.role
-	`
+	`)
 
 	rows, err := db.Query(query, u.UserID)
 	if err != nil {
@@ -339,15 +337,13 @@ func (u *MembershipUser) AddToRole(role string) error {
 		return nil
 	}
 
-	query := `
-		INSERT INTO wmeter.user_role (
+	query := prepareQuery(`
+		INSERT INTO user_role (
 			user_id,
 			role_id
 		)
-		VALUES (
-			$1, $2
-		)
-	`
+		VALUES (?, ?)
+	`)
 
 	_, err = db.Exec(
 		query,
@@ -389,12 +385,12 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 	}
 	defer tx.Rollback()
 
-	query := `
-		UPDATE wmeter.user_role
+	query := prepareQuery(`
+		UPDATE user_role
 		   SET valid_until = current_timestamp
-		 WHERE user_id = $1
-		   AND role_id = $2
-	`
+		 WHERE user_id = ?
+		   AND role_id = ?
+	`)
 
 	_, err = tx.Exec(
 		query,
@@ -406,13 +402,13 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 		return err
 	}
 
-	query = `
-		INSERT INTO wmeter.user_role_history
+	query = prepareQuery(`
+		INSERT INTO user_role_history
 		SELECT *
-		  FROM wmeter.user_role
-		 WHERE user_id = $1
-		   AND role_id = $2
-	`
+		  FROM user_role
+		 WHERE user_id = ?
+		   AND role_id = ?
+	`)
 
 	_, err = tx.Exec(
 		query,
@@ -424,11 +420,11 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 		return err
 	}
 
-	query = `
-		DELETE FROM wmeter.user_role
-		 WHERE user_id = $1
-		   AND role_id = $2
-	`
+	query = prepareQuery(`
+		DELETE FROM user_role
+		 WHERE user_id = ?
+		   AND role_id = ?
+	`)
 
 	_, err = tx.Exec(
 		query,
@@ -457,14 +453,14 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 	var hashedPassword string
 	var passwordSalt string
 
-	query := `
+	query := prepareQuery(`
 		SELECT COALESCE(password, '') AS password,
 		       COALESCE(password_salt, '') AS password_salt
-		  FROM wmeter.user_password
-		 WHERE user_id = $1
+		  FROM user_password
+		 WHERE user_id = ?
 		 ORDER BY password_id DESC
-		 LIMIT $2
-	`
+		 LIMIT ?
+	`)
 
 	rows, err := tx.Query(query, u.UserID, notRepeatPasswords)
 	if err != nil {
@@ -584,35 +580,35 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 
 	password := base64.StdEncoding.EncodeToString(hashedPassword)
 
-	query := `
-		UPDATE wmeter.user_password p
+	query := prepareQuery(`
+		UPDATE user_password p
 		   SET valid_until = current_timestamp
-		 WHERE user_id = $1
+		 WHERE user_id = ?
 		   AND p.valid_from <= current_timestamp
 		   AND (p.valid_until is null OR p.valid_until > current_timestamp)
-	`
+	`)
 
 	_, err = tx.Exec(query, u.UserID)
 	if err != nil {
 		return err
 	}
 
-	query = fmt.Sprintf(`
-		INSERT INTO wmeter.user_password (
+	query = prepareQuery(fmt.Sprintf(`
+		INSERT INTO user_password (
 			user_id,
 			password,
 			password_salt,
 			valid_until
 		)
-		SELECT $1,
-		       $2,
-			   $3,
-			   CASE WHEN $4 > 0 THEN
+		SELECT ?,
+		       ?,
+			   ?,
+			   CASE WHEN ? > 0 THEN
 			       current_timestamp + interval '%d' day
 			   ELSE
 			       null
 			   END
-	`, changeInterval)
+	`, changeInterval))
 
 	_, err = tx.Exec(
 		query,
@@ -626,11 +622,11 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		return err
 	}
 
-	query = `
-		UPDATE wmeter.user
+	query = prepareQuery(`
+		UPDATE user
 		   SET last_password_change = current_timestamp
-		 WHERE user_id = $1
-	`
+		 WHERE user_id = ?
+	`)
 
 	_, err = tx.Exec(query, u.UserID)
 	if err != nil {
@@ -664,7 +660,7 @@ func ValidateUserPassword(user string, pass string) (int, error) {
 	var valid int
 	var temporary int
 
-	query := `
+	query := prepareQuery(`
         SELECT u.user_id,
 		       COALESCE(p.password, '') AS password,
 		       COALESCE(p.password_salt, '') AS password_salt,
@@ -672,12 +668,12 @@ func ValidateUserPassword(user string, pass string) (int, error) {
 			   locked_out,
 			   valid,
 			   p.temporary
-          FROM wmeter.user u
-          LEFT OUTER JOIN wmeter.user_password p ON (u.user_id = p.user_id)
-         WHERE loweredusername = lower($1)
+          FROM user u
+          LEFT OUTER JOIN user_password p ON (u.user_id = p.user_id)
+         WHERE loweredusername = lower(?)
 		   AND p.valid_from <= current_timestamp
 		   AND (p.valid_until is null OR p.valid_until > current_timestamp)
-    `
+    `)
 
 	err := db.QueryRow(query, user).Scan(
 		&userID,
@@ -757,12 +753,12 @@ func failedUserPasswordValidation(userID int, user string) {
 	}
 	defer tx.Rollback()
 
-	query := `
+	query := prepareQuery(`
 		SELECT failed_password_atmpts,
 		       COALESCE(first_failed_password, to_timestamp('1970-01-01', 'yyyy-mm-dd')) AS first_failed_password
-		  FROM wmeter.user u
-		 WHERE user_id = $1
-	`
+		  FROM user u
+		 WHERE user_id = ?
+	`)
 
 	err = tx.QueryRow(query, userID).Scan(
 		&failedPasswordAtempts,
@@ -786,21 +782,21 @@ func failedUserPasswordValidation(userID int, user string) {
 		newFail = 1
 	}
 
-	query = `
-		UPDATE wmeter.user u
-		   SET failed_password_atmpts = CASE WHEN $1 = 1 THEN
+	query = prepareQuery(`
+		UPDATE user u
+		   SET failed_password_atmpts = CASE WHEN ? = 1 THEN
 		                                    1
 										ELSE
 										    failed_password_atmpts + 1
 		                                END,
-		       first_failed_password  = CASE WHEN $2 = 1 THEN
+		       first_failed_password  = CASE WHEN ? = 1 THEN
 			   			                    current_timestamp
 										ELSE
 										    first_failed_password
 			                            END,
 		       last_failed_password   = current_timestamp
-		 WHERE user_id = $3
-	`
+		 WHERE user_id = ?
+	`)
 
 	_, err = tx.Exec(query, newFail, newFail, userID)
 
@@ -809,11 +805,11 @@ func failedUserPasswordValidation(userID int, user string) {
 		return
 	}
 
-	query = `
+	query = prepareQuery(`
 		SELECT failed_password_atmpts
-		  FROM wmeter.user u
-		 WHERE user_id = $1
-	`
+		  FROM user u
+		 WHERE user_id = ?
+	`)
 
 	err = tx.QueryRow(query, userID).Scan(
 		&failedPasswordAtempts,
@@ -831,11 +827,11 @@ func failedUserPasswordValidation(userID int, user string) {
 	}
 
 	if failedPasswordAtempts >= maxAllowedFailedAtmpts {
-		query = `
-			UPDATE wmeter.user
+		query = prepareQuery(`
+			UPDATE user
 			   SET locked_out = 1
-			 WHERE user_id = $1
-		`
+			 WHERE user_id = ?
+		`)
 
 		_, err = tx.Exec(query, userID)
 
@@ -844,13 +840,13 @@ func failedUserPasswordValidation(userID int, user string) {
 			// return // commented on purpose - Geo 18.03.2017
 		}
 
-		query = `
-			UPDATE wmeter.user_password p
+		query = prepareQuery(`
+			UPDATE user_password p
 			   SET valid_until = current_timestamp
-			 WHERE user_id = $1
+			 WHERE user_id = ?
 			   AND valid_from <= current_timestamp
 		       AND (valid_until is null OR valid_until > current_timestamp)
-		`
+		`)
 
 		_, err = tx.Exec(query, userID)
 		if err != nil {
