@@ -1,0 +1,2 @@
+mysqldump -u root -p --single-transaction --flush-logs --master-data=2 --all-databases --delete-master-logs > backup_mysql_20170506.dmp
+

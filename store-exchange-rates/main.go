@@ -287,7 +287,7 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		query = prepareQuery(`
 			INSERT INTO exchange_rate (
 				currency_id,
-				exchange_date,       
+				exchange_date,
 				rate
 			)
 			VALUES (?, ?, ?)
