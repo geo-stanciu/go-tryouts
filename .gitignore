@@ -1,5 +1,6 @@
 .directory
 .vscode
+.idea
 *.~sql
 *.~cod
 *.bak

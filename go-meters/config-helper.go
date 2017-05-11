@@ -9,7 +9,6 @@ type Configuration struct {
 	Port   string `json:"Port"`
 	DbType string `json:"DbType"`
 	DbURL  string `json:"DbURL"`
-	Db     string `json:"DB"`
 }
 
 func (c *Configuration) ReadFromFile(cfgFile string) error {

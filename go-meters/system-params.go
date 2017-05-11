@@ -28,7 +28,7 @@ func (p *SystemParams) LoadByGroup(group string) error {
 	p.Group = strings.ToLower(group)
 	p.Params = make(map[string]string)
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		SELECT param, val
 		  FROM system_params
 		 WHERE param_group = ?

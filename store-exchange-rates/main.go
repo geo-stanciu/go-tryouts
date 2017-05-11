@@ -3,12 +3,12 @@ package main
 import (
 	"database/sql"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/sirupsen/logrus"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -17,7 +17,9 @@ import (
 
 var (
 	log    = logrus.New()
+	audit   = utils.AuditLog{}
 	db     *sql.DB
+	dbUtils = utils.DbUtils{}
 	config = Configuration{}
 )
 
@@ -41,7 +43,6 @@ type Cube struct {
 type ParseSourceStream func(source io.Reader) error
 
 func main() {
-	var auditLog AuditLog
 	var err error
 
 	cfgFile := "./conf.json"
@@ -51,14 +52,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = connect2Database()
+	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 	defer db.Close()
 
-	mw := io.MultiWriter(os.Stdout, auditLog)
+	audit.SetLoggerAndDatabase(log, &dbUtils)
+
+	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
 
 	err = prepareCurrencies()
@@ -144,22 +147,6 @@ func parseXmlSource(source io.Reader) error {
 	return nil
 }
 
-func connect2Database() error {
-	var err error
-
-	db, err = sql.Open(config.DbType, config.DbURL)
-	if err != nil {
-		return fmt.Errorf("Can't connect to the database, error: %s", err.Error())
-	}
-
-	err = db.Ping()
-	if err != nil {
-		return fmt.Errorf("Can't ping the database, error: %s", err.Error())
-	}
-
-	return nil
-}
-
 func prepareCurrencies() error {
 	var found bool
 
@@ -181,7 +168,7 @@ func prepareCurrencies() error {
 	}
 
 	if !found {
-		query = prepareQuery("INSERT INTO currency (currency) VALUES (?)")
+		query = dbUtils.PQuery("INSERT INTO currency (currency) VALUES (?)")
 
 		_, err = tx.Exec(query, "RON")
 		if err != nil {
@@ -249,7 +236,7 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 	var currencyID int32
 	var found bool
 
-	query := prepareQuery("SELECT currency_id FROM currency WHERE currency = ?")
+	query := dbUtils.PQuery("SELECT currency_id FROM currency WHERE currency = ?")
 
 	err := tx.QueryRow(query, currency).Scan(&currencyID)
 
@@ -265,7 +252,7 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		return err
 	}
 
-	query = prepareQuery(`
+	query = dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
 			FROM exchange_rate 
@@ -284,7 +271,7 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 	}
 
 	if !found {
-		query = prepareQuery(`
+		query = dbUtils.PQuery(`
 			INSERT INTO exchange_rate (
 				currency_id,
 				exchange_date,

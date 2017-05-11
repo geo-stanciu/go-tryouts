@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/geo-stanciu/go-utils/utils"
 )
 
 type Configuration struct {
@@ -23,8 +24,9 @@ type Configuration struct {
 }
 
 var (
-	db     *sql.DB
-	config = Configuration{}
+	db      *sql.DB
+	dbUtils = utils.DbUtils{}
+	config  = Configuration{}
 )
 
 func main() {
@@ -50,7 +52,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = connect2Database(config.DbURL)
+	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
@@ -135,22 +137,6 @@ func (c *Configuration) readFromFile(cfgFile string) error {
 	return nil
 }
 
-func connect2Database(dbURL string) error {
-	var err error
-
-	db, err = sql.Open("postgres", dbURL)
-	if err != nil {
-		return fmt.Errorf("Can't connect to the database, error: %s", err.Error())
-	}
-
-	err = db.Ping()
-	if err != nil {
-		return fmt.Errorf("Can't ping the database, error: %s", err.Error())
-	}
-
-	return nil
-}
-
 func createBackupTables(tx *sql.Tx) error {
 	t1 := `
 		create table if not exists backup_log (
@@ -175,7 +161,7 @@ func getBkFileName(tx *sql.Tx, sData string) (string, string, int, error) {
 	var bkFile string
 	var bkLabel string
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		select CAST(last_file_index AS integer)
 		  from backup_log
 		 where backup_log_id = (
@@ -212,7 +198,7 @@ func getBkFileName(tx *sql.Tx, sData string) (string, string, int, error) {
 func startBk(tx *sql.Tx, bkLabel string) (string, error) {
 	var startBk string
 
-	query := prepareQuery("SELECT pg_start_backup(?)::text")
+	query := dbUtils.PQuery("SELECT pg_start_backup(?)::text")
 
 	err := tx.QueryRow(query, bkLabel).Scan(&startBk)
 
@@ -244,7 +230,7 @@ func finishBk(tx *sql.Tx) (string, error) {
 }
 
 func logBackup(tx *sql.Tx, bkFile string, archFile string, lastFileIndex int) error {
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		insert into backup_log (
 		    backup_file,
 			arch_file,
@@ -266,7 +252,7 @@ func getLastNeededArchFile(tx *sql.Tx, nrBackups2Keep int) (string, int, error) 
 	var archFile string
 	var logID int
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		select arch_file,
 			   backup_log_id
 		  from backup_log
@@ -306,7 +292,7 @@ func getLastNeededArchFile(tx *sql.Tx, nrBackups2Keep int) (string, int, error) 
 func deleteOldBackups(tx *sql.Tx, logID int, archFile2Keep string) error {
 	var bkFile string
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		select backup_file
 		  from backup_log
 		 where backup_log_id < ?
@@ -343,7 +329,7 @@ func deleteOldBackups(tx *sql.Tx, logID int, archFile2Keep string) error {
 		return err
 	}
 
-	query = prepareQuery("delete from backup_log where backup_log_id < ?")
+	query = dbUtils.PQuery("delete from backup_log where backup_log_id < ?")
 
 	_, err = tx.Exec(query, logID)
 	if err != nil {

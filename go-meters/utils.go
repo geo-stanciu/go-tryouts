@@ -23,7 +23,7 @@ func string2int(sval string) int {
 	val, err := strconv.Atoi(sval)
 
 	if err != nil {
-		Log(true, err, "conversion", "Conversion error.", "val", val)
+		audit.Log(true, err, "conversion", "Conversion error.", "val", val)
 		return 0
 	}
 

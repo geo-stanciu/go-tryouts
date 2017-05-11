@@ -162,7 +162,7 @@ func getNewCookieStore() (*sessions.CookieStore, error) {
 }
 
 func saveCookieEncodeKeys(keys [][]byte) error {
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		INSERT INTO cookie_encode_key (
 			encode_key
 		)

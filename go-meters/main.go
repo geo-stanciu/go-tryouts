@@ -2,9 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"flag"
-	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -13,20 +11,24 @@ import (
 
 	"encoding/gob"
 
+	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 
 	"strings"
 
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 )
 
 var (
 	log                 = logrus.New()
+	audit               = utils.AuditLog{}
 	templateDelims      = []string{"{{%", "%}}"}
 	templates           *template.Template
 	addr                *string
 	db                  *sql.DB
+	dbUtils             = utils.DbUtils{}
 	config              = Configuration{}
 	appName             = "GoMeters"
 	appVersion          = "0.0.0.1"
@@ -55,7 +57,6 @@ func init() {
 
 func main() {
 	var err error
-	var auditLog AuditLog
 
 	cfgFile := "./conf.json"
 	err = config.ReadFromFile(cfgFile)
@@ -64,14 +65,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = connect2Database(config.DbURL)
+	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 	defer db.Close()
 
-	mw := io.MultiWriter(os.Stdout, auditLog)
+	audit.SetLoggerAndDatabase(log, &dbUtils)
+
+	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
 
 	cookieStore, err = getNewCookieStore()
@@ -108,20 +111,4 @@ func main() {
 	}
 
 	log.Info("Closing application...")
-}
-
-func connect2Database(dbURL string) error {
-	var err error
-
-	db, err = sql.Open("postgres", dbURL)
-	if err != nil {
-		return errors.New("Can't connect to the database, go error " + fmt.Sprintf("%s", err))
-	}
-
-	err = db.Ping()
-	if err != nil {
-		return errors.New("Can't ping the database, go error " + fmt.Sprintf("%s", err))
-	}
-
-	return nil
 }

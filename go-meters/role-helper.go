@@ -18,7 +18,7 @@ func (r *MembershipRole) RoleExists(role string) (bool, error) {
 
 	found := false
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
 			  FROM role
@@ -42,7 +42,7 @@ func (r *MembershipRole) GetRoleByName(role string) error {
 	r.Lock()
 	defer r.Unlock()
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
         SELECT role_id,
 		       role
           FROM role
@@ -67,7 +67,7 @@ func (r *MembershipRole) GetRoleByID(roleID int) error {
 	r.Lock()
 	defer r.Unlock()
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
         SELECT role_id,
 		       role
           FROM role
@@ -95,7 +95,7 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 
 	var found bool
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
         SELECT EXISTS(
 			SELECT 1
 		      FROM role
@@ -142,7 +142,7 @@ func (r *MembershipRole) Save() error {
 	}
 
 	if r.RoleID < 0 {
-		query := prepareQuery(`
+		query := dbUtils.PQuery(`
 			INSERT INTO role (
 				role
 			)
@@ -158,7 +158,7 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		query = prepareQuery(`
+		query = dbUtils.PQuery(`
 			SELECT role_id FROM role WHERE lower(role) = lower(?)
 		`)
 
@@ -171,7 +171,7 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		Log(false, nil, "add-role", "Add new role.", "new", r)
+		audit.Log(false, nil, "add-role", "Add new role.", "new", r)
 	} else {
 		var old MembershipRole
 		err = old.GetRoleByID(r.RoleID)
@@ -179,7 +179,7 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		query := prepareQuery(`
+		query := dbUtils.PQuery(`
 			UPDATE role SET role = ? WHERE role_id = ?
 		`)
 
@@ -193,7 +193,7 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		Log(false, nil, "update-role", "Add new role.", "old", old, "new", r)
+		audit.Log(false, nil, "update-role", "Add new role.", "old", old, "new", r)
 	}
 
 	tx.Commit()
@@ -204,7 +204,7 @@ func (r *MembershipRole) Save() error {
 func (r *MembershipRole) HasMember(user string) (bool, error) {
 	found := false
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
 			  FROM user_role ur
@@ -231,7 +231,7 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 	found := false
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
 			  FROM user_role ur
@@ -257,7 +257,7 @@ func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 func IsUserInRole(user string, role string) (bool, error) {
 	found := false
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
 			  FROM user_role ur

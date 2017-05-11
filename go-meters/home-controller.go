@@ -57,7 +57,7 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 			goto loginerr
 		}
 
-		query := prepareQuery(`
+		query := dbUtils.PQuery(`
 			UPDATE user
 			   SET last_connect_time = current_timestamp,
 			       last_connect_ip   = ?
@@ -71,7 +71,7 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 	}
 
 	lres.BError = false
-	Log(lres.BError, nil, "login", "User logged in.",
+	audit.Log(lres.BError, nil, "login", "User logged in.",
 		"user", sessionData.User.Username,
 		"ip", ip,
 		"Temporary Password", lres.TemporaryPassword)
@@ -82,7 +82,7 @@ loginerr:
 
 	if err != nil || throwErr2Client {
 		lres.SError = err.Error()
-		Log(lres.BError, err, "login", lres.SError,
+		audit.Log(lres.BError, err, "login", lres.SError,
 			"user", user,
 			"Temporary Password", lres.TemporaryPassword,
 		)
@@ -91,7 +91,7 @@ loginerr:
 
 	lres.SError = "Unknown user or wrong password."
 
-	Log(lres.BError, nil, "login", lres.SError,
+	audit.Log(lres.BError, nil, "login", lres.SError,
 		"user", user,
 		"Temporary Password", lres.TemporaryPassword,
 	)
@@ -116,12 +116,12 @@ func (HomeController) Logout(w http.ResponseWriter, r *http.Request, res *Respon
 		if err != nil {
 			lres.BError = true
 			lres.SError = err.Error()
-			Log(lres.BError, err, "logout", lres.SError, "user", user)
+			audit.Log(lres.BError, err, "logout", lres.SError, "user", user)
 			return nil, err
 		}
 	}
 
-	Log(false, nil, "logout", "User logged out.", "user", user)
+	audit.Log(false, nil, "logout", "User logged out.", "user", user)
 
 	return &lres, nil
 }
@@ -144,7 +144,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 	if len(user) == 0 {
 		lres.BError = true
 		lres.SError = "User is empty"
-		Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
+		audit.Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
 
 		return &lres, nil
 	}
@@ -152,7 +152,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 	if len(pass) == 0 || pass != confirmPass {
 		lres.BError = true
 		lres.SError = "Password is empty or is different from it's confirmation."
-		Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
+		audit.Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
 
 		return &lres, nil
 	}
@@ -160,7 +160,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 	if len(email) == 0 {
 		lres.BError = true
 		lres.SError = "E-mail is empty"
-		Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
+		audit.Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
 
 		return &lres, nil
 	}
@@ -179,7 +179,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 	if err != nil {
 		lres.BError = true
 		lres.SError = err.Error()
-		Log(lres.BError, err, "register", lres.SError, "user", user, "email", email)
+		audit.Log(lres.BError, err, "register", lres.SError, "user", user, "email", email)
 
 		return &lres, err
 	}
@@ -190,7 +190,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 		if err != nil {
 			lres.BError = true
 			lres.SError = err.Error()
-			Log(lres.BError, err, "register", lres.SError, "user", user, "email", email)
+			audit.Log(lres.BError, err, "register", lres.SError, "user", user, "email", email)
 
 			return &lres, err
 		}
@@ -198,7 +198,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 
 	lres.BError = false
 	lres.SError = "User registered"
-	Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
+	audit.Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
 
 	return &lres, nil
 }
@@ -216,7 +216,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if !sessionData.LoggedIn {
 		lres.BError = true
 		lres.SError = "User not logged in."
-		Log(lres.BError, nil, "change-password", lres.SError, "user", "", "email", "")
+		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", "", "email", "")
 
 		return &lres, nil
 	}
@@ -227,7 +227,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if err != nil {
 		lres.BError = true
 		lres.SError = err.Error()
-		Log(lres.BError, err, "change-password", lres.SError, "user", "", "email", "")
+		audit.Log(lres.BError, err, "change-password", lres.SError, "user", "", "email", "")
 
 		return &lres, nil
 	}
@@ -239,7 +239,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if len(pass) == 0 {
 		lres.BError = true
 		lres.SError = "Old password cannot be empty"
-		Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, nil
 	}
@@ -247,7 +247,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if len(newPass) == 0 || newPass != confirmPass {
 		lres.BError = true
 		lres.SError = "Password is empty or is different from it's confirmation."
-		Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, nil
 	}
@@ -255,7 +255,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if pass == newPass {
 		lres.BError = true
 		lres.SError = "The new password must be different from the current one."
-		Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, nil
 	}
@@ -265,7 +265,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if success != ValidationOK && success != ValidationTemporaryPassword {
 		lres.BError = true
 		lres.SError = "Old password is not valid."
-		Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, nil
 	}
@@ -277,7 +277,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if err != nil {
 		lres.BError = true
 		lres.SError = err.Error()
-		Log(lres.BError, err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		audit.Log(lres.BError, err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, err
 	}
@@ -289,7 +289,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 		if err != nil {
 			lres.BError = true
 			lres.SError = err.Error()
-			Log(lres.BError, err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+			audit.Log(lres.BError, err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 			return &lres, err
 		}
@@ -297,7 +297,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 
 	lres.BError = false
 	lres.SError = "User password changed"
-	Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+	audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 	return &lres, nil
 }
@@ -320,7 +320,7 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 		queryAux += " where exchange_date <= to_date(?, 'yyyy-mm-dd')"
 	}
 
-	query := prepareQuery(`
+	query := dbUtils.PQuery(`
 		select c.currency, r.exchange_date, r.rate
 		  from exchange_rate r
 		  join currency c on (r.currency_id = c.currency_id)
