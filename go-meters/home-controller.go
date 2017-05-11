@@ -7,6 +7,7 @@ import (
 	"./models"
 
 	"strings"
+	"github.com/geo-stanciu/go-utils/utils"
 )
 
 type HomeController struct {
@@ -310,7 +311,7 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 		date = val[0]
 	}
 
-	if !isISODate(date) {
+	if !utils.IsISODate(date) {
 		date = ""
 	}
 

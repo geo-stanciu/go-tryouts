@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"github.com/geo-stanciu/go-utils/utils"
 )
 
 const (
@@ -66,5 +67,5 @@ func (p SystemParams) GetString(key string) string {
 }
 
 func (p SystemParams) GetInt(key string) int {
-	return string2int(p.Params[key])
+	return utils.String2int(p.Params[key])
 }

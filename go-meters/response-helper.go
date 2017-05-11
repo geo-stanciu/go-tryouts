@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"./models"
+	"github.com/geo-stanciu/go-utils/utils"
 )
 
 type ResponseHelper struct {
@@ -34,7 +35,7 @@ func (res *ResponseHelper) getResponseValue(controller interface{}, w http.Respo
 		return nil, nil
 	}
 
-	response := InvokeMethodByName(controller, res.Action, w, r, res)
+	response := utils.InvokeMethodByName(controller, res.Action, w, r, res)
 
 	if len(response) >= 2 {
 		r := response[0].Interface()

@@ -247,7 +247,7 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		return err
 	}
 
-	dData, err := string2date(date, ISODate)
+	dData, err := utils.String2date(date, utils.ISODate)
 	if err != nil {
 		return err
 	}

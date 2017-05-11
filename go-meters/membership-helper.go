@@ -12,6 +12,7 @@ import (
 
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/geo-stanciu/go-utils/utils"
 )
 
 const (
@@ -556,7 +557,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		return fmt.Errorf("Password must contain at least %d non alpha-numeric character(s)", minNonAlphaNumerics)
 	}
 
-	if allowRepetitiveCharacters <= 0 && containsRepeatingGroups(u.Password) {
+	if allowRepetitiveCharacters <= 0 && utils.ContainsRepeatingGroups(u.Password) {
 		return fmt.Errorf("Password must not contain repetitive groups of characters")
 	}
 
