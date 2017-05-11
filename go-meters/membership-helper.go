@@ -38,12 +38,12 @@ func (u *MembershipUser) UserExists(user string) (bool, error) {
 	found := false
 
 	query := dbUtils.PQuery(`
-        SELECT EXISTS(
+		SELECT EXISTS(
 			SELECT 1
 		      FROM user
-	         WHERE loweredusername = lower(?)
+		 WHERE loweredusername = lower(?)
 		)
-    `)
+    	`)
 
 	err := db.QueryRow(query, user).Scan(&found)
 
@@ -62,14 +62,14 @@ func (u *MembershipUser) GetUserByName(user string) error {
 	defer u.Unlock()
 
 	query := dbUtils.PQuery(`
-        SELECT user_id,
+		SELECT user_id,
 		       username,
-               name,
-               surname,
-               email
-          FROM user
-         WHERE loweredusername = lower(?)
-    `)
+		       name,
+		       surname,
+		       email
+		  FROM user
+		 WHERE loweredusername = lower(?)
+	`)
 
 	err := db.QueryRow(query, user).Scan(
 		&u.UserID,
@@ -93,14 +93,14 @@ func (u *MembershipUser) GetUserByID(userID int) error {
 	defer u.Unlock()
 
 	query := dbUtils.PQuery(`
-        SELECT user_id,
-		       username,
-               name,
-               surname,
-               email
-          FROM user
-         WHERE user_id = ?
-    `)
+		SELECT user_id,
+			username,
+			name,
+			surname,
+			email
+		 FROM user
+		WHERE user_id = ?
+	`)
 
 	err := db.QueryRow(query, userID).Scan(
 		&u.UserID,
@@ -131,11 +131,11 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 	var found bool
 
 	query := dbUtils.PQuery(`
-        SELECT EXISTS(
+		SELECT EXISTS(
 			SELECT 1
-		      FROM user
-			 WHERE loweredusername = LOWER(?)
-			   AND user_id <> ?
+		 FROM user
+		WHERE loweredusername = LOWER(?)
+		  AND user_id <> ?
 		)
 	`)
 
@@ -238,7 +238,7 @@ func (u *MembershipUser) Save() error {
 		if !u.Equals(&old) {
 			query = dbUtils.PQuery(`
 				UPDATE user
-				SET username        = ?,
+				   SET username        = ?,
 					loweredusername = ?,
 					name            = ?,
 					surname         = ?,
@@ -455,8 +455,8 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 	var passwordSalt string
 
 	query := dbUtils.PQuery(`
-		SELECT COALESCE(password, '') AS password,
-		       COALESCE(password_salt, '') AS password_salt
+		SELECT case when password is null then '' else password end AS password,
+		       case when password_salt is null then '' else password_salt end AS password_salt
 		  FROM user_password
 		 WHERE user_id = ?
 		 ORDER BY password_id DESC
@@ -594,7 +594,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		return err
 	}
 
-	query = dbUtils.PQuery(fmt.Sprintf(`
+	query = dbUtils.PQuery(`
 		INSERT INTO user_password (
 			user_id,
 			password,
@@ -604,14 +604,14 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		SELECT ?,
 		       ?,
 		       ?,
-			   CASE WHEN ? > 0 THEN
-			       ?
-			   ELSE
-			       null
-			   END
-	`, changeInterval))
+		       CASE WHEN ? > 0 THEN
+		           ?
+		       ELSE
+		           null
+		       END
+	`)
 
-	now := time.Now().UTC()
+	now := time.Now()
 	until := now.Add(time.Duration(changeInterval * 24) * time.Hour)
 
 	_, err = tx.Exec(
@@ -666,19 +666,19 @@ func ValidateUserPassword(user string, pass string) (int, error) {
 	var temporary int
 
 	query := dbUtils.PQuery(`
-        SELECT u.user_id,
-		       COALESCE(p.password, '') AS password,
-		       COALESCE(p.password_salt, '') AS password_salt,
-			   activated,
-			   locked_out,
-			   valid,
-			   p.temporary
-          FROM user u
-          LEFT OUTER JOIN user_password p ON (u.user_id = p.user_id)
-         WHERE loweredusername = lower(?)
+		SELECT u.user_id,
+		       case when p.password is null then '' else p.password end AS password,
+		       case when p.password_salt is null then '' else p.password_salt end AS password_salt,
+		       activated,
+		       locked_out,
+		       valid,
+		       p.temporary
+		  FROM user u
+		  LEFT OUTER JOIN user_password p ON (u.user_id = p.user_id)
+		 WHERE loweredusername = lower(?)
 		   AND p.valid_from <= current_timestamp
 		   AND (p.valid_until is null OR p.valid_until > current_timestamp)
-    `)
+    	`)
 
 	err := db.QueryRow(query, user).Scan(
 		&userID,
@@ -760,7 +760,7 @@ func failedUserPasswordValidation(userID int, user string) {
 
 	query := dbUtils.PQuery(`
 		SELECT failed_password_atmpts,
-		       COALESCE(first_failed_password, to_timestamp('1970-01-01', 'yyyy-mm-dd')) AS first_failed_password
+		       case when first_failed_password is null then DATETIME '1970-01-01 00:00:00' else first_failed_password end AS first_failed_password
 		  FROM user u
 		 WHERE user_id = ?
 	`)

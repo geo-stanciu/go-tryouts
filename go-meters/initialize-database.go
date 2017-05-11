@@ -1,16 +1,26 @@
 package main
 
+import "database/sql"
+
 func initializeDatabase() error {
 	var err error
 
-	audit.Log(false, nil, "initialize", "adding rquests")
-	err = addRequests()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
-	audit.Log(false, nil, "initialize", "adding roles")
-	err = addRoles()
+	audit.Log(false, nil, "initialize", "rquests")
+	err = addRequests(tx)
 
-	audit.Log(false, nil, "initialize", "adding system params")
-	err = addSystemParams()
+	audit.Log(false, nil, "initialize", "roles")
+	err = addRoles(tx)
+
+	audit.Log(false, nil, "initialize", "system params")
+	err = addSystemParams(tx)
+
+	tx.Commit()
 
 	return err
 }
@@ -35,7 +45,7 @@ type systemParams struct {
 	val         string
 }
 
-func addRequests() error {
+func addRequests(tx *sql.Tx) error {
 	var _found bool
 
 	requests := []urlRequest {
@@ -76,16 +86,27 @@ func addRequests() error {
 		values (?, ?, ?, ?, ?, ?, ?)
 	`)
 
+	stmtE, err := tx.Prepare(queryExists)
+	if err != nil {
+		return err
+	}
+	defer stmtE.Close()
+
+	stmtAdd, err := tx.Prepare(queryAdd)
+	if err != nil {
+		return err
+	}
+	defer stmtAdd.Close()
+
 	for _, req := range requests {
-		err := db.QueryRow(queryExists, req.request_url).Scan(&_found)
+		err := stmtE.QueryRow(req.request_url).Scan(&_found)
 
 		if err != nil {
 			return err
 		}
 
 		if !_found {
-			_, err = db.Exec(
-				queryAdd,
+			_, err = stmtAdd.Exec(
 				req.request_title,
 				req.request_template,
 				req.request_url,
@@ -104,7 +125,7 @@ func addRequests() error {
 	return  nil
 }
 
-func addRoles() error {
+func addRoles(tx *sql.Tx) error {
 	var _found bool
 
 	roles := []userRole {
@@ -126,19 +147,27 @@ func addRoles() error {
 		values (?)
 	`)
 
+	stmtE, err := tx.Prepare(queryExists)
+	if err != nil {
+		return err
+	}
+	defer stmtE.Close()
+
+	stmtAdd, err := tx.Prepare(queryAdd)
+	if err != nil {
+		return err
+	}
+	defer stmtAdd.Close()
+
 	for _, r := range roles {
-		err := db.QueryRow(queryExists, r.role).Scan(&_found)
+		err := stmtE.QueryRow(r.role).Scan(&_found)
 
 		if err != nil {
 			return err
 		}
 
 		if !_found {
-			_, err = db.Exec(
-				queryAdd,
-				r.role,
-			)
-
+			_, err = stmtAdd.Exec(r.role)
 			if err != nil {
 				return err
 			}
@@ -148,7 +177,7 @@ func addRoles() error {
 	return  nil
 }
 
-func addSystemParams() error {
+func addSystemParams(tx *sql.Tx) error {
 	var _found bool
 
 	params := []systemParams {
@@ -183,16 +212,27 @@ func addSystemParams() error {
 		values (?, ?, ?)
 	`)
 
+	stmtE, err := tx.Prepare(queryExists)
+	if err != nil {
+		return err
+	}
+	defer stmtE.Close()
+
+	stmtAdd, err := tx.Prepare(queryAdd)
+	if err != nil {
+		return err
+	}
+	defer stmtAdd.Close()
+
 	for _, p := range params {
-		err := db.QueryRow(queryExists, p.param_group, p.param).Scan(&_found)
+		err := stmtE.QueryRow(p.param_group, p.param).Scan(&_found)
 
 		if err != nil {
 			return err
 		}
 
 		if !_found {
-			_, err = db.Exec(
-				queryAdd,
+			_, err = stmtAdd.Exec(
 				p.param_group,
 				p.param,
 				p.val,

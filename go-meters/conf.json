@@ -1,5 +1,5 @@
 {
   "Port": "8080",
   "DbType": "mysql",
-  "DbURL": "geo:geo@tcp(devel:3306)/devel?parseTime=true&loc=UTC&sql_mode=TRADITIONAL"
+  "DbURL": "geo:geo@tcp(devel:3306)/devel?parseTime=true&loc=Europe%2FBucharest&sql_mode=TRADITIONAL"
 }

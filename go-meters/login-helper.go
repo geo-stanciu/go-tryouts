@@ -40,7 +40,7 @@ func clearSession(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func createSession(w http.ResponseWriter, r *http.Request, user string, tempPassword bool) (*SessionData, error) {
+func createSession(w http.ResponseWriter, r *http.Request, user string, name string, surname string, tempPassword bool) (*SessionData, error) {
 	session, _ := cookieStore.Get(r, authCookieStoreName)
 
 	sessionID := uuid.NewV4()
@@ -49,8 +49,8 @@ func createSession(w http.ResponseWriter, r *http.Request, user string, tempPass
 		LoggedIn:  true,
 		SessionID: sessionID.String(),
 		User: User{
-			Name:         "name1",
-			Surname:      "surname1",
+			Name:         name,
+			Surname:      surname,
 			Username:     user,
 			TempPassword: tempPassword,
 		},
@@ -171,7 +171,7 @@ func saveCookieEncodeKeys(keys [][]byte) error {
 		VALUES (?, ?)
 	`)
 
-	now := time.Now().UTC()
+	now := time.Now()
 	after30days := now.Add(time.Duration(30 * 24) * time.Hour)
 
 	tx, err := db.Begin()

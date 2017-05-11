@@ -53,12 +53,26 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 			lres.TemporaryPassword = true
 		}
 
-		sessionData, err = createSession(w, r, user, lres.TemporaryPassword)
+		var name string
+		var surname string
+
+		query := dbUtils.PQuery(`
+			SELECT name, surname
+			  FROM user
+			 WHERE loweredusername = lower(?)
+		`)
+
+		err = db.QueryRow(query, user).Scan(&name, &surname)
 		if err != nil {
 			goto loginerr
 		}
 
-		query := dbUtils.PQuery(`
+		sessionData, err = createSession(w, r, user, name, surname, lres.TemporaryPassword)
+		if err != nil {
+			goto loginerr
+		}
+
+		query = dbUtils.PQuery(`
 			UPDATE user
 			   SET last_connect_time = current_timestamp,
 			       last_connect_ip   = ?
