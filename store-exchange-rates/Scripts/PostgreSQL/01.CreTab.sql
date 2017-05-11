@@ -18,3 +18,5 @@ create table if not exists audit_log (
     log_time       timestamp not null DEFAULT (current_timestamp at time zone 'UTC'),
     audit_msg      jsonb     not null
 );
+
+create index idx_time_audit_log on audit_log (log_time);

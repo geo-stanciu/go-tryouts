@@ -32,7 +32,7 @@ partition by range (year(exchange_date)) (
 
 create table if not exists audit_log (
     audit_log_id   bigint auto_increment PRIMARY KEY,
-    log_time       datetime DEFAULT current_timestamp,
+    log_time       datetime not null DEFAULT current_timestamp,
     audit_msg      MEDIUMTEXT not null
 )
 partition by range (audit_log_id) (
@@ -40,3 +40,5 @@ partition by range (audit_log_id) (
     partition p2mil values less than (2000000),
     partition pmax values less than (MAXVALUE)
 );
+
+create index idx_time_audit_log on audit_log (log_time);
