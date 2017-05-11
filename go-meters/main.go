@@ -83,6 +83,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = initializeDatabase()
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
 	// server flags
 	addr = flag.String("addr", ":"+config.Port, "http service address")
 

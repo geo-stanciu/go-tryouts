@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/satori/go.uuid"
+	"time"
 )
 
 type User struct {
@@ -164,10 +165,14 @@ func getNewCookieStore() (*sessions.CookieStore, error) {
 func saveCookieEncodeKeys(keys [][]byte) error {
 	query := dbUtils.PQuery(`
 		INSERT INTO cookie_encode_key (
-			encode_key
+			encode_key,
+			valid_until
 		)
-		VALUES (?)
+		VALUES (?, ?)
 	`)
+
+	now := time.Now().UTC()
+	after30days := now.Add(time.Duration(30 * 24) * time.Hour)
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -183,7 +188,7 @@ func saveCookieEncodeKeys(keys [][]byte) error {
 
 	for _, key := range keys {
 		sKey := base64.StdEncoding.EncodeToString(key)
-		_, err = stmt.Exec(sKey)
+		_, err = stmt.Exec(sKey, after30days)
 		if err != nil {
 			return err
 		}

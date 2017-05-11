@@ -603,13 +603,16 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		)
 		SELECT ?,
 		       ?,
-			   ?,
+		       ?,
 			   CASE WHEN ? > 0 THEN
-			       current_timestamp + interval '%d' day
+			       ?
 			   ELSE
 			       null
 			   END
 	`, changeInterval))
+
+	now := time.Now().UTC()
+	until := now.Add(time.Duration(changeInterval * 24) * time.Hour)
 
 	_, err = tx.Exec(
 		query,
@@ -617,6 +620,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		password,
 		salt,
 		changeInterval,
+		until,
 	)
 
 	if err != nil {

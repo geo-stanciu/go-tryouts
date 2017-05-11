@@ -12,7 +12,7 @@ CREATE TABLE wmeter.request (
     request_id        serial PRIMARY KEY,
     request_title     varchar(64)  not null DEFAULT '-',
     request_template  varchar(64)  not null DEFAULT '-',
-    request_url       varchar(256) not null DEFAULT '-',
+    request_url       varchar(128) not null DEFAULT '-',
     controller        varchar(64)  not null DEFAULT '-',
     action            varchar(64)  not null DEFAULT '-',
     redirect_url      varchar(256) not null DEFAULT '-',
