@@ -172,7 +172,7 @@ func saveCookieEncodeKeys(keys [][]byte) error {
 	`)
 
 	now := time.Now()
-	after30days := now.Add(time.Duration(30 * 24) * time.Hour)
+	after30days := now.Add(time.Duration(30*24) * time.Hour)
 
 	tx, err := db.Begin()
 	if err != nil {

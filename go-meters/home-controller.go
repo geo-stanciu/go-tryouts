@@ -6,8 +6,8 @@ import (
 
 	"./models"
 
-	"strings"
 	"github.com/geo-stanciu/go-utils/utils"
+	"strings"
 )
 
 type HomeController struct {

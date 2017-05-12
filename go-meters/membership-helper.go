@@ -10,9 +10,9 @@ import (
 
 	"strings"
 
+	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
-	"github.com/geo-stanciu/go-utils/utils"
 )
 
 const (
@@ -612,7 +612,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	`)
 
 	now := time.Now()
-	until := now.Add(time.Duration(changeInterval * 24) * time.Hour)
+	until := now.Add(time.Duration(changeInterval*24) * time.Hour)
 
 	_, err = tx.Exec(
 		query,

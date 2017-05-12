@@ -26,12 +26,12 @@ func initializeDatabase() error {
 }
 
 type urlRequest struct {
-	request_title string
-	request_template string
-	request_url string
-	controller string
-	action string
-	redirect_url string
+	request_title     string
+	request_template  string
+	request_url       string
+	controller        string
+	action            string
+	redirect_url      string
 	redirect_on_error string
 }
 
@@ -48,21 +48,21 @@ type systemParams struct {
 func addRequests(tx *sql.Tx) error {
 	var _found bool
 
-	requests := []urlRequest {
+	requests := []urlRequest{
 		// pages
-		urlRequest {"Index", "home/index.html", "index", 	"Home", "Index", 	"-", "-" },
-		urlRequest {"About", "home/about.html", "about", 	"Home", "-", 	"-", "-" },
-		urlRequest {"Login", "home/login.html", "login", 	"Home", "-", 	"-", "-" },
-		urlRequest {"Register", "home/register.html", "register", 	"Home", "-", 	"-", "-" },
-		urlRequest {"Change Password", "home/change-password.html", "change-password", 	"Home", "-", 	"-", "-" },
+		urlRequest{"Index", "home/index.html", "index", "Home", "Index", "-", "-"},
+		urlRequest{"About", "home/about.html", "about", "Home", "-", "-", "-"},
+		urlRequest{"Login", "home/login.html", "login", "Home", "-", "-", "-"},
+		urlRequest{"Register", "home/register.html", "register", "Home", "-", "-", "-"},
+		urlRequest{"Change Password", "home/change-password.html", "change-password", "Home", "-", "-", "-"},
 		// gets
-		urlRequest {"Logout", "-", "logout", 	"Home", "Logout", 	"/", "-" },
-		urlRequest {"Exchange Rates", "-", "exchange-rates", 	"Home", "GetExchangeRates", 	"-", "-" },
+		urlRequest{"Logout", "-", "logout", "Home", "Logout", "/", "-"},
+		urlRequest{"Exchange Rates", "-", "exchange-rates", "Home", "GetExchangeRates", "-", "-"},
 		// posts
-		urlRequest {"Login", "-", "perform-login", 	"Home", "Login",  "index", "login" },
-		urlRequest {"Logout", "-", "perform-logout", "Home", "Logout", "login", "login" },
-		urlRequest {"Register", "-", "perform-register", "Home", "Register", "login", "register" },
-		urlRequest {"Change Password", "-", "perform-change-password", "Home", "ChangePassword", "change-password", "change-password" },
+		urlRequest{"Login", "-", "perform-login", "Home", "Login", "index", "login"},
+		urlRequest{"Logout", "-", "perform-logout", "Home", "Logout", "login", "login"},
+		urlRequest{"Register", "-", "perform-register", "Home", "Register", "login", "register"},
+		urlRequest{"Change Password", "-", "perform-change-password", "Home", "ChangePassword", "change-password", "change-password"},
 	}
 
 	queryExists := dbUtils.PQuery(`
@@ -122,14 +122,14 @@ func addRequests(tx *sql.Tx) error {
 		}
 	}
 
-	return  nil
+	return nil
 }
 
 func addRoles(tx *sql.Tx) error {
 	var _found bool
 
-	roles := []userRole {
-		userRole { "Administrator" },
+	roles := []userRole{
+		userRole{"Administrator"},
 	}
 
 	queryExists := dbUtils.PQuery(`
@@ -174,24 +174,24 @@ func addRoles(tx *sql.Tx) error {
 		}
 	}
 
-	return  nil
+	return nil
 }
 
 func addSystemParams(tx *sql.Tx) error {
 	var _found bool
 
-	params := []systemParams {
-		systemParams { "password-rules", "change-interval", "30" },
-		systemParams { "password-rules", "password-fail-interval", "10" },
-		systemParams { "password-rules", "max-allowed-failed-atmpts", "3" },
-		systemParams { "password-rules", "not-repeat-last-x-passwords", "5" },
-		systemParams { "password-rules", "min-characters", "8" },
-		systemParams { "password-rules", "min-letters", "2" },
-		systemParams { "password-rules", "min-capitals", "1" },
-		systemParams { "password-rules", "min-digits", "1" },
-		systemParams { "password-rules", "min-non-alpha-numerics", "1" },
-		systemParams { "password-rules", "allow-repetitive-characters", "0" },
-		systemParams { "password-rules", "can-contain-username", "0" },
+	params := []systemParams{
+		systemParams{"password-rules", "change-interval", "30"},
+		systemParams{"password-rules", "password-fail-interval", "10"},
+		systemParams{"password-rules", "max-allowed-failed-atmpts", "3"},
+		systemParams{"password-rules", "not-repeat-last-x-passwords", "5"},
+		systemParams{"password-rules", "min-characters", "8"},
+		systemParams{"password-rules", "min-letters", "2"},
+		systemParams{"password-rules", "min-capitals", "1"},
+		systemParams{"password-rules", "min-digits", "1"},
+		systemParams{"password-rules", "min-non-alpha-numerics", "1"},
+		systemParams{"password-rules", "allow-repetitive-characters", "0"},
+		systemParams{"password-rules", "can-contain-username", "0"},
 	}
 
 	queryExists := dbUtils.PQuery(`
@@ -244,5 +244,5 @@ func addSystemParams(tx *sql.Tx) error {
 		}
 	}
 
-	return  nil
+	return nil
 }

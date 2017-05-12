@@ -20,6 +20,14 @@ func main() {
 		panic(err.Error())
 	}
 
+	var r1 int
+
+	err = db.QueryRow("select :1 + :2 from dual", 4, 5).Scan(&r1)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("rez", r1)
+
 	rows, err := db.Query("select current_timestamp from dual")
 	if err != nil {
 		panic(err)

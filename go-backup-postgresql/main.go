@@ -10,8 +10,8 @@ import (
 	"os/exec"
 	"time"
 
-	_ "github.com/lib/pq"
 	"github.com/geo-stanciu/go-utils/utils"
+	_ "github.com/lib/pq"
 )
 
 type Configuration struct {

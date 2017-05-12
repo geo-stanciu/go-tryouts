@@ -16,11 +16,11 @@ import (
 )
 
 var (
-	log    = logrus.New()
+	log     = logrus.New()
 	audit   = utils.AuditLog{}
-	db     *sql.DB
+	db      *sql.DB
 	dbUtils = utils.DbUtils{}
-	config = Configuration{}
+	config  = Configuration{}
 )
 
 func init() {
