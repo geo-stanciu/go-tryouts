@@ -50,19 +50,19 @@ func addRequests(tx *sql.Tx) error {
 
 	requests := []urlRequest{
 		// pages
-		urlRequest{"Index", "home/index.html", "index", "Home", "Index", "-", "-"},
-		urlRequest{"About", "home/about.html", "about", "Home", "-", "-", "-"},
-		urlRequest{"Login", "home/login.html", "login", "Home", "-", "-", "-"},
-		urlRequest{"Register", "home/register.html", "register", "Home", "-", "-", "-"},
-		urlRequest{"Change Password", "home/change-password.html", "change-password", "Home", "-", "-", "-"},
+		{"Index", "home/index.html", "index", "Home", "Index", "-", "-"},
+		{"About", "home/about.html", "about", "Home", "-", "-", "-"},
+		{"Login", "home/login.html", "login", "Home", "-", "-", "-"},
+		{"Register", "home/register.html", "register", "Home", "-", "-", "-"},
+		{"Change Password", "home/change-password.html", "change-password", "Home", "-", "-", "-"},
 		// gets
-		urlRequest{"Logout", "-", "logout", "Home", "Logout", "/", "-"},
-		urlRequest{"Exchange Rates", "-", "exchange-rates", "Home", "GetExchangeRates", "-", "-"},
+		{"Logout", "-", "logout", "Home", "Logout", "/", "-"},
+		{"Exchange Rates", "-", "exchange-rates", "Home", "GetExchangeRates", "-", "-"},
 		// posts
-		urlRequest{"Login", "-", "perform-login", "Home", "Login", "index", "login"},
-		urlRequest{"Logout", "-", "perform-logout", "Home", "Logout", "login", "login"},
-		urlRequest{"Register", "-", "perform-register", "Home", "Register", "login", "register"},
-		urlRequest{"Change Password", "-", "perform-change-password", "Home", "ChangePassword", "change-password", "change-password"},
+		{"Login", "-", "perform-login", "Home", "Login", "index", "login"},
+		{"Logout", "-", "perform-logout", "Home", "Logout", "login", "login"},
+		{"Register", "-", "perform-register", "Home", "Register", "login", "register"},
+		{"Change Password", "-", "perform-change-password", "Home", "ChangePassword", "change-password", "change-password"},
 	}
 
 	queryExists := dbUtils.PQuery(`
@@ -129,7 +129,7 @@ func addRoles(tx *sql.Tx) error {
 	var _found bool
 
 	roles := []userRole{
-		userRole{"Administrator"},
+		{"Administrator"},
 	}
 
 	queryExists := dbUtils.PQuery(`
@@ -181,17 +181,17 @@ func addSystemParams(tx *sql.Tx) error {
 	var _found bool
 
 	params := []systemParams{
-		systemParams{"password-rules", "change-interval", "30"},
-		systemParams{"password-rules", "password-fail-interval", "10"},
-		systemParams{"password-rules", "max-allowed-failed-atmpts", "3"},
-		systemParams{"password-rules", "not-repeat-last-x-passwords", "5"},
-		systemParams{"password-rules", "min-characters", "8"},
-		systemParams{"password-rules", "min-letters", "2"},
-		systemParams{"password-rules", "min-capitals", "1"},
-		systemParams{"password-rules", "min-digits", "1"},
-		systemParams{"password-rules", "min-non-alpha-numerics", "1"},
-		systemParams{"password-rules", "allow-repetitive-characters", "0"},
-		systemParams{"password-rules", "can-contain-username", "0"},
+		{"password-rules", "change-interval", "30"},
+		{"password-rules", "password-fail-interval", "10"},
+		{"password-rules", "max-allowed-failed-atmpts", "3"},
+		{"password-rules", "not-repeat-last-x-passwords", "5"},
+		{"password-rules", "min-characters", "8"},
+		{"password-rules", "min-letters", "2"},
+		{"password-rules", "min-capitals", "1"},
+		{"password-rules", "min-digits", "1"},
+		{"password-rules", "min-non-alpha-numerics", "1"},
+		{"password-rules", "allow-repetitive-characters", "0"},
+		{"password-rules", "can-contain-username", "0"},
 	}
 
 	queryExists := dbUtils.PQuery(`

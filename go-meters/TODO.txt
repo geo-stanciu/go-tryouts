@@ -4,4 +4,4 @@
 
 -----------------------------
 
-2. application roles + menus allocation on roles.
+2. application roles + menu allocation on roles.
