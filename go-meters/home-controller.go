@@ -8,6 +8,8 @@ import (
 
 	"strings"
 
+	"fmt"
+
 	"github.com/geo-stanciu/go-utils/utils"
 )
 
@@ -87,7 +89,7 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 	}
 
 	lres.BError = false
-	audit.Log(lres.BError, nil, "login", "User logged in.",
+	audit.Log(nil, "login", "User logged in.",
 		"user", sessionData.User.Username,
 		"ip", ip,
 		"Temporary Password", lres.TemporaryPassword)
@@ -97,8 +99,12 @@ loginerr:
 	lres.BError = true
 
 	if err != nil || throwErr2Client {
+		if err == nil {
+			err = fmt.Errorf("Unknown error")
+		}
+
 		lres.SError = err.Error()
-		audit.Log(lres.BError, err, "login", lres.SError,
+		audit.Log(err, "login", lres.SError,
 			"user", user,
 			"Temporary Password", lres.TemporaryPassword,
 		)
@@ -107,7 +113,8 @@ loginerr:
 
 	lres.SError = "Unknown user or wrong password."
 
-	audit.Log(lres.BError, nil, "login", lres.SError,
+	err = fmt.Errorf(lres.SError)
+	audit.Log(err, "login", lres.SError,
 		"user", user,
 		"Temporary Password", lres.TemporaryPassword,
 	)
@@ -132,18 +139,19 @@ func (HomeController) Logout(w http.ResponseWriter, r *http.Request, res *Respon
 		if err != nil {
 			lres.BError = true
 			lres.SError = err.Error()
-			audit.Log(lres.BError, err, "logout", lres.SError, "user", user)
+			audit.Log(err, "logout", lres.SError, "user", user)
 			return nil, err
 		}
 	}
 
-	audit.Log(false, nil, "logout", "User logged out.", "user", user)
+	audit.Log(nil, "logout", "User logged out.", "user", user)
 
 	return &lres, nil
 }
 
 func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	var lres models.GenericResponseModel
+	var err error
 
 	if res != nil {
 		lres.SSuccessURL = res.RedirectURL
@@ -160,7 +168,8 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 	if len(user) == 0 {
 		lres.BError = true
 		lres.SError = "User is empty"
-		audit.Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "register", lres.SError, "user", user, "email", email)
 
 		return &lres, nil
 	}
@@ -168,7 +177,8 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 	if len(pass) == 0 || pass != confirmPass {
 		lres.BError = true
 		lres.SError = "Password is empty or is different from it's confirmation."
-		audit.Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "register", lres.SError, "user", user, "email", email)
 
 		return &lres, nil
 	}
@@ -176,7 +186,8 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 	if len(email) == 0 {
 		lres.BError = true
 		lres.SError = "E-mail is empty"
-		audit.Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "register", lres.SError, "user", user, "email", email)
 
 		return &lres, nil
 	}
@@ -190,12 +201,12 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 		Password: pass,
 	}
 
-	err := u.Save()
+	err = u.Save()
 
 	if err != nil {
 		lres.BError = true
 		lres.SError = err.Error()
-		audit.Log(lres.BError, err, "register", lres.SError, "user", user, "email", email)
+		audit.Log(err, "register", lres.SError, "user", user, "email", email)
 
 		return &lres, err
 	}
@@ -206,7 +217,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 		if err != nil {
 			lres.BError = true
 			lres.SError = err.Error()
-			audit.Log(lres.BError, err, "register", lres.SError, "user", user, "email", email)
+			audit.Log(err, "register", lres.SError, "user", user, "email", email)
 
 			return &lres, err
 		}
@@ -214,13 +225,15 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 
 	lres.BError = false
 	lres.SError = "User registered"
-	audit.Log(lres.BError, nil, "register", lres.SError, "user", user, "email", email)
+	err = fmt.Errorf(lres.SError)
+	audit.Log(err, "register", lres.SError, "user", user, "email", email)
 
 	return &lres, nil
 }
 
 func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	var lres models.GenericResponseModel
+	var err error
 
 	if res != nil {
 		lres.SSuccessURL = res.RedirectURL
@@ -232,18 +245,19 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if !sessionData.LoggedIn {
 		lres.BError = true
 		lres.SError = "User not logged in."
-		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", "", "email", "")
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "change-password", lres.SError, "user", "", "email", "")
 
 		return &lres, nil
 	}
 
 	var usr MembershipUser
-	err := usr.GetUserByName(sessionData.User.Username)
+	err = usr.GetUserByName(sessionData.User.Username)
 
 	if err != nil {
 		lres.BError = true
 		lres.SError = err.Error()
-		audit.Log(lres.BError, err, "change-password", lres.SError, "user", "", "email", "")
+		audit.Log(err, "change-password", lres.SError, "user", "", "email", "")
 
 		return &lres, nil
 	}
@@ -255,7 +269,8 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if len(pass) == 0 {
 		lres.BError = true
 		lres.SError = "Old password cannot be empty"
-		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, nil
 	}
@@ -263,7 +278,8 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if len(newPass) == 0 || newPass != confirmPass {
 		lres.BError = true
 		lres.SError = "Password is empty or is different from it's confirmation."
-		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, nil
 	}
@@ -271,7 +287,8 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if pass == newPass {
 		lres.BError = true
 		lres.SError = "The new password must be different from the current one."
-		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, nil
 	}
@@ -281,7 +298,8 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if success != ValidationOK && success != ValidationTemporaryPassword {
 		lres.BError = true
 		lres.SError = "Old password is not valid."
-		audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, nil
 	}
@@ -293,7 +311,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	if err != nil {
 		lres.BError = true
 		lres.SError = err.Error()
-		audit.Log(lres.BError, err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+		audit.Log(err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 		return &lres, err
 	}
@@ -305,7 +323,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 		if err != nil {
 			lres.BError = true
 			lres.SError = err.Error()
-			audit.Log(lres.BError, err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+			audit.Log(err, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 			return &lres, err
 		}
@@ -313,7 +331,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 
 	lres.BError = false
 	lres.SError = "User password changed"
-	audit.Log(lres.BError, nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+	audit.Log(nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
 
 	return &lres, nil
 }
@@ -370,6 +388,8 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
+	rows.Close()
 
 	return &lres, nil
 }

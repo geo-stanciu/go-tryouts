@@ -71,6 +71,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	rows.Close()
+
 	stmt, err = db.Prepare("select name from foo where id = ?")
 	if err != nil {
 		log.Fatal(err)
@@ -117,6 +119,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	rows.Close()
+
 	rows, err = db.Query("select strftime('%Y-%m-%d %H:%M:%S', current_timestamp, 'localtime')")
 	if err != nil {
 		log.Fatal(err)
@@ -137,4 +141,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	rows.Close()
 }

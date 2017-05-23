@@ -11,14 +11,14 @@ func initializeDatabase() error {
 	}
 	defer tx.Rollback()
 
-	audit.Log(false, nil, "initialize", "rquests")
 	err = addRequests(tx)
+	audit.Log(err, "initialize", "requests")
 
-	audit.Log(false, nil, "initialize", "roles")
 	err = addRoles(tx)
+	audit.Log(err, "initialize", "roles")
 
-	audit.Log(false, nil, "initialize", "system params")
 	err = addSystemParams(tx)
+	audit.Log(err, "initialize", "system params")
 
 	tx.Commit()
 

@@ -227,7 +227,7 @@ func (u *MembershipUser) Save() error {
 			return err
 		}
 
-		audit.Log(false, nil, "add-user", "Add new user.", "new", u)
+		audit.Log(nil, "add-user", "Add new user.", "new", u)
 	} else {
 		var old MembershipUser
 		err = old.GetUserByID(u.UserID)
@@ -263,7 +263,7 @@ func (u *MembershipUser) Save() error {
 				return err
 			}
 
-			audit.Log(false, nil, "update-user", "Update user.", "old", old, "new", u)
+			audit.Log(nil, "update-user", "Update user.", "old", old, "new", u)
 		}
 
 		if len(u.Password) > 0 {
@@ -316,6 +316,8 @@ func (u *MembershipUser) GetUserRoles() ([]MembershipRole, error) {
 		return nil, err
 	}
 
+	rows.Close()
+
 	return roles, nil
 }
 
@@ -356,7 +358,7 @@ func (u *MembershipUser) AddToRole(role string) error {
 		return err
 	}
 
-	audit.Log(false, nil, "add-user-role", "Add user to role.", "user", u.Username, "role", r.Rolename)
+	audit.Log(nil, "add-user-role", "Add user to role.", "user", u.Username, "role", r.Rolename)
 
 	return nil
 }
@@ -439,7 +441,7 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 
 	tx.Commit()
 
-	audit.Log(false, nil, "remove-user-role", "Remove user from role.", "user", u.Username, "role", r.Rolename)
+	audit.Log(nil, "remove-user-role", "Remove user from role.", "user", u.Username, "role", r.Rolename)
 
 	return nil
 }
@@ -490,6 +492,8 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 	if err := rows.Err(); err != nil {
 		return true, notRepeatPasswords, err
 	}
+
+	rows.Close()
 
 	return false, notRepeatPasswords, nil
 }
@@ -582,11 +586,11 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	password := base64.StdEncoding.EncodeToString(hashedPassword)
 
 	query := dbUtils.PQuery(`
-		UPDATE user_password p
+		UPDATE user_password
 		   SET valid_until = current_timestamp
 		 WHERE user_id = ?
-		   AND p.valid_from <= current_timestamp
-		   AND (p.valid_until is null OR p.valid_until > current_timestamp)
+		   AND valid_from <= current_timestamp
+		   AND (valid_until is null OR valid_until > current_timestamp)
 	`)
 
 	_, err = tx.Exec(query, u.UserID)
@@ -744,7 +748,7 @@ func failedUserPasswordValidation(userID int, user string) {
 	params := SystemParams{}
 	err := params.LoadByGroup(PasswordRules)
 	if err != nil {
-		audit.Log(true, err, "failed-login", "Operation error.", "user", user)
+		audit.Log(err, "failed-login", "Operation error.", "user", user)
 		return
 	}
 
@@ -753,7 +757,7 @@ func failedUserPasswordValidation(userID int, user string) {
 
 	tx, err := db.Begin()
 	if err != nil {
-		audit.Log(true, err, "failed-login", "Operation error.", "user", user)
+		audit.Log(err, "failed-login", "Operation error.", "user", user)
 		return
 	}
 	defer tx.Rollback()
@@ -773,11 +777,11 @@ func failedUserPasswordValidation(userID int, user string) {
 	switch {
 	case err == sql.ErrNoRows:
 		err1 := fmt.Sprintf("username \"%s\" not found", user)
-		audit.Log(true, err, "failed-login", err1, "user", user)
+		audit.Log(err, "failed-login", err1, "user", user)
 		return
 	case err != nil:
 		err1 := fmt.Sprintf("username \"%s\" not found", user)
-		audit.Log(true, err, "failed-login", err1, "user", user)
+		audit.Log(err, "failed-login", err1, "user", user)
 		return
 	}
 
@@ -788,7 +792,7 @@ func failedUserPasswordValidation(userID int, user string) {
 	}
 
 	query = dbUtils.PQuery(`
-		UPDATE user u
+		UPDATE user
 		   SET failed_password_atmpts = CASE WHEN ? = 1 THEN
 		                                    1
 										ELSE
@@ -806,7 +810,7 @@ func failedUserPasswordValidation(userID int, user string) {
 	_, err = tx.Exec(query, newFail, newFail, userID)
 
 	if err != nil {
-		audit.Log(true, err, "failed-login", "Failed to setup failed password params.", "user", user)
+		audit.Log(err, "failed-login", "Failed to setup failed password params.", "user", user)
 		return
 	}
 
@@ -823,11 +827,11 @@ func failedUserPasswordValidation(userID int, user string) {
 	switch {
 	case err == sql.ErrNoRows:
 		err1 := fmt.Sprintf("username \"%s\" not found", user)
-		audit.Log(true, err, "failed-login", err1, "user", user)
+		audit.Log(err, "failed-login", err1, "user", user)
 		return
 	case err != nil:
 		err1 := fmt.Sprintf("username \"%s\" not found", user)
-		audit.Log(true, err, "failed-login", err1, "user", user)
+		audit.Log(err, "failed-login", err1, "user", user)
 		return
 	}
 
@@ -841,12 +845,12 @@ func failedUserPasswordValidation(userID int, user string) {
 		_, err = tx.Exec(query, userID)
 
 		if err != nil {
-			audit.Log(true, err, "failed-login", "User locked out.", "user", user)
+			audit.Log(err, "failed-login", "User locked out.", "user", user)
 			// return // commented on purpose - Geo 18.03.2017
 		}
 
 		query = dbUtils.PQuery(`
-			UPDATE user_password p
+			UPDATE user_password
 			   SET valid_until = current_timestamp
 			 WHERE user_id = ?
 			   AND valid_from <= current_timestamp
@@ -855,16 +859,16 @@ func failedUserPasswordValidation(userID int, user string) {
 
 		_, err = tx.Exec(query, userID)
 		if err != nil {
-			audit.Log(true, err, "failed-login", "Failed to invalidate user password.", "user", user)
+			audit.Log(err, "failed-login", "Failed to invalidate user password.", "user", user)
 			// return // commented on purpose - Geo 17.03.2017
 		}
 
 		msg := "User password invalidated for multiple failed attempts"
 
-		audit.Log(true, nil, "failed-login", msg, "user", user)
+		audit.Log(err, "failed-login", msg, "user", user)
 	}
 
 	tx.Commit()
 
-	audit.Log(false, nil, "failed-login", "Wrong password", "user", user)
+	audit.Log(nil, "failed-login", "Wrong password", "user", user)
 }

@@ -171,7 +171,7 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		audit.Log(false, nil, "add-role", "Add new role.", "new", r)
+		audit.Log(nil, "add-role", "Add new role.", "new", r)
 	} else {
 		var old MembershipRole
 		err = old.GetRoleByID(r.RoleID)
@@ -193,7 +193,7 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		audit.Log(false, nil, "update-role", "Add new role.", "old", old, "new", r)
+		audit.Log(nil, "update-role", "Add new role.", "old", old, "new", r)
 	}
 
 	tx.Commit()

@@ -41,7 +41,7 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 
 	if (err != nil || !sessionData.LoggedIn) && url != "/perform-login" && url != "/perform-register" {
 		if err != nil {
-			audit.Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
+			audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)
 		}
 
 		setOperationError(w, r, "Request failed.")
@@ -66,7 +66,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 
 	if (err != nil || !sessionData.LoggedIn) && url != "/login" && url != "/register" {
 		if err != nil {
-			audit.Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
+			audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)
 		}
 
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -95,7 +95,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 	bErr, sErr, err := getLastOperationError(w, r)
 
 	if err != nil {
-		audit.Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
+		audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)
 	}
 
 	t := time.Now().Unix()
@@ -111,7 +111,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 	response, err := getResponseHelperByURL(url)
 
 	if err != nil {
-		audit.Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
+		audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)
 
 		http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 		return
@@ -125,7 +125,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 	model, err := response.getResponse(w, r)
 
 	if err != nil {
-		audit.Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
+		audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)
 	}
 
 	passedObj.Title = response.Title
@@ -141,7 +141,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 		err = executeTemplate(w, response.Template, passedObj)
 
 		if err != nil {
-			audit.Log(true, err, "no-context", "Failed request", "url", r.URL.Path)
+			audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)
 
 			http.Error(w, fmt.Sprintf("%s - Not found", r.URL.Path), 404)
 			return

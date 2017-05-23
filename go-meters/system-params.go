@@ -60,6 +60,8 @@ func (p *SystemParams) LoadByGroup(group string) error {
 		return err
 	}
 
+	rows.Close()
+
 	return nil
 }
 

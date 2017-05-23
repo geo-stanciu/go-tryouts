@@ -238,5 +238,7 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 		return nil, err
 	}
 
+	rows.Close()
+
 	return keys, nil
 }
