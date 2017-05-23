@@ -116,4 +116,25 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	rows, err = db.Query("select strftime('%Y-%m-%d %H:%M:%S', current_timestamp, 'localtime')")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var dt string
+		err = rows.Scan(&dt)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(dt)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

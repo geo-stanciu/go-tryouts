@@ -6,10 +6,11 @@ import (
 
 	"fmt"
 
+	"time"
+
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/satori/go.uuid"
-	"time"
 )
 
 type User struct {

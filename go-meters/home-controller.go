@@ -6,8 +6,9 @@ import (
 
 	"./models"
 
-	"github.com/geo-stanciu/go-utils/utils"
 	"strings"
+
+	"github.com/geo-stanciu/go-utils/utils"
 )
 
 type HomeController struct {

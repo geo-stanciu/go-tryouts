@@ -46,7 +46,7 @@ type systemParams struct {
 }
 
 func addRequests(tx *sql.Tx) error {
-	var _found bool
+	var found bool
 
 	requests := []urlRequest{
 		// pages
@@ -99,13 +99,13 @@ func addRequests(tx *sql.Tx) error {
 	defer stmtAdd.Close()
 
 	for _, req := range requests {
-		err := stmtE.QueryRow(req.request_url).Scan(&_found)
+		err := stmtE.QueryRow(req.request_url).Scan(&found)
 
 		if err != nil {
 			return err
 		}
 
-		if !_found {
+		if !found {
 			_, err = stmtAdd.Exec(
 				req.request_title,
 				req.request_template,
@@ -126,10 +126,11 @@ func addRequests(tx *sql.Tx) error {
 }
 
 func addRoles(tx *sql.Tx) error {
-	var _found bool
+	var found bool
 
 	roles := []userRole{
 		{"Administrator"},
+		{"Member"},
 	}
 
 	queryExists := dbUtils.PQuery(`
@@ -160,13 +161,13 @@ func addRoles(tx *sql.Tx) error {
 	defer stmtAdd.Close()
 
 	for _, r := range roles {
-		err := stmtE.QueryRow(r.role).Scan(&_found)
+		err := stmtE.QueryRow(r.role).Scan(&found)
 
 		if err != nil {
 			return err
 		}
 
-		if !_found {
+		if !found {
 			_, err = stmtAdd.Exec(r.role)
 			if err != nil {
 				return err
@@ -178,7 +179,7 @@ func addRoles(tx *sql.Tx) error {
 }
 
 func addSystemParams(tx *sql.Tx) error {
-	var _found bool
+	var found bool
 
 	params := []systemParams{
 		{"password-rules", "change-interval", "30"},
@@ -225,13 +226,13 @@ func addSystemParams(tx *sql.Tx) error {
 	defer stmtAdd.Close()
 
 	for _, p := range params {
-		err := stmtE.QueryRow(p.param_group, p.param).Scan(&_found)
+		err := stmtE.QueryRow(p.param_group, p.param).Scan(&found)
 
 		if err != nil {
 			return err
 		}
 
-		if !_found {
+		if !found {
 			_, err = stmtAdd.Exec(
 				p.param_group,
 				p.param,

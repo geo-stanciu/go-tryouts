@@ -1,5 +1,5 @@
 {
-  "DbType": "mysql",
-  "DbURL": "geo:geo@tcp(devel:3306)/devel?parseTime=true&loc=Europe%2FBucharest&sql_mode=TRADITIONAL",
+  "DbType": "sqlite3",
+  "DbURL": "../../__db/devel.db",
   "RatesXMLUrl": "http://bnro.ro/nbrfxrates.xml"
 }

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/geo-stanciu/go-utils/utils"
 	"strings"
+
+	"github.com/geo-stanciu/go-utils/utils"
 )
 
 const (
