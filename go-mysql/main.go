@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	db, err := sql.Open("mysql", "geo:geo@tcp(127.0.0.1:3306)/devel?parseTime=true&loc=Europe%2FBucharest&sql_mode=TRADITIONAL")
+	db, err := sql.Open("mysql", "geo:geo@tcp(devel:3306)/devel?parseTime=true&loc=UTC&time_zone=%27%2B00:00%27&sql_mode=TRADITIONAL")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -32,6 +32,11 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+
+		now := time.Now()
+
+		fmt.Println(now)
+		fmt.Println(now.UTC())
 
 		fmt.Println(dt)
 		fmt.Println(dt.UTC())

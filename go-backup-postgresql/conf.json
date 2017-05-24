@@ -1,6 +1,6 @@
 {
   "DbType": "postgres",
-  "DbURL": "postgres://postgres:postgres@localhost:5432/devel?sslmode=disable&application_name=Backup&options=--search_path%3Dpublic",
+  "DbURL": "postgres://postgres:postgres@localhost:5432/devel?sslmode=disable&application_name=Backup&options=--search_path%3Dpublic&timezone=UTC",
   "PG-data-dir": "D:/PostgreSQL/9.6/data",
   "PG-backup-dir": "d:/backup/devel",
   "PG-archive-dir": "d:/backup/devel/archive",
