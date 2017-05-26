@@ -3,8 +3,8 @@
 
 {{% if not .Session.LoggedIn %}}
 <form action="/perform-login" method="POST">
-    Username:<input type="text" name="username"><br>
-    Password:<input type="password" name="password"><br>
+    Username:<input type="text" class="form-control" name="username"><br>
+    Password:<input type="password" class="form-control" name="password"><br>
     <input type="submit" value="Login"><br>
 </form>
 {{% end %}}

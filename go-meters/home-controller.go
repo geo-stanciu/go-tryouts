@@ -225,8 +225,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 
 	lres.BError = false
 	lres.SError = "User registered"
-	err = fmt.Errorf(lres.SError)
-	audit.Log(err, "register", lres.SError, "user", user, "email", email)
+	audit.Log(nil, "register", lres.SError, "user", user, "email", email)
 
 	return &lres, nil
 }

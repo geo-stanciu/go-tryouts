@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/sirupsen/logrus"
@@ -45,6 +46,7 @@ type ParseSourceStream func(source io.Reader) error
 
 func main() {
 	var err error
+	var wg sync.WaitGroup
 
 	cfgFile := "./conf.json"
 	err = config.ReadFromFile(cfgFile)
@@ -61,6 +63,7 @@ func main() {
 	defer db.Close()
 
 	audit.SetLoggerAndDatabase(log, &dbUtils)
+	audit.SetWaitGroup(&wg)
 
 	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
@@ -81,7 +84,9 @@ func main() {
 		return
 	}
 
-	log.Info("Import done.")
+	audit.Log(nil, "import exchange rates", "Import done.")
+
+	wg.Wait()
 }
 
 func getStreamFromURL(url string, callback ParseSourceStream) error {
@@ -200,7 +205,7 @@ func prepareCurrencies() error {
 func storeRates(tx *sql.Tx, cube Cube) error {
 	var err error
 
-	log.WithField("data", cube.Date).Info("Importing exchange rates...")
+	audit.Log(nil, "import exchange rates", "Importing exchange rates...", "data", cube.Date)
 
 	for _, rate := range cube.Rate {
 		multiplier := 1.0
@@ -248,21 +253,16 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		return err
 	}
 
-	dData, err := utils.String2date(date, utils.ISODate)
-	if err != nil {
-		return err
-	}
-
 	query = dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
 			FROM exchange_rate 
 		   WHERE currency_id = ? 
-		     AND exchange_date = ?
+		     AND exchange_date = DATE ?
 		)
 	`)
 
-	err = tx.QueryRow(query, currencyID, dData).Scan(&found)
+	err = tx.QueryRow(query, currencyID, date).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -278,10 +278,10 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 				exchange_date,
 				rate
 			)
-			VALUES (?, ?, ?)
+			VALUES (?, DATE ?, ?)
 		`)
 
-		_, err = tx.Exec(query, currencyID, dData, exchRate/multiplier)
+		_, err = tx.Exec(query, currencyID, date, exchRate/multiplier)
 		if err != nil {
 			return err
 		}

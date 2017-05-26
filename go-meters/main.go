@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"encoding/gob"
 
@@ -58,6 +59,7 @@ func init() {
 
 func main() {
 	var err error
+	var wg sync.WaitGroup
 
 	cfgFile := "./conf.json"
 	err = config.ReadFromFile(cfgFile)
@@ -74,6 +76,7 @@ func main() {
 	defer db.Close()
 
 	audit.SetLoggerAndDatabase(log, &dbUtils)
+	audit.SetWaitGroup(&wg)
 
 	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
@@ -118,4 +121,5 @@ func main() {
 	}
 
 	log.Info("Closing application...")
+	wg.Wait()
 }
