@@ -2,11 +2,25 @@
 <br><br>
 
 {{% if not .Session.LoggedIn %}}
-<form action="/perform-login" method="POST">
-    Username:<input type="text" class="form-control" name="username"><br>
-    Password:<input type="password" class="form-control" name="password"><br>
-    <input type="submit" value="Login"><br>
-</form>
+<div class="container">
+    <form action="/perform-login" method="POST">
+        <div class="form-group row">
+            <label for="username" class="col-sm-2 col-form-label">Username:</label>
+            <div class="col-sm-6">
+                <input type="text" class="form-control" name="username" placeholder="Username">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="password" class="col-sm-2 col-form-label">Password:</label>
+            <div class="col-sm-6">
+                <input type="password" class="form-control" name="password">
+            </div>
+        </div>
+        <div class="form-group row">
+            <input type="submit" value="Login">
+        </div>
+    </form>
+</div>
 {{% end %}}
 
 {{% if .Err %}}
