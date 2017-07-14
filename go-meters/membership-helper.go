@@ -696,7 +696,7 @@ func ValidateUserPassword(user string, pass string) (int, error) {
 
 	switch {
 	case err == sql.ErrNoRows:
-		return ValidationFailed, fmt.Errorf("username \"%s\" not found", user)
+		return ValidationFailed, fmt.Errorf("username \"%s\" not found or password expired", user)
 	case err != nil:
 		return ValidationFailed, err
 	}

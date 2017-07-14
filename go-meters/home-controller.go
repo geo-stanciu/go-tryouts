@@ -43,13 +43,15 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 
 		if len(user) == 0 || len(pass) == 0 {
 			throwErr2Client = false
-			goto loginerr
+			lres, err = loginerr(&lres, err, user, throwErr2Client)
+			return &lres, err
 		}
 
 		success, err := ValidateUserPassword(user, pass)
 		if err != nil || (success != ValidationOK && success != ValidationTemporaryPassword) {
 			throwErr2Client = false
-			goto loginerr
+			lres, err = loginerr(&lres, err, user, throwErr2Client)
+			return &lres, err
 		}
 
 		if success == ValidationTemporaryPassword {
@@ -67,12 +69,14 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 
 		err = db.QueryRow(query, user).Scan(&name, &surname)
 		if err != nil {
-			goto loginerr
+			lres, err = loginerr(&lres, err, user, throwErr2Client)
+			return &lres, err
 		}
 
 		sessionData, err = createSession(w, r, user, name, surname, lres.TemporaryPassword)
 		if err != nil {
-			goto loginerr
+			lres, err = loginerr(&lres, err, user, throwErr2Client)
+			return &lres, err
 		}
 
 		query = dbUtils.PQuery(`
@@ -84,7 +88,8 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 
 		_, err = db.Exec(query, ip, user)
 		if err != nil {
-			goto loginerr
+			lres, err = loginerr(&lres, err, user, throwErr2Client)
+			return &lres, err
 		}
 	}
 
@@ -93,32 +98,36 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 		"user", sessionData.User.Username,
 		"ip", ip,
 		"Temporary Password", lres.TemporaryPassword)
-	return &lres, nil
 
-loginerr:
+	return &lres, nil
+}
+
+func loginerr(lres *models.LoginResponseModel,
+	errLogin error,
+	user string,
+	throwErr2Client bool) (models.LoginResponseModel, error) {
+
+	err := errLogin
+
 	lres.BError = true
 
-	if err != nil || throwErr2Client {
+	if err != nil && throwErr2Client {
 		if err == nil {
 			err = fmt.Errorf("Unknown error")
 		}
 
 		lres.SError = err.Error()
-		audit.Log(err, "login", lres.SError,
-			"user", user,
-			"Temporary Password", lres.TemporaryPassword,
-		)
-		return &lres, err
+	} else {
+		lres.SError = "Unknown user or wrong password."
 	}
 
-	lres.SError = "Unknown user or wrong password."
-
-	err = fmt.Errorf(lres.SError)
 	audit.Log(err, "login", lres.SError,
 		"user", user,
 		"Temporary Password", lres.TemporaryPassword,
 	)
-	return &lres, nil
+
+	err = fmt.Errorf(lres.SError)
+	return *lres, nil
 }
 
 func (HomeController) Logout(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
