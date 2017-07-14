@@ -79,6 +79,12 @@ CREATE TABLE wmeter.user_role_history (
         references wmeter.role (role_id)
 );
 
+CREATE TABLE user_ip (
+  user_ip_id serial PRIMARY KEY,
+  user_id    INT          NOT NULL,
+  ip         varchar(256) NOT NULL
+);
+
 CREATE TABLE wmeter.audit_log (
     audit_log_id   bigserial PRIMARY KEY,
     log_time       timestamp not null DEFAULT current_timestamp,

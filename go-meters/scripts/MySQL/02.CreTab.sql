@@ -96,6 +96,12 @@ CREATE TABLE user_role_history (
   partition pmax values less than (MAXVALUE)
   );
 
+CREATE TABLE user_ip (
+  user_ip_id BIGINT       AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT          NOT NULL,
+  ip         varchar(256) NOT NULL
+);
+
 create table audit_log (
   audit_log_id   bigint auto_increment PRIMARY KEY,
   log_time       datetime not null DEFAULT current_timestamp,

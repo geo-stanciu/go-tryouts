@@ -86,6 +86,14 @@ CREATE TABLE user_role_history (
       references role(role_id)
 );
 
+CREATE TABLE user_ip (
+  user_ip_id integer PRIMARY KEY AUTOINCREMENT,
+  user_id    INT          NOT NULL,
+  ip         varchar(256) NOT NULL,
+  constraint user_ip_fk foreign key (user_id)
+      references user(user_id)
+);
+
 create table audit_log (
   audit_log_id   integer PRIMARY KEY autoincrement,
   log_time       timestamp not null DEFAULT current_timestamp,

@@ -660,7 +660,7 @@ func (u *MembershipUser) Equals(usr *MembershipUser) bool {
 	return true
 }
 
-func ValidateUserPassword(user string, pass string) (int, error) {
+func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 	var userID int
 	var hashedPassword string
 	var passwordSalt string
@@ -711,6 +711,43 @@ func ValidateUserPassword(user string, pass string) (int, error) {
 
 	if valid <= 0 {
 		return ValidationFailed, fmt.Errorf("username \"%s\" is not valid", user)
+	}
+
+	hasIPs := false
+	foundIP := false
+
+	query = dbUtils.PQuery(`
+		SELECT ip FROM user_ip WHERE user_id = ?
+	`)
+
+	rows, err := db.Query(query, userID)
+	if err != nil {
+		return ValidationFailed, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		hasIPs = true
+		var addr string
+		err = rows.Scan(&addr)
+		if err != nil {
+			return ValidationFailed, err
+		}
+
+		if addr == ip {
+			foundIP = true
+			break
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return ValidationFailed, err
+	}
+
+	rows.Close()
+
+	if hasIPs && !foundIP {
+		return ValidationFailed, fmt.Errorf("IP not accepted for \"%s\"", user)
 	}
 
 	passBytes := []byte(passwordSalt + pass)

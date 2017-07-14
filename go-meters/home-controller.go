@@ -47,7 +47,7 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 			return &lres, err
 		}
 
-		success, err := ValidateUserPassword(user, pass)
+		success, err := ValidateUserPassword(user, pass, ip)
 		if err != nil || (success != ValidationOK && success != ValidationTemporaryPassword) {
 			throwErr2Client = false
 			lres, err = loginerr(&lres, err, user, throwErr2Client)
@@ -301,7 +301,9 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 		return &lres, nil
 	}
 
-	success, err := ValidateUserPassword(usr.Username, pass)
+	ip := getClientIP(r)
+
+	success, err := ValidateUserPassword(usr.Username, pass, ip)
 
 	if success != ValidationOK && success != ValidationTemporaryPassword {
 		lres.BError = true
