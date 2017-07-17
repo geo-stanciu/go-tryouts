@@ -53,7 +53,8 @@ func init() {
 
 	err := filepath.Walk(basePath, parseTemplate(basePath))
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 }
 
@@ -64,14 +65,14 @@ func main() {
 	cfgFile := "./conf.json"
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 
 	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 	defer db.Close()
 
@@ -83,14 +84,14 @@ func main() {
 
 	cookieStore, err = getNewCookieStore()
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 
 	err = initializeDatabase()
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 
 	// server flags
@@ -116,8 +117,8 @@ func main() {
 
 	err = http.ListenAndServe(*addr, nil)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 
 	log.Info("Closing application...")

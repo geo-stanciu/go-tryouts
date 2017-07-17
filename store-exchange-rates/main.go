@@ -51,14 +51,14 @@ func main() {
 	cfgFile := "./conf.json"
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 
 	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 	defer db.Close()
 
@@ -70,7 +70,8 @@ func main() {
 
 	err = prepareCurrencies()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	if len(os.Args) >= 2 {
@@ -80,7 +81,7 @@ func main() {
 	}
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 

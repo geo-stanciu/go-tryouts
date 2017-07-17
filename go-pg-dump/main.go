@@ -27,7 +27,8 @@ func main() {
 
 	logFile, err := os.OpenFile(fmt.Sprintf("logs/backup_%s.txt", sData), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	defer logFile.Close()
 
@@ -38,8 +39,8 @@ func main() {
 	cfgFile := "./conf.json"
 	err = config.readFromFile(cfgFile)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 
 	dumpFile := path.Join(config.DumpDir, fmt.Sprintf("save_devel_%s.dmp", sData))
@@ -48,7 +49,8 @@ func main() {
 
 	dump, err := os.OpenFile(dumpFile, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	defer dump.Close()
 
@@ -57,7 +59,8 @@ func main() {
 
 	err = cmd.Start()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	log.Printf("end dump backup")

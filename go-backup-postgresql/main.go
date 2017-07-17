@@ -37,7 +37,8 @@ func main() {
 
 	logFile, err := os.OpenFile(fmt.Sprintf("logs/backup_%s.txt", sData), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	defer logFile.Close()
 
@@ -48,67 +49,76 @@ func main() {
 	cfgFile := "./conf.json"
 	err = config.readFromFile(cfgFile)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 
 	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Println(err)
+		return
 	}
 	defer db.Close()
 
 	tx, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	defer tx.Rollback()
 
 	err = createBackupTables(tx)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	bkFile, bkLabel, lastIndex, err := getBkFileName(tx, sData)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	log.Printf("start backup with label \"%s\"\n", bkLabel)
 
 	startBk, err := startBk(tx, bkLabel)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	log.Printf("pg_start_backup: %s\n\n", startBk)
 
 	out, err := exec.Command("jar", "cvf", bkFile, config.PgDataDir).Output()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	log.Println(string(out))
 
 	archFile, err := finishBk(tx)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	err = logBackup(tx, bkFile, archFile, lastIndex)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	log.Printf("\n\ncleanup:\n")
 
 	archFile2Keep, logID, err := getLastNeededArchFile(tx, config.NumberOfBackups2Keep)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	err = deleteOldBackups(tx, logID, archFile2Keep)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	log.Printf("stop backup \"%s\"\n\n\n", bkLabel)
