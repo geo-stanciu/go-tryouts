@@ -1,0 +1,4 @@
+{
+  "DbType": "postgres",
+  "DbURL": "host=localhost port=5432 user=geo password=geo dbname=devel sslmode=require options='--application_name=TestPG --search_path=public --timezone=UTC --client_encoding=UTF8'"
+}

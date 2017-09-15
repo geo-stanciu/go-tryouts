@@ -48,11 +48,6 @@ CREATE TABLE user (
   valid                  int         not null DEFAULT 1,
   locked_out             int         not null DEFAULT 0,
   CONSTRAINT user_uk unique(user_id, loweredusername)
-)
-  partition by range (user_id) (
-  partition p1mil values less than (1000000),
-  partition p2mil values less than (2000000),
-  partition pmax values less than (MAXVALUE)
 );
 
 CREATE TABLE user_password (
@@ -62,56 +57,48 @@ CREATE TABLE user_password (
   password_salt VARCHAR(256) NOT NULL,
   valid_from    datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   valid_until   datetime,
-  temporary     INT          NOT NULL DEFAULT 0
-)
-  partition by range (password_id) (
-  partition p1mil values less than (1000000),
-  partition p2mil values less than (2000000),
-  partition pmax values less than (MAXVALUE)
-  );
+  temporary     INT          NOT NULL DEFAULT 0,
+  constraint user_password_fk foreign key (user_id)
+    references user(user_id)
+);
 
 CREATE TABLE user_role (
   user_role_id BIGINT            AUTO_INCREMENT PRIMARY KEY,
   user_id      int not null,
   role_id      int not null,
   valid_from   datetime not null DEFAULT current_timestamp,
-  valid_until  datetime
-)
-  partition by range (user_role_id) (
-  partition p1mil values less than (1000000),
-  partition p2mil values less than (2000000),
-  partition pmax values less than (MAXVALUE)
-  );
+  valid_until  datetime,
+  constraint user_role_fk foreign key (role_id)
+    references role(role_id),
+  constraint user_role_usr_fk foreign key (user_id)
+    references user(user_id)
+);
 
 CREATE TABLE user_role_history (
   user_role_id int PRIMARY KEY,
   user_id      int not null,
   role_id      int not null,
   valid_from   datetime not null,
-  valid_until  datetime
-)
-  partition by range (user_role_id) (
-  partition p1mil values less than (1000000),
-  partition p2mil values less than (2000000),
-  partition pmax values less than (MAXVALUE)
-  );
+  valid_until  datetime,
+  constraint user_role_h_fk foreign key (role_id)
+    references role(role_id),
+  constraint user_role_h_usr_fk foreign key (user_id)
+    references user(user_id)
+);
 
 CREATE TABLE user_ip (
   user_ip_id BIGINT       AUTO_INCREMENT PRIMARY KEY,
   user_id    INT          NOT NULL,
-  ip         varchar(256) NOT NULL
+  ip         varchar(256) NOT NULL,
+  constraint user_ip_fk foreign key (user_id)
+    references user(user_id)
 );
 
 create table audit_log (
   audit_log_id   bigint auto_increment PRIMARY KEY,
   log_time       datetime not null DEFAULT current_timestamp,
   audit_msg      MEDIUMTEXT not null
-)
-  partition by range (audit_log_id) (
-  partition p1mil values less than (1000000),
-  partition p2mil values less than (2000000),
-  partition pmax values less than (MAXVALUE)
-  );
+);
 
 CREATE TABLE cookie_encode_key (
   cookie_encode_key_id int auto_increment PRIMARY KEY,

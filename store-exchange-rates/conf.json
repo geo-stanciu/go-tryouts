@@ -1,5 +1,5 @@
 {
-  "DbType": "sqlite3",
-  "DbURL": "../../__db/devel.db?_busy_timeout=9999999&cache=shared&mode=rwc",
+  "DbType": "postgres",
+  "DbURL": "host=localhost port=5432 user=geo password=geo dbname=devel sslmode=require options='--application_name=StoreExchRates --search_path=public --timezone=UTC --client_encoding=UTF8'",
   "RatesXMLUrl": "http://bnro.ro/nbrfxrates.xml"
 }

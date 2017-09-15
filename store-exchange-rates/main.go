@@ -14,7 +14,6 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
@@ -63,7 +62,6 @@ func main() {
 	defer db.Close()
 
 	audit.SetLoggerAndDatabase(log, &dbUtils)
-	audit.SetWaitGroup(&wg)
 
 	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
@@ -254,16 +252,21 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		return err
 	}
 
+	dData, err := utils.String2date(date, utils.ISODate)
+	if err != nil {
+		return err
+	}
+
 	query = dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
 			FROM exchange_rate 
 		   WHERE currency_id = ? 
-		     AND exchange_date = DATE ?
+		     AND exchange_date = ?
 		)
 	`)
 
-	err = tx.QueryRow(query, currencyID, date).Scan(&found)
+	err = tx.QueryRow(query, currencyID, dData).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -279,10 +282,10 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 				exchange_date,
 				rate
 			)
-			VALUES (?, DATE ?, ?)
+			VALUES (?, ?, ?)
 		`)
 
-		_, err = tx.Exec(query, currencyID, date, exchRate/multiplier)
+		_, err = tx.Exec(query, currencyID, dData, exchRate/multiplier)
 		if err != nil {
 			return err
 		}
