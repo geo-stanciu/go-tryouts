@@ -62,6 +62,7 @@ func main() {
 	defer db.Close()
 
 	audit.SetLoggerAndDatabase(log, &dbUtils)
+	audit.SetWaitGroup(&wg)
 
 	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
