@@ -1,5 +1,5 @@
 {
-  "DbType": "postgres",
-  "DbURL": "host=localhost port=5432 user=geo password=geo dbname=devel sslmode=require options='--application_name=StoreExchRates --search_path=public --timezone=UTC --client_encoding=UTF8'",
-  "RatesXMLUrl": "http://bnro.ro/nbrfxrates.xml"
+    "DbType": "postgres",
+    "DbURL": "host=localhost port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=StoreExchRates --search_path=public --timezone=UTC --client_encoding=UTF8'",
+    "RatesXMLUrl": "http://bnro.ro/nbrfxrates.xml"
 }

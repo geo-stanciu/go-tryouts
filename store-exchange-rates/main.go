@@ -74,9 +74,9 @@ func main() {
 	}
 
 	if len(os.Args) >= 2 {
-		err = getStreamFromFile(os.Args[1], parseXmlSource)
+		err = getStreamFromFile(os.Args[1], parseXMLSource)
 	} else {
-		err = getStreamFromURL(config.RatesXMLUrl, parseXmlSource)
+		err = getStreamFromURL(config.RatesXMLUrl, parseXMLSource)
 	}
 
 	if err != nil {
@@ -119,7 +119,7 @@ func getStreamFromFile(filename string, callback ParseSourceStream) error {
 	return nil
 }
 
-func parseXmlSource(source io.Reader) error {
+func parseXMLSource(source io.Reader) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err

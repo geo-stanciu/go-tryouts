@@ -1,8 +1,8 @@
 {
-  "DbType": "postgres",
-  "DbURL": "host=localhost port=5432 user=postgres password=postgres dbname=devel sslmode=require options='--application_name=Backup --search_path=public --timezone=UTC --client_encoding=UTF8'",
-  "PG-data-dir": "/var/lib/postgresql/9.6/main",
-  "PG-backup-dir": "/home/geo/backup/devel",
-  "PG-archive-dir": "/home/geo/backup/devel/archivedir",
-  "NumberOfBackups2Keep": 7
+    "DbType": "postgres",
+    "DbURL": "host=localhost port=5432 user=postgres password=postgres dbname=devel sslmode=disable options='--application_name=Backup --search_path=public --timezone=UTC --client_encoding=UTF8'",
+    "PG-data-dir": "/var/lib/postgresql/9.6/main",
+    "PG-backup-dir": "/home/geo/backup/devel",
+    "PG-archive-dir": "/home/geo/backup/devel/archivedir",
+    "NumberOfBackups2Keep": 7
 }

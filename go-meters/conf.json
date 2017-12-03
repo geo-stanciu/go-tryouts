@@ -1,5 +1,5 @@
 {
-  "Port": "8080",
-  "DbType": "postgres",
-  "DbURL": "host=localhost port=5432 user=geo password=geo dbname=devel sslmode=require options='--application_name=GoMeters --search_path=wmeter --timezone=UTC --client_encoding=UTF8'"
+    "Port": "8080",
+    "DbType": "postgres",
+    "DbURL": "host=localhost port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=GoMeters --search_path=wmeter --timezone=UTC --client_encoding=UTF8'"
 }
