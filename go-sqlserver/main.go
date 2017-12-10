@@ -96,7 +96,7 @@ func main() {
 		panic(err)
 	}
 
-	query = dbUtils.PQuery(`
+	/*query = dbUtils.PQuery(`
 		insert into test1 (
 			dt,
 			dtz,
@@ -110,7 +110,7 @@ func main() {
 
 	if err != nil {
 		panic(err)
-	}
+	}*/
 
 	query = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
 
