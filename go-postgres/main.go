@@ -81,13 +81,13 @@ func main() {
 		panic(err)
 	}
 
-	query = dbUtils.PQuery(`
+	query = `
 		create table if not exists test1 (
 			dt timestamp,
 			dtz timestamp with time zone,
 			d date
 		)
-	`)
+	`
 
 	_, err = db.Exec(query)
 
@@ -122,6 +122,7 @@ func main() {
 		}
 
 		fmt.Println(test1.Dt)
+		fmt.Println(test1.Dt.In(loc))
 		fmt.Println(test1.Dtz)
 		fmt.Println(test1.D)
 	})
