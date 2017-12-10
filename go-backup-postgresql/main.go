@@ -30,7 +30,7 @@ var (
 )
 
 func main() {
-	t := time.Now()
+	t := time.Now().UTC()
 	sData := t.Format("20060102")
 
 	var err error
@@ -151,7 +151,7 @@ func createBackupTables(tx *sql.Tx) error {
 	t1 := `
 		create table if not exists backup_log (
 			backup_log_id   serial PRIMARY KEY,
-			backup_time     timestamp with time zone not null DEFAULT current_timestamp,
+			backup_time     timestamp with time zone not null,
 			backup_file     varchar(256) not null,
 			arch_file       varchar(256) not null,
 			last_file_index varchar(8)   not null
@@ -240,17 +240,20 @@ func finishBk(tx *sql.Tx) (string, error) {
 }
 
 func logBackup(tx *sql.Tx, bkFile string, archFile string, lastFileIndex int) error {
+	dt := time.Now().UTC()
+
 	query := dbUtils.PQuery(`
 		insert into backup_log (
-		    backup_file,
+			backup_time,
+			backup_file,
 			arch_file,
 			last_file_index
-		) values (?, ?, ?)
+		) values (?, ?, ?, ?)
 	`)
 
 	sIndex := fmt.Sprintf("%02d", lastFileIndex)
 
-	_, err := tx.Exec(query, bkFile, archFile, sIndex)
+	_, err := tx.Exec(query, dt, bkFile, archFile, sIndex)
 	if err != nil {
 		return err
 	}

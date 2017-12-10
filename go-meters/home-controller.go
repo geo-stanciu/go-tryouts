@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"net/http"
+	"time"
 
 	"./models"
 
@@ -79,14 +80,16 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 			return &lres, err
 		}
 
+		dt := time.Now().UTC()
+
 		query = dbUtils.PQuery(`
 			UPDATE user
-			   SET last_connect_time = current_timestamp,
+			   SET last_connect_time = ?,
 			       last_connect_ip   = ?
 			 WHERE loweredusername = lower(?)
 		`)
 
-		_, err = db.Exec(query, ip, user)
+		_, err = db.Exec(query, dt, ip, user)
 		if err != nil {
 			lres, err = loginerr(&lres, err, user, throwErr2Client)
 			return &lres, err

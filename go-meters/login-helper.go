@@ -167,13 +167,14 @@ func saveCookieEncodeKeys(keys [][]byte) error {
 	query := dbUtils.PQuery(`
 		INSERT INTO cookie_encode_key (
 			encode_key,
+			valid_from,
 			valid_until
 		)
-		VALUES (?, ?)
+		VALUES (?, ?, ?)
 	`)
 
-	now := time.Now()
-	after30days := now.Add(time.Duration(30*24) * time.Hour)
+	dt := time.Now().UTC()
+	after30days := dt.Add(time.Duration(30*24) * time.Hour)
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -189,7 +190,7 @@ func saveCookieEncodeKeys(keys [][]byte) error {
 
 	for _, key := range keys {
 		sKey := base64.StdEncoding.EncodeToString(key)
-		_, err = stmt.Exec(sKey, after30days)
+		_, err = stmt.Exec(sKey, dt, after30days)
 		if err != nil {
 			return err
 		}
@@ -202,17 +203,18 @@ func saveCookieEncodeKeys(keys [][]byte) error {
 
 func getCookiesEncodeKeys() ([][]byte, error) {
 	var keys [][]byte
+	dt := time.Now().UTC()
 
 	query := `
 		SELECT encode_key
 		  FROM cookie_encode_key
-		 WHERE valid_from  <= current_timestamp
-		   AND valid_until >= current_timestamp
+		 WHERE valid_from  <= ?
+		   AND valid_until >= ?
 		 ORDER BY cookie_encode_key_id
 		 LIMIT 4
 	`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, dt, dt)
 	if err != nil {
 		return nil, err
 	}

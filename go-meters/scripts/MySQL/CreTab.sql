@@ -35,8 +35,8 @@ CREATE TABLE user (
   surname                varchar(64) not null,
   email                  varchar(64) not null,
   loweredemail           varchar(64) not null,
-  creation_time          datetime not null DEFAULT current_timestamp,
-  last_update            datetime not null DEFAULT current_timestamp,
+  creation_time          datetime not null,
+  last_update            datetime not null,
   activated              int         not null DEFAULT 0,
   activation_time        datetime,
   last_password_change   datetime,
@@ -55,7 +55,7 @@ CREATE TABLE user_password (
   user_id       INT          NOT NULL,
   password      VARCHAR(256) NOT NULL,
   password_salt VARCHAR(256) NOT NULL,
-  valid_from    datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  valid_from    datetime NOT NULL,
   valid_until   datetime,
   temporary     INT          NOT NULL DEFAULT 0,
   constraint user_password_fk foreign key (user_id)
@@ -66,7 +66,7 @@ CREATE TABLE user_role (
   user_role_id BIGINT            AUTO_INCREMENT PRIMARY KEY,
   user_id      int not null,
   role_id      int not null,
-  valid_from   datetime not null DEFAULT current_timestamp,
+  valid_from   datetime not null,
   valid_until  datetime,
   constraint user_role_fk foreign key (role_id)
     references role(role_id),
@@ -96,13 +96,13 @@ CREATE TABLE user_ip (
 
 create table audit_log (
   audit_log_id   bigint auto_increment PRIMARY KEY,
-  log_time       datetime not null DEFAULT current_timestamp,
+  log_time       datetime not null,
   audit_msg      MEDIUMTEXT not null
 );
 
 CREATE TABLE cookie_encode_key (
   cookie_encode_key_id int auto_increment PRIMARY KEY,
   encode_key           varchar(256) not null,
-  valid_from           datetime not null DEFAULT current_timestamp,
+  valid_from           datetime not null,
   valid_until          datetime not null
 );

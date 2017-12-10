@@ -22,7 +22,7 @@ var (
 
 func main() {
 	var err error
-	t := time.Now()
+	t := time.Now().UTC()
 	sData := t.Format("20060102")
 
 	logFile, err := os.OpenFile(fmt.Sprintf("logs/backup_%s.txt", sData), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)

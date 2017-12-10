@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sync"
+	"time"
 )
 
 type MembershipRole struct {
@@ -204,6 +205,8 @@ func (r *MembershipRole) Save() error {
 func (r *MembershipRole) HasMember(user string) (bool, error) {
 	found := false
 
+	dt := time.Now().UTC()
+
 	query := dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
@@ -211,12 +214,12 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 			  JOIN user u ON (ur.user_id = u.user_id)
 			 WHERE u.loweredusername =  lower(?)
 			   AND ur.role_id        =  ?
-			   AND ur.valid_from     <= current_timestamp
-			   AND (ur.valid_until is null OR ur.valid_until > current_timestamp)
+			   AND ur.valid_from     <= ?
+			   AND (ur.valid_until is null OR ur.valid_until > ?)
 		)
 	`)
 
-	err := db.QueryRow(query, user, r.RoleID).Scan(&found)
+	err := db.QueryRow(query, user, r.RoleID, dt, dt).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -231,18 +234,20 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 	found := false
 
+	dt := time.Now().UTC()
+
 	query := dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
 			  FROM user_role ur
 			 WHERE ur.user_id =  ?
 			   AND ur.role_id =  ?
-			   AND ur.valid_from     <= current_timestamp
-			   AND (ur.valid_until is null OR ur.valid_until > current_timestamp)
+			   AND ur.valid_from <= ?
+			   AND (ur.valid_until is null OR ur.valid_until > ?)
 		)
 	`)
 
-	err := db.QueryRow(query, userID, r.RoleID).Scan(&found)
+	err := db.QueryRow(query, userID, r.RoleID, dt, dt).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -257,6 +262,8 @@ func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 func IsUserInRole(user string, role string) (bool, error) {
 	found := false
 
+	dt := time.Now().UTC()
+
 	query := dbUtils.PQuery(`
 		SELECT EXISTS(
 			SELECT 1
@@ -265,12 +272,12 @@ func IsUserInRole(user string, role string) (bool, error) {
 			  JOIN role r ON (ur.role_id = r.role_id)
 			 WHERE u.loweredusername =  lower(?)
 			   AND lower(r.role)     =  lower(?)
-			   AND ur.valid_from     <= current_timestamp
-			   AND (ur.valid_until is null OR ur.valid_until > current_timestamp)
+			   AND ur.valid_from     <= ?
+			   AND (ur.valid_until is null OR ur.valid_until > ?)
 		)
 	`)
 
-	err := db.QueryRow(query, user, role).Scan(&found)
+	err := db.QueryRow(query, user, role, dt, dt).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:

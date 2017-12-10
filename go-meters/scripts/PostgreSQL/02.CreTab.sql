@@ -35,8 +35,8 @@ CREATE TABLE wmeter.user (
     surname                varchar(64) not null,
     email                  varchar(64) not null,
     loweredemail           varchar(64) not null,
-    creation_time          timestamp with time zone not null DEFAULT current_timestamp,
-    last_update            timestamp with time zone not null DEFAULT current_timestamp,
+    creation_time          timestamp with time zone not null,
+    last_update            timestamp with time zone not null,
     activated              int         not null DEFAULT 0,
     activation_time        timestamp with time zone,
     last_password_change   timestamp with time zone,
@@ -55,7 +55,7 @@ CREATE TABLE wmeter.user_password (
     user_id       int          not null,
     password      varchar(256) not null,
     password_salt varchar(256) not null,
-    valid_from    timestamp with time zone not null DEFAULT current_timestamp,
+    valid_from    timestamp with time zone not null,
     valid_until   timestamp with time zone,
     temporary     int          not null DEFAULT 0,
     constraint user_password_fk foreign key (user_id)
@@ -66,7 +66,7 @@ CREATE TABLE wmeter.user_role (
     user_role_id serial PRIMARY KEY,
     user_id      int not null,
     role_id      int not null,
-    valid_from   timestamp with time zone not null DEFAULT current_timestamp,
+    valid_from   timestamp with time zone not null,
     valid_until  timestamp with time zone,
     constraint  user_role_fk foreign key (role_id)
         references wmeter.role (role_id),
@@ -96,13 +96,13 @@ CREATE TABLE user_ip (
 
 CREATE TABLE wmeter.audit_log (
     audit_log_id   bigserial PRIMARY KEY,
-    log_time       timestamp with time zone not null DEFAULT current_timestamp,
+    log_time       timestamp with time zone not null,
     audit_msg      jsonb     not null
 );
 
 CREATE TABLE wmeter.cookie_encode_key (
     cookie_encode_key_id serial       PRIMARY KEY,
     encode_key           varchar(256) not null,
-    valid_from           timestamp with time zone not null DEFAULT current_timestamp,
-    valid_until          timestamp with time zone not null DEFAULT current_timestamp + interval '30' day
+    valid_from           timestamp with time zone not null,
+    valid_until          timestamp with time zone not null
 );
