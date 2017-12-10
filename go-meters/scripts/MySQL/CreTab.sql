@@ -47,7 +47,7 @@ CREATE TABLE user (
   last_connect_ip        varchar(128),
   valid                  int         not null DEFAULT 1,
   locked_out             int         not null DEFAULT 0,
-  CONSTRAINT user_uk unique(user_id, loweredusername)
+  CONSTRAINT user_uk unique(loweredusername)
 );
 
 CREATE TABLE user_password (
@@ -75,7 +75,7 @@ CREATE TABLE user_role (
 );
 
 CREATE TABLE user_role_history (
-  user_role_id int PRIMARY KEY,
+  user_role_id bigint PRIMARY KEY,
   user_id      int not null,
   role_id      int not null,
   valid_from   datetime not null,

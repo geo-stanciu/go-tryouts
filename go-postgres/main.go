@@ -21,6 +21,12 @@ type Test struct {
 	Version string
 }
 
+type Test1 struct {
+	Dt  time.Time
+	Dtz time.Time
+	D   time.Time
+}
+
 func main() {
 	var err error
 
@@ -57,8 +63,6 @@ func main() {
 	fmt.Println(test.Date.In(loc))
 	fmt.Println(test.Version)
 
-	//time.Sleep(1 * time.Second)
-
 	sc := utils.SQLScanHelper{}
 
 	err = utils.ForEachRow(db, query, func(row *sql.Rows) {
@@ -71,6 +75,55 @@ func main() {
 		fmt.Println(test2.Date)
 		fmt.Println(test2.Date.In(loc))
 		fmt.Println(test2.Version)
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	query = dbUtils.PQuery(`
+		create table if not exists test1 (
+			dt timestamp,
+			dtz timestamp with time zone,
+			d date
+		)
+	`)
+
+	_, err = db.Exec(query)
+
+	if err != nil {
+		panic(err)
+	}
+
+	query = dbUtils.PQuery(`
+		insert into test1 (
+			dt,
+			dtz,
+			d
+		)
+		values (?, ?, ?)
+	`)
+
+	now = time.Now().UTC()
+	_, err = db.Exec(query, now, now, now)
+
+	if err != nil {
+		panic(err)
+	}
+
+	query = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
+
+	sc.Clear()
+	err = utils.ForEachRow(db, query, func(row *sql.Rows) {
+		test1 := Test1{}
+		err = sc.Scan(row, &test1)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(test1.Dt)
+		fmt.Println(test1.Dtz)
+		fmt.Println(test1.D)
 	})
 
 	if err != nil {
