@@ -42,46 +42,39 @@ func main() {
 	}
 	defer db.Close()
 
-	test := Test{}
-	query := dbUtils.PQuery("select current_timestamp date, version() as version")
-	err = utils.RunQuery(db, query, &test)
-	if err != nil {
-		panic(err)
-	}
-
-	now := time.Now()
-
-	fmt.Println(now)
-	fmt.Println(now.UTC())
-
 	loc, err := time.LoadLocation("Europe/Bucharest")
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(test.Date)
-	fmt.Println(test.Date.In(loc))
-	fmt.Println(test.Version)
+	test := Test{}
+	query := dbUtils.PQuery("select current_timestamp date, version() as version")
+	err = dbUtils.RunQuery(query, &test)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Date: ", test.Date)
+	fmt.Println("Date - local: ", test.Date.In(loc))
+	//fmt.Println(test.Version)
 
 	sc := utils.SQLScanHelper{}
-
-	err = utils.ForEachRow(db, query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
 		test2 := Test{}
-		err = sc.Scan(row, &test2)
+		err = sc.Scan(&dbUtils, row, &test2)
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println(test2.Date)
-		fmt.Println(test2.Date.In(loc))
-		fmt.Println(test2.Version)
+		fmt.Println("Date: ", test2.Date)
+		fmt.Println("Date - local:", test2.Date.In(loc))
 	})
 
 	if err != nil {
 		panic(err)
 	}
 
-	query = `
+	/*query = `
 		create table if not exists test1 (
 			dt timestamp,
 			dtz timestamp with time zone,
@@ -114,20 +107,20 @@ func main() {
 	query = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
 
 	sc.Clear()
-	err = utils.ForEachRow(db, query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
 		test1 := Test1{}
-		err = sc.Scan(row, &test1)
+		err = sc.Scan(&dbUtils, row, &test1)
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println(test1.Dt)
-		fmt.Println(test1.Dt.In(loc))
-		fmt.Println(test1.Dtz)
-		fmt.Println(test1.D)
+		fmt.Println("Dt:", test1.Dt)
+		fmt.Println("Dt - local:", test1.Dt.In(loc))
+		fmt.Println("Dtz:", test1.Dtz)
+		fmt.Println("D:", test1.D)
 	})
 
 	if err != nil {
 		panic(err)
-	}
+	}*/
 }

@@ -5,50 +5,127 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/geo-stanciu/go-utils/utils"
+
 	_ "github.com/mattn/go-oci8"
 )
 
+var (
+	db      *sql.DB
+	config  = Configuration{}
+	dbUtils = utils.DbUtils{}
+)
+
+type Test struct {
+	Date    time.Time
+	Version string
+}
+
+type Test1 struct {
+	Dt  time.Time
+	Dtz time.Time
+	D   time.Time
+}
+
 func main() {
-	db, err := sql.Open("oci8", "geo/geo@db1")
+	var err error
+
+	cfgFile := "./conf.json"
+	err = config.ReadFromFile(cfgFile)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
+	}
+
+	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
+	if err != nil {
+		panic(err)
 	}
 	defer db.Close()
 
-	err = db.Ping()
-	if err != nil {
-		panic(err.Error())
-	}
-
-	var r1 int
-
-	err = db.QueryRow("select :1 + :2 from dual", 4, 5).Scan(&r1)
+	loc, err := time.LoadLocation("Europe/Bucharest")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("rez", r1)
 
-	rows, err := db.Query("select current_timestamp from dual")
+	test := Test{}
+	query := dbUtils.PQuery(`
+		select current_timestamp "date", '12.2.1.0' version from dual
+	`)
+
+	err = dbUtils.RunQuery(query, &test)
 	if err != nil {
 		panic(err)
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var dt time.Time
-		err = rows.Scan(&dt)
+	fmt.Println("Date:", test.Date)
+	fmt.Println("Date - local:", test.Date.In(loc))
+	fmt.Println(test.Version)
+
+	sc := utils.SQLScanHelper{}
+
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+		test2 := Test{}
+		err = sc.Scan(&dbUtils, row, &test2)
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println(dt)
-		fmt.Println(dt.UTC())
-	}
+		fmt.Println("Date:", test2.Date)
+		fmt.Println("Date - local:", test2.Date.In(loc))
+		//fmt.Println(test2.Version)
+	})
 
-	err = rows.Err()
 	if err != nil {
 		panic(err)
 	}
 
-	rows.Close()
+	/*query = `
+			create table test1 (
+				dt date,
+				dtz timestamp,
+				d date
+			)
+		`
+
+	_, err = db.Exec(query)
+
+	if err != nil {
+		panic(err)
+	}*/
+
+	/*query = dbUtils.PQuery(`
+			insert into test1 (
+				dt,
+				dtz,
+				d
+			)
+			values (?, ?, ?)
+		`)
+
+	now = time.Now().UTC()
+	_, err = db.Exec(query, now, now, now)
+
+	if err != nil {
+		panic(err)
+	}*/
+
+	/*query = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
+
+	sc.Clear()
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+		test1 := Test1{}
+		err = sc.Scan(&dbUtils, row, &test1)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(test1.Dt)
+		fmt.Println(test1.Dt.In(loc))
+		fmt.Println(test1.Dtz)
+		fmt.Println(test1.D)
+	})
+
+	if err != nil {
+		panic(err)
+	}*/
 }
