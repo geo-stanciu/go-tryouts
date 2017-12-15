@@ -5,47 +5,122 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/geo-stanciu/go-utils/utils"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
+var (
+	db      *sql.DB
+	config  = Configuration{}
+	dbUtils = utils.DbUtils{}
+)
+
+type Test struct {
+	Date    time.Time
+	Version string
+}
+
+type Test1 struct {
+	Dt  time.Time
+	Dtz time.Time
+	D   time.Time
+}
+
 func main() {
-	db, err := sql.Open("mysql", "geo:geo@tcp(devel:3306)/devel?parseTime=true&loc=UTC&time_zone=%27%2B00:00%27&sql_mode=TRADITIONAL")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
+	var err error
 
-	err = db.Ping()
-	if err != nil {
-		panic(err.Error())
-	}
-
-	rows, err := db.Query("select current_timestamp")
+	cfgFile := "./conf.json"
+	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		panic(err)
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var dt time.Time
-		err = rows.Scan(&dt)
+	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	loc, err := time.LoadLocation("Europe/Bucharest")
+	if err != nil {
+		panic(err)
+	}
+
+	test := Test{}
+	query := dbUtils.PQuery("select current_timestamp date, version() as version")
+	err = dbUtils.RunQuery(query, &test)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Date: ", test.Date)
+	fmt.Println("Date - local: ", test.Date.In(loc))
+	//fmt.Println(test.Version)
+
+	sc := utils.SQLScanHelper{}
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+		test2 := Test{}
+		err = sc.Scan(&dbUtils, row, &test2)
 		if err != nil {
 			panic(err)
 		}
 
-		now := time.Now()
+		fmt.Println("Date: ", test2.Date)
+		fmt.Println("Date - local:", test2.Date.In(loc))
+	})
 
-		fmt.Println(now)
-		fmt.Println(now.UTC())
-
-		fmt.Println(dt)
-		fmt.Println(dt.UTC())
-	}
-
-	err = rows.Err()
 	if err != nil {
 		panic(err)
 	}
 
-	rows.Close()
+	query = `
+		create table if not exists test1 (
+			dt datetime(3),
+			dtz timestamp,
+			d date
+		)
+	`
+
+	_, err = db.Exec(query)
+
+	if err != nil {
+		panic(err)
+	}
+
+	/*query = dbUtils.PQuery(`
+		insert into test1 (
+			dt,
+			dtz,
+			d
+		)
+		values (?, ?, ?)
+	`)
+
+	now := time.Now().UTC()
+	_, err = db.Exec(query, now, now, now)
+
+	if err != nil {
+		panic(err)
+	}*/
+
+	query = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
+
+	sc.Clear()
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+		test1 := Test1{}
+		err = sc.Scan(&dbUtils, row, &test1)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Dt:", test1.Dt)
+		fmt.Println("Dt - local:", test1.Dt.In(loc))
+		fmt.Println("Dtz:", test1.Dtz)
+		fmt.Println("D:", test1.D)
+	})
+
+	if err != nil {
+		panic(err)
+	}
 }

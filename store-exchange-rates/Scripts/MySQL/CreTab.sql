@@ -13,7 +13,7 @@ create table if not exists exchange_rate (
 
 create table if not exists audit_log (
     audit_log_id   bigint auto_increment PRIMARY KEY,
-    log_time       datetime not null,
+    log_time       datetime(3) not null,
     audit_msg      MEDIUMTEXT not null
 );
 
