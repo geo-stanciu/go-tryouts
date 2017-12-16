@@ -13,6 +13,8 @@ import (
 	"encoding/gob"
 
 	"github.com/geo-stanciu/go-utils/utils"
+	"github.com/gorilla/csrf"
+	"github.com/gorilla/pat"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 
@@ -82,7 +84,7 @@ func main() {
 	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
 
-	cookieStore, err = getNewCookieStore(config.IsHTTPS)
+	cookieStore, err = getNewCookieStore()
 	if err != nil {
 		log.Println(err)
 		return
@@ -101,21 +103,53 @@ func main() {
 
 	log.WithField("port", *addr).Info("Starting listening...")
 
+	router := pat.New()
+
 	// Normal resources
-	http.Handle("/static/",
+	router.PathPrefix("/static/").Handler(
 		http.StripPrefix("/static/", http.FileServer(http.Dir("public/static"))))
-	http.Handle("/images/",
+	router.PathPrefix("/images/").Handler(
 		http.StripPrefix("/images/", http.FileServer(http.Dir("public/images"))))
-	http.Handle("/js/",
+	router.PathPrefix("/js/").Handler(
 		http.StripPrefix("/js/", http.FileServer(http.Dir("public/js"))))
-	http.Handle("/css/",
+	router.PathPrefix("/css/").Handler(
 		http.StripPrefix("/css/", http.FileServer(http.Dir("public/css"))))
 
-	http.Handle("/favicon.ico", http.NotFoundHandler())
+	router.PathPrefix("/favicon.ico").Handler(http.NotFoundHandler())
 
-	http.HandleFunc("/", handler)
+	router.Get("/", handler)
+	router.Get("/{url}", handler)
+	router.Post("/", handler)
+	router.Post("/{url}", handler)
 
-	err = http.ListenAndServe(*addr, nil)
+	encodeKeys, _ := getCookiesEncodeKeys()
+	if encodeKeys == nil || len(encodeKeys) == 0 {
+		log.Error("No encode Keys")
+		wg.Wait()
+		return
+	}
+
+	var key []byte
+	l1 := len(encodeKeys)
+	if l1 >= 4 {
+		key = encodeKeys[3]
+	} else if l1 >= 2 {
+		key = encodeKeys[1]
+	} else {
+		key = encodeKeys[0]
+	}
+
+	err = http.ListenAndServe(*addr,
+		csrf.Protect(
+			key,
+			csrf.Secure(config.IsHTTPS),
+			csrf.Path("/"),
+			csrf.FieldName("csrfToken"),
+			csrf.CookieName("csrfCookie"),
+			csrf.HttpOnly(true),
+			csrf.MaxAge(24*3600),
+			csrf.RequestHeader("X-CSRF-Token"))(router))
+
 	if err != nil {
 		log.Println(err)
 		return

@@ -3,6 +3,7 @@
 
 <div class="container">
     <form action="/register" method="POST">
+        {{% .csrfField %}}
         <div class="form-group row">
             <label for="username" class="col-sm-2 col-form-label">Username:</label>
             <div class="col-sm-6">
@@ -45,8 +46,8 @@
     </form>
 </div>
 
-{{% if .Err %}}
-<div style="color: red;">{{% .SErr %}}</div>
+{{% if .m.Err %}}
+<div style="color: red;">{{% .m.SErr %}}</div>
 {{% end %}}
 
 <br><br>

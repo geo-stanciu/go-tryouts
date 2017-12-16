@@ -5,7 +5,7 @@ function setDstDetails() {
     later.setTime(now.getTime() + 365 * 24 * 60 * 60 * 1000);
 
     // Set cookie for the time zone offset in minutes
-    Cookies.set("time_zone_offset", now.getTimezoneOffset().toString(), { expires: later, path: "/" });
+    Cookies.set("time_zone_offset", (-now.getTimezoneOffset()).toString(), { expires: later, path: "/" });
 
     Cookies.getTime
 
@@ -28,18 +28,18 @@ function setDstDetails() {
     d2.setMonth(7);
 
     // If time zone offsets match, no DST exists for this time zone
-    if(parseInt(d1.getTimezoneOffset())==parseInt(d2.getTimezoneOffset())) {
+    if (parseInt(d1.getTimezoneOffset()) == parseInt(d2.getTimezoneOffset())) {
         Cookies.set("time_zone_dst", "0", { expires: later, path: "/" });
     }
     // DST exists for this time zone – check if it is currently active
     else {
         // Find out if we are on northern or southern hemisphere
         // Hemisphere is positive for northern, and negative for southern
-        var hemisphere = parseInt(d1.getTimezoneOffset())-parseInt(d2.getTimezoneOffset());
-        
+        var hemisphere = parseInt(d1.getTimezoneOffset()) - parseInt(d2.getTimezoneOffset());
+
         // Current date is still before or after DST, not containing DST
-        if ((hemisphere>0 && parseInt(d1.getTimezoneOffset())==parseInt(now.getTimezoneOffset())) ||
-            (hemisphere<0 && parseInt(d2.getTimezoneOffset())==parseInt(now.getTimezoneOffset()))) {
+        if ((hemisphere > 0 && parseInt(d1.getTimezoneOffset()) == parseInt(now.getTimezoneOffset())) ||
+            (hemisphere < 0 && parseInt(d2.getTimezoneOffset()) == parseInt(now.getTimezoneOffset()))) {
             Cookies.set("time_zone_dst", "0", { expires: later, path: "/" });
         } // DST is active right now with the current date
         else {

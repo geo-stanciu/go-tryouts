@@ -110,7 +110,7 @@ func getSessionData(r *http.Request) (*SessionData, error) {
 	return data, nil
 }
 
-func getNewCookieStore(isHTTPS bool) (*sessions.CookieStore, error) {
+func getNewCookieStore() (*sessions.CookieStore, error) {
 	encodeKeys, err := getCookiesEncodeKeys()
 
 	if err != nil {
@@ -157,7 +157,7 @@ func getNewCookieStore(isHTTPS bool) (*sessions.CookieStore, error) {
 		Path:     "/",
 		MaxAge:   0,
 		HttpOnly: true,
-		Secure:   isHTTPS,
+		Secure:   config.IsHTTPS,
 	}
 
 	return cookieStore, nil

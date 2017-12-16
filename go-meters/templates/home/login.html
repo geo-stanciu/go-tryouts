@@ -2,6 +2,7 @@
 <br><br> {{% if not .Session.LoggedIn %}}
 <div class="container">
     <form action="/login" method="POST">
+        {{% .csrfField %}}
         <div class="form-group row">
             <label for="username" class="col-sm-2 col-form-label">Username:</label>
             <div class="col-sm-6">
@@ -19,8 +20,8 @@
         </div>
     </form>
 </div>
-{{% end %}} {{% if .Err %}}
-<div style="color: red;">{{% .SErr %}}</div>
+{{% end %}} {{% if .m.Err %}}
+<div style="color: red;">{{% .m.SErr %}}</div>
 {{% end %}}
 
 <br><br>

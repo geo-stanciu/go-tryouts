@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/gorilla/csrf"
 )
 
 type template0Data struct {
@@ -132,13 +134,23 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 	passedObj.Model = model
 	passedObj.Session = *sessionData
 
+	w.Header().Set("X-CSRF-Token", csrf.Token(r))
+
 	if response.Template != "-" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "private, max-age=600, no-store")
 		w.Header().Set("X-Frame-Options", "DENY")
-		//w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
-		err = executeTemplate(w, response.Template, passedObj)
+		if config.IsHTTPS {
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
+
+		m := map[string]interface{}{
+			"m":              passedObj,
+			csrf.TemplateTag: csrf.TemplateField(r),
+		}
+
+		err = executeTemplate(w, r, response.Template, m)
 
 		if err != nil {
 			audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)
@@ -174,13 +186,18 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 	}
 }
 
-func executeTemplate(w io.Writer, tmplName string, data interface{}) error {
+func executeTemplate(w io.Writer, r *http.Request, tmplName string, data interface{}) error {
 	var err error
 
-	t := templates.Lookup(tmplName)
-	if t == nil {
+	tmpl := templates.Lookup(tmplName)
+	if tmpl == nil {
 		errNoLayout := fmt.Errorf("%s not found", tmplName)
 		return errNoLayout
+	}
+
+	t, err := tmpl.Clone()
+	if err != nil {
+		return err
 	}
 
 	layout := templates.Lookup("layout")
