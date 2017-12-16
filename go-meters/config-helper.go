@@ -6,9 +6,10 @@ import (
 )
 
 type Configuration struct {
-	Port   string `json:"Port"`
-	DbType string `json:"DbType"`
-	DbURL  string `json:"DbURL"`
+	Port    string `json:"Port"`
+	DbType  string `json:"DbType"`
+	DbURL   string `json:"DbURL"`
+	IsHTTPS bool   `json:"isHTTPS"`
 }
 
 func (c *Configuration) ReadFromFile(cfgFile string) error {

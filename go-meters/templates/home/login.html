@@ -1,9 +1,7 @@
 <div>You are at login</div>
-<br><br>
-
-{{% if not .Session.LoggedIn %}}
+<br><br> {{% if not .Session.LoggedIn %}}
 <div class="container">
-    <form action="/perform-login" method="POST">
+    <form action="/login" method="POST">
         <div class="form-group row">
             <label for="username" class="col-sm-2 col-form-label">Username:</label>
             <div class="col-sm-6">
@@ -21,9 +19,7 @@
         </div>
     </form>
 </div>
-{{% end %}}
-
-{{% if .Err %}}
+{{% end %}} {{% if .Err %}}
 <div style="color: red;">{{% .SErr %}}</div>
 {{% end %}}
 

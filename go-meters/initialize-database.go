@@ -29,6 +29,7 @@ type urlRequest struct {
 	request_title     string
 	request_template  string
 	request_url       string
+	request_type      string
 	controller        string
 	action            string
 	redirect_url      string
@@ -50,26 +51,27 @@ func addRequests(tx *sql.Tx) error {
 
 	requests := []urlRequest{
 		// pages
-		{"Index", "home/index.html", "index", "Home", "Index", "-", "-"},
-		{"About", "home/about.html", "about", "Home", "-", "-", "-"},
-		{"Login", "home/login.html", "login", "Home", "-", "-", "-"},
-		{"Register", "home/register.html", "register", "Home", "-", "-", "-"},
-		{"Change Password", "home/change-password.html", "change-password", "Home", "-", "-", "-"},
+		{"Index", "home/index.html", "index", "GET", "Home", "Index", "-", "-"},
+		{"About", "home/about.html", "about", "GET", "Home", "-", "-", "-"},
+		{"Login", "home/login.html", "login", "GET", "Home", "-", "-", "-"},
+		{"Register", "home/register.html", "register", "GET", "Home", "-", "-", "-"},
+		{"Change Password", "home/change-password.html", "change-password", "GET", "Home", "-", "-", "-"},
 		// gets
-		{"Logout", "-", "logout", "Home", "Logout", "/", "-"},
-		{"Exchange Rates", "-", "exchange-rates", "Home", "GetExchangeRates", "-", "-"},
+		{"Logout", "-", "logout", "GET", "Home", "Logout", "/", "-"},
+		{"Exchange Rates", "-", "exchange-rates", "GET", "Home", "GetExchangeRates", "-", "-"},
 		// posts
-		{"Login", "-", "perform-login", "Home", "Login", "index", "login"},
-		{"Logout", "-", "perform-logout", "Home", "Logout", "login", "login"},
-		{"Register", "-", "perform-register", "Home", "Register", "login", "register"},
-		{"Change Password", "-", "perform-change-password", "Home", "ChangePassword", "change-password", "change-password"},
+		{"Login", "-", "login", "POST", "Home", "Login", "index", "login"},
+		{"Logout", "-", "logout", "POST", "Home", "Logout", "login", "login"},
+		{"Register", "-", "register", "POST", "Home", "Register", "login", "register"},
+		{"Change Password", "-", "change-password", "POST", "Home", "ChangePassword", "change-password", "change-password"},
 	}
 
 	queryExists := dbUtils.PQuery(`
 		select exists(
 		    select 1
 		      from request
-		    where request_url = ?
+			where request_url = ?
+			  and request_type = ?
 		)
 	`)
 
@@ -78,12 +80,13 @@ func addRequests(tx *sql.Tx) error {
 			request_title,
 			request_template,
 			request_url,
+			request_type,
 			controller,
 			action,
 			redirect_url,
 			redirect_on_error
 		)
-		values (?, ?, ?, ?, ?, ?, ?)
+		values (?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 
 	stmtE, err := tx.Prepare(queryExists)
@@ -99,7 +102,7 @@ func addRequests(tx *sql.Tx) error {
 	defer stmtAdd.Close()
 
 	for _, req := range requests {
-		err := stmtE.QueryRow(req.request_url).Scan(&found)
+		err := stmtE.QueryRow(req.request_url, req.request_type).Scan(&found)
 
 		if err != nil {
 			return err
@@ -110,6 +113,7 @@ func addRequests(tx *sql.Tx) error {
 				req.request_title,
 				req.request_template,
 				req.request_url,
+				req.request_type,
 				req.controller,
 				req.action,
 				req.redirect_url,

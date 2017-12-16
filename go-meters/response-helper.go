@@ -55,7 +55,7 @@ func (res *ResponseHelper) getResponseValue(controller interface{}, w http.Respo
 	return nil, fmt.Errorf("Function does not return the requested number of values.")
 }
 
-func getResponseHelperByURL(url string) (*ResponseHelper, error) {
+func getResponseHelperByURL(url string, requestType string) (*ResponseHelper, error) {
 	var res ResponseHelper
 	var sURL string
 
@@ -73,10 +73,11 @@ func getResponseHelperByURL(url string) (*ResponseHelper, error) {
 			   redirect_url,
 			   redirect_on_error
           from request
-         where request_url = ?
+		 where request_url = ?
+		   and request_type = ?
     `)
 
-	err := db.QueryRow(query, sURL).Scan(
+	err := db.QueryRow(query, sURL, requestType).Scan(
 		&res.Title,
 		&res.Template,
 		&res.Controller,

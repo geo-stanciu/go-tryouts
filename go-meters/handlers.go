@@ -39,7 +39,7 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 	url := getBaseURL(r)
 	sessionData, err := getSessionData(r)
 
-	if (err != nil || !sessionData.LoggedIn) && url != "/perform-login" && url != "/perform-register" {
+	if (err != nil || !sessionData.LoggedIn) && url != "/login" && url != "/register" {
 		if err != nil {
 			audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)
 		}
@@ -50,7 +50,7 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if sessionData.LoggedIn && strings.HasPrefix(url, "/perform-login") {
+	if sessionData.LoggedIn && strings.HasPrefix(url, "/login") {
 		setOperationError(w, r, "Request failed.")
 
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -108,7 +108,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 		Date:    t,
 	}
 
-	response, err := getResponseHelperByURL(url)
+	response, err := getResponseHelperByURL(url, r.Method)
 
 	if err != nil {
 		audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)

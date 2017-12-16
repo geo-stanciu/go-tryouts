@@ -12,16 +12,19 @@ import (
 	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/sirupsen/logrus"
 
+	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 )
 
 var (
-	log     = logrus.New()
-	audit   = utils.AuditLog{}
-	db      *sql.DB
-	dbUtils = utils.DbUtils{}
-	config  = Configuration{}
+	appName    = "GoExchRates"
+	appVersion = "0.0.0.1"
+	log        = logrus.New()
+	audit      = utils.AuditLog{}
+	db         *sql.DB
+	dbUtils    = utils.DbUtils{}
+	config     = Configuration{}
 )
 
 func init() {
@@ -61,7 +64,7 @@ func main() {
 	}
 	defer db.Close()
 
-	audit.SetLoggerAndDatabase(log, &dbUtils)
+	audit.SetLogger(appName+"/"+appVersion, log, &dbUtils)
 	audit.SetWaitGroup(&wg)
 
 	mw := io.MultiWriter(os.Stdout, audit)

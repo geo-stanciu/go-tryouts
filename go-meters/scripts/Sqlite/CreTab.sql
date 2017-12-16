@@ -17,7 +17,9 @@ CREATE TABLE request (
   action            varchar(64)  not null DEFAULT '-',
   redirect_url      varchar(256) not null DEFAULT '-',
   redirect_on_error varchar(256) not null DEFAULT '-',
-  constraint request_url_uk unique (request_url)
+  request_type      varchar(8)   not null DEFAULT 'GET',
+  constraint request_url_uk unique (request_url, request_type),
+  constraint request_type_chk check (request_type in ('GET', 'POST'))
 );
 
 CREATE TABLE role (

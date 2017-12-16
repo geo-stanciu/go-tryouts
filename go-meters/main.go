@@ -18,6 +18,7 @@ import (
 
 	"strings"
 
+	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 )
@@ -75,13 +76,13 @@ func main() {
 	}
 	defer db.Close()
 
-	audit.SetLoggerAndDatabase(log, &dbUtils)
+	audit.SetLogger(appName+"/"+appVersion, log, &dbUtils)
 	audit.SetWaitGroup(&wg)
 
 	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
 
-	cookieStore, err = getNewCookieStore()
+	cookieStore, err = getNewCookieStore(config.IsHTTPS)
 	if err != nil {
 		log.Println(err)
 		return

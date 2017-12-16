@@ -17,7 +17,9 @@ CREATE TABLE request (
   action            varchar(64)  not null DEFAULT '-',
   redirect_url      varchar(256) not null DEFAULT '-',
   redirect_on_error varchar(256) not null DEFAULT '-',
-  constraint request_url_uk unique (request_url)
+  request_type      varchar(8)   not null DEFAULT 'GET',
+  constraint request_url_uk unique (request_url, request_type),
+  constraint request_type_chk check (request_type in ('GET', 'POST'))
 );
 
 CREATE TABLE role (
@@ -51,8 +53,8 @@ CREATE TABLE user (
 );
 
 CREATE TABLE user_password (
-  password_id   BIGINT                AUTO_INCREMENT PRIMARY KEY,
-  user_id       INT          NOT NULL,
+  password_id   bigint       AUTO_INCREMENT PRIMARY KEY,
+  user_id       bigint       NOT NULL,
   password      VARCHAR(256) NOT NULL,
   password_salt VARCHAR(256) NOT NULL,
   valid_from    datetime(3) NOT NULL,
@@ -63,8 +65,8 @@ CREATE TABLE user_password (
 );
 
 CREATE TABLE user_role (
-  user_role_id BIGINT            AUTO_INCREMENT PRIMARY KEY,
-  user_id      int not null,
+  user_role_id bigint            AUTO_INCREMENT PRIMARY KEY,
+  user_id      bigint not null,
   role_id      int not null,
   valid_from   datetime(3) not null,
   valid_until  datetime(3),
@@ -76,7 +78,7 @@ CREATE TABLE user_role (
 
 CREATE TABLE user_role_history (
   user_role_id bigint PRIMARY KEY,
-  user_id      int not null,
+  user_id      bigint not null,
   role_id      int not null,
   valid_from   datetime(3) not null,
   valid_until  datetime(3),
@@ -87,8 +89,8 @@ CREATE TABLE user_role_history (
 );
 
 CREATE TABLE user_ip (
-  user_ip_id BIGINT       AUTO_INCREMENT PRIMARY KEY,
-  user_id    INT          NOT NULL,
+  user_ip_id bigint       AUTO_INCREMENT PRIMARY KEY,
+  user_id    bigint       NOT NULL,
   ip         varchar(256) NOT NULL,
   constraint user_ip_fk foreign key (user_id)
     references user(user_id)
@@ -96,6 +98,7 @@ CREATE TABLE user_ip (
 
 create table audit_log (
   audit_log_id   bigint auto_increment PRIMARY KEY,
+  log_source     varchar(64) not null,
   log_time       datetime(3) not null,
   audit_msg      MEDIUMTEXT not null
 );
