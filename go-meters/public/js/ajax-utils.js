@@ -1,8 +1,8 @@
 function getHttpRequest() {
     var xmlhttp;
-    if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+    if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
         xmlhttp = new XMLHttpRequest();
-    } else {// code for IE6, IE5
+    } else { // code for IE6, IE5
         xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
     }
 
@@ -12,7 +12,7 @@ function getHttpRequest() {
 function getAJAX(path, params, callback) {
     var method = "GET";
     var url = path + "?lrt=" + (new Date().getTime());
-    
+
     var str = [];
 
     for (var key in params) {
@@ -34,13 +34,18 @@ function getAJAX(path, params, callback) {
         }
     }
 
+    var token = document.getElementsByTagName("meta")["csrf.Token"];
+    if (token != undefined) {
+        xhr.setRequestHeader("X-CSRF-Token", token.getAttribute("content"));
+    }
+
     xhr.send();
 }
 
 function postAJAX(path, params, callback) {
     var method = "POST";
     var url = path + "?lrt=" + (new Date().getTime());
-    
+
     var str = [];
 
     for (var key in params) {
@@ -60,7 +65,12 @@ function postAJAX(path, params, callback) {
         }
     }
 
-    xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+    var token = document.getElementsByTagName("meta")["csrf.Token"];
+    if (token != undefined) {
+        xhr.setRequestHeader("X-CSRF-Token", token.getAttribute("content"));
+    }
+
+    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
     xhr.send(str.join("&"));
 }
 
@@ -75,15 +85,25 @@ function sendPOST(path, params) {
     form.setAttribute("method", method);
     form.setAttribute("action", url);
 
-    for(var key in params) {
-        if(params.hasOwnProperty(key)) {
+    for (var key in params) {
+        if (params.hasOwnProperty(key)) {
             var hiddenField = document.createElement("input");
             hiddenField.setAttribute("type", "hidden");
-            hiddenField.setAttribute("name", key);
-            hiddenField.setAttribute("value", params[key]);
+            hiddenField.setAttribute("name", encodeURIComponent(key));
+            hiddenField.setAttribute("value", encodeURIComponent(params[key]));
 
             form.appendChild(hiddenField);
-         }
+        }
+    }
+
+    var token = document.getElementsByTagName("meta")["csrf.Token"];
+    if (token != undefined) {
+        var hiddenField = document.createElement("input");
+        hiddenField.setAttribute("type", "hidden");
+        hiddenField.setAttribute("name", encodeURIComponent(key));
+        hiddenField.setAttribute("value", encodeURIComponent(token.getAttribute("content")));
+
+        form.appendChild(hiddenField);
     }
 
     document.body.appendChild(form);

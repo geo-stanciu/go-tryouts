@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{% .m.Title %}} - {{% .m.AppName %}} - {{% .m.Version %}}</title>
 
+    <meta name="csrf.Token" content="{{% .csrf %}}">
+
     <script src="/js/cookies-v1.2.3.min.js"></script>
 
     <script src="/js/ajax-utils.js?v={{% .m.Version %}}"></script>

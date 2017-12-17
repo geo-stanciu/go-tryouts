@@ -147,6 +147,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 
 		m := map[string]interface{}{
 			"m":              passedObj,
+			"csrf":           csrf.Token(r),
 			csrf.TemplateTag: csrf.TemplateField(r),
 		}
 

@@ -364,7 +364,7 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 	queryAux := "select max(exchange_date) from exchange_rate"
 
 	if len(date) > 0 {
-		queryAux += " where exchange_date <= DATE ?"
+		queryAux += " where exchange_date <= DATE ? "
 	}
 
 	query := dbUtils.PQuery(`

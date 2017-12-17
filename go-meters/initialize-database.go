@@ -64,6 +64,7 @@ func addRequests(tx *sql.Tx) error {
 		{"Logout", "-", "logout", "POST", "Home", "Logout", "login", "login"},
 		{"Register", "-", "register", "POST", "Home", "Register", "login", "register"},
 		{"Change Password", "-", "change-password", "POST", "Home", "ChangePassword", "change-password", "change-password"},
+		{"Exchange Rates", "-", "exchange-rates", "POST", "Home", "GetExchangeRates", "-", "-"},
 	}
 
 	queryExists := dbUtils.PQuery(`
