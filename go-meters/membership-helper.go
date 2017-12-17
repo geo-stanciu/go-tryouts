@@ -684,13 +684,13 @@ func (u *MembershipUser) Equals(usr *MembershipUser) bool {
 }
 
 type validateUserUtil struct {
-	userID         int    `sql:"user_id"`
-	hashedPassword string `sql:"hashed_password"`
-	passwordSalt   string `sql:"password_salt"`
-	activated      int    `sql:"activated"`
-	lockedOut      int    `sql:"locked_out"`
-	valid          int    `sql:"valid"`
-	temporary      int    `sql:"temporary"`
+	UserID         int    `sql:"user_id"`
+	HashedPassword string `sql:"hashed_password"`
+	PasswordSalt   string `sql:"password_salt"`
+	Activated      int    `sql:"activated"`
+	LockedOut      int    `sql:"locked_out"`
+	Valid          int    `sql:"valid"`
+	Temporary      int    `sql:"temporary"`
 }
 
 // ValidateUserPassword - check user and password validity
@@ -722,15 +722,15 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		return ValidationFailed, err
 	}
 
-	if testUser.lockedOut > 0 {
+	if testUser.LockedOut > 0 {
 		return ValidationFailed, fmt.Errorf("username \"%s\" is locked out", user)
 	}
 
-	if testUser.activated <= 0 {
+	if testUser.Activated <= 0 {
 		return ValidationFailed, fmt.Errorf("username \"%s\" is not activated", user)
 	}
 
-	if testUser.valid <= 0 {
+	if testUser.Valid <= 0 {
 		return ValidationFailed, fmt.Errorf("username \"%s\" is not valid", user)
 	}
 
@@ -741,7 +741,7 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		SELECT ip FROM user_ip WHERE user_id = ?
 	`)
 
-	rows, err := db.Query(query, testUser.userID)
+	rows, err := db.Query(query, testUser.UserID)
 	if err != nil {
 		return ValidationFailed, err
 	}
@@ -771,19 +771,19 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		return ValidationFailed, fmt.Errorf("IP not accepted for \"%s\"", user)
 	}
 
-	passBytes := []byte(testUser.passwordSalt + pass)
-	hashBytes, err := base64.StdEncoding.DecodeString(testUser.hashedPassword)
+	passBytes := []byte(testUser.PasswordSalt + pass)
+	hashBytes, err := base64.StdEncoding.DecodeString(testUser.HashedPassword)
 	if err != nil {
 		return ValidationFailed, err
 	}
 
 	err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
 	if err != nil {
-		failedUserPasswordValidation(testUser.userID, user)
+		failedUserPasswordValidation(testUser.UserID, user)
 		return ValidationFailed, err
 	}
 
-	if testUser.temporary > 0 {
+	if testUser.Temporary > 0 {
 		return ValidationTemporaryPassword, nil
 	}
 
