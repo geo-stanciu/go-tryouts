@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/base64"
 	"net/http"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
+// User - user
 type User struct {
 	Name         string
 	Surname      string
@@ -20,6 +22,7 @@ type User struct {
 	TempPassword bool
 }
 
+// SessionData - session data
 type SessionData struct {
 	LoggedIn  bool
 	SessionID string
@@ -205,42 +208,36 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 	var keys [][]byte
 	dt := time.Now().UTC()
 
-	query := `
+	query := dbUtils.PQuery(`
 		SELECT encode_key
 		  FROM cookie_encode_key
 		 WHERE valid_from  <= ?
 		   AND valid_until >= ?
 		 ORDER BY cookie_encode_key_id
 		 LIMIT 4
-	`
+	`)
 
-	rows, err := db.Query(query, dt, dt)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
+	var err error
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
 		var encodeKey string
 
-		err = rows.Scan(&encodeKey)
+		err = row.Scan(&encodeKey)
 		if err != nil {
-			return nil, err
+			return
 		}
 
 		key, err := base64.StdEncoding.DecodeString(encodeKey)
 		if err != nil {
-			return nil, err
+			return
 		}
 
 		keys = append(keys, key)
-	}
+	}, dt,
+		dt)
 
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return nil, err
 	}
-
-	rows.Close()
 
 	return keys, nil
 }

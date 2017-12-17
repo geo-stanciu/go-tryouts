@@ -14,13 +14,16 @@ import (
 	"github.com/geo-stanciu/go-utils/utils"
 )
 
+// HomeController - Home controller
 type HomeController struct {
 }
 
+// Index - index
 func (HomeController) Index(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	return nil, nil
 }
 
+// Login - login
 func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.LoginResponseModel, error) {
 	var lres models.LoginResponseModel
 	var ip string
@@ -133,6 +136,7 @@ func loginerr(lres *models.LoginResponseModel,
 	return *lres, nil
 }
 
+// Logout - logout
 func (HomeController) Logout(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	var lres models.GenericResponseModel
 	var user string
@@ -161,6 +165,7 @@ func (HomeController) Logout(w http.ResponseWriter, r *http.Request, res *Respon
 	return &lres, nil
 }
 
+// Register - register
 func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	var lres models.GenericResponseModel
 	var err error
@@ -242,6 +247,7 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 	return &lres, nil
 }
 
+// ChangePassword - change password
 func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.GenericResponseModel, error) {
 	var lres models.GenericResponseModel
 	var err error
@@ -349,6 +355,7 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	return &lres, nil
 }
 
+// GetExchangeRates - get exchange rates
 func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, res *ResponseHelper) (*models.ExchangeRatesResponseModel, error) {
 	var lres models.ExchangeRatesResponseModel
 	var date string

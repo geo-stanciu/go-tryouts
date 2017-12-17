@@ -16,11 +16,15 @@ import (
 )
 
 const (
-	ValidationFailed            int = 0
-	ValidationOK                int = 1
+	// ValidationFailed - validation failed
+	ValidationFailed int = 0
+	// ValidationOK - validation OK
+	ValidationOK int = 1
+	// ValidationTemporaryPassword - validation temporary password
 	ValidationTemporaryPassword int = 2
 )
 
+// MembershipUser - membership user helper
 type MembershipUser struct {
 	sync.RWMutex
 	UserID   int
@@ -31,6 +35,7 @@ type MembershipUser struct {
 	Password string `json:"-"`
 }
 
+// UserExists - user exists
 func (u *MembershipUser) UserExists(user string) (bool, error) {
 	u.RLock()
 	defer u.RUnlock()
@@ -57,6 +62,7 @@ func (u *MembershipUser) UserExists(user string) (bool, error) {
 	return found, nil
 }
 
+// GetUserByName - get user by name
 func (u *MembershipUser) GetUserByName(user string) error {
 	u.Lock()
 	defer u.Unlock()
@@ -88,6 +94,7 @@ func (u *MembershipUser) GetUserByName(user string) error {
 	return nil
 }
 
+// GetUserByID - get user by id
 func (u *MembershipUser) GetUserByID(userID int) error {
 	u.Lock()
 	defer u.Unlock()
@@ -161,6 +168,7 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 	return nil
 }
 
+// Save - save user details
 func (u *MembershipUser) Save() error {
 	var query string
 
@@ -288,6 +296,7 @@ func (u *MembershipUser) Save() error {
 	return nil
 }
 
+// GetUserRoles - get user roles
 func (u *MembershipUser) GetUserRoles() ([]MembershipRole, error) {
 	u.RLock()
 	defer u.RUnlock()
@@ -307,31 +316,27 @@ func (u *MembershipUser) GetUserRoles() ([]MembershipRole, error) {
 		 ORDER BY r.role
 	`)
 
-	rows, err := db.Query(query, u.UserID, dt, dt)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
+	var err error
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
 		var r MembershipRole
-		err = rows.Scan(&r.RoleID, &r.Rolename)
+		err = row.Scan(&r.RoleID, &r.Rolename)
 		if err != nil {
-			return nil, err
+			return
 		}
 
 		roles = append(roles, r)
-	}
+	}, u.UserID,
+		dt,
+		dt)
 
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return nil, err
 	}
-
-	rows.Close()
 
 	return roles, nil
 }
 
+// AddToRole - add user to role
 func (u *MembershipUser) AddToRole(role string) error {
 	u.Lock()
 	defer u.Unlock()
@@ -378,6 +383,7 @@ func (u *MembershipUser) AddToRole(role string) error {
 	return nil
 }
 
+// RemoveFromRole - remove user from role
 func (u *MembershipUser) RemoveFromRole(role string) error {
 	u.Lock()
 	defer u.Unlock()
@@ -483,35 +489,29 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 		 LIMIT ?
 	`)
 
-	rows, err := tx.Query(query, u.UserID, notRepeatPasswords)
-	if err != nil {
-		return true, notRepeatPasswords, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err = rows.Scan(&hashedPassword, &passwordSalt)
+	var err error
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+		err = row.Scan(&hashedPassword, &passwordSalt)
 		if err != nil {
-			return true, notRepeatPasswords, err
+			return
 		}
 
 		passBytes := []byte(passwordSalt + u.Password)
 		hashBytes, err := base64.StdEncoding.DecodeString(hashedPassword)
 		if err != nil {
-			return true, notRepeatPasswords, err
+			return
 		}
 
 		err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
 		if err == nil {
-			return true, notRepeatPasswords, err
+			return
 		}
-	}
+	}, u.UserID,
+		notRepeatPasswords)
 
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return true, notRepeatPasswords, err
 	}
-
-	rows.Close()
 
 	return false, notRepeatPasswords, nil
 }
@@ -667,6 +667,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	return nil
 }
 
+// Equals - test equality between User structs
 func (u *MembershipUser) Equals(usr *MembershipUser) bool {
 	if u == nil && usr != nil ||
 		u != nil && usr == nil ||
@@ -682,20 +683,23 @@ func (u *MembershipUser) Equals(usr *MembershipUser) bool {
 	return true
 }
 
-func ValidateUserPassword(user string, pass string, ip string) (int, error) {
-	var userID int
-	var hashedPassword string
-	var passwordSalt string
-	var activated int
-	var lockedOut int
-	var valid int
-	var temporary int
+type validateUserUtil struct {
+	userID         int    `sql:"user_id"`
+	hashedPassword string `sql:"hashed_password"`
+	passwordSalt   string `sql:"password_salt"`
+	activated      int    `sql:"activated"`
+	lockedOut      int    `sql:"locked_out"`
+	valid          int    `sql:"valid"`
+	temporary      int    `sql:"temporary"`
+}
 
+// ValidateUserPassword - check user and password validity
+func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 	dt := time.Now().UTC()
 
 	query := dbUtils.PQuery(`
 		SELECT u.user_id,
-		       case when p.password is null then '' else p.password end AS password,
+		       case when p.password is null then '' else p.password end AS hashed_password,
 		       case when p.password_salt is null then '' else p.password_salt end AS password_salt,
 		       activated,
 		       locked_out,
@@ -706,17 +710,10 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		 WHERE loweredusername = lower(?)
 		   AND p.valid_from <= ?
 		   AND (p.valid_until is null OR p.valid_until > ?)
-    	`)
+	`)
 
-	err := db.QueryRow(query, user, dt, dt).Scan(
-		&userID,
-		&hashedPassword,
-		&passwordSalt,
-		&activated,
-		&lockedOut,
-		&valid,
-		&temporary,
-	)
+	testUser := validateUserUtil{}
+	err := dbUtils.RunQuery(query, &testUser, user, dt, dt)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -725,15 +722,15 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		return ValidationFailed, err
 	}
 
-	if lockedOut > 0 {
+	if testUser.lockedOut > 0 {
 		return ValidationFailed, fmt.Errorf("username \"%s\" is locked out", user)
 	}
 
-	if activated <= 0 {
+	if testUser.activated <= 0 {
 		return ValidationFailed, fmt.Errorf("username \"%s\" is not activated", user)
 	}
 
-	if valid <= 0 {
+	if testUser.valid <= 0 {
 		return ValidationFailed, fmt.Errorf("username \"%s\" is not valid", user)
 	}
 
@@ -744,7 +741,7 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		SELECT ip FROM user_ip WHERE user_id = ?
 	`)
 
-	rows, err := db.Query(query, userID)
+	rows, err := db.Query(query, testUser.userID)
 	if err != nil {
 		return ValidationFailed, err
 	}
@@ -774,19 +771,19 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		return ValidationFailed, fmt.Errorf("IP not accepted for \"%s\"", user)
 	}
 
-	passBytes := []byte(passwordSalt + pass)
-	hashBytes, err := base64.StdEncoding.DecodeString(hashedPassword)
+	passBytes := []byte(testUser.passwordSalt + pass)
+	hashBytes, err := base64.StdEncoding.DecodeString(testUser.hashedPassword)
 	if err != nil {
 		return ValidationFailed, err
 	}
 
 	err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
 	if err != nil {
-		failedUserPasswordValidation(userID, user)
+		failedUserPasswordValidation(testUser.userID, user)
 		return ValidationFailed, err
 	}
 
-	if temporary > 0 {
+	if testUser.temporary > 0 {
 		return ValidationTemporaryPassword, nil
 	}
 

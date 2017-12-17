@@ -7,12 +7,14 @@ import (
 	"time"
 )
 
+// MembershipRole - role utils
 type MembershipRole struct {
 	sync.RWMutex
 	RoleID   int
 	Rolename string
 }
 
+// RoleExists - role exists
 func (r *MembershipRole) RoleExists(role string) (bool, error) {
 	r.RLock()
 	defer r.RUnlock()
@@ -39,6 +41,7 @@ func (r *MembershipRole) RoleExists(role string) (bool, error) {
 	return found, nil
 }
 
+// GetRoleByName - get role by name
 func (r *MembershipRole) GetRoleByName(role string) error {
 	r.Lock()
 	defer r.Unlock()
@@ -64,6 +67,7 @@ func (r *MembershipRole) GetRoleByName(role string) error {
 	return nil
 }
 
+// GetRoleByID - get role by ID
 func (r *MembershipRole) GetRoleByID(roleID int) error {
 	r.Lock()
 	defer r.Unlock()
@@ -127,6 +131,7 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 	return nil
 }
 
+// Save - save role details
 func (r *MembershipRole) Save() error {
 	r.Lock()
 	defer r.Unlock()
@@ -202,6 +207,7 @@ func (r *MembershipRole) Save() error {
 	return nil
 }
 
+// HasMember - role has member
 func (r *MembershipRole) HasMember(user string) (bool, error) {
 	found := false
 
@@ -231,6 +237,7 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 	return found, nil
 }
 
+// HasMemberID - has member ID
 func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 	found := false
 
@@ -259,6 +266,7 @@ func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 	return found, nil
 }
 
+// IsUserInRole - Is user in role
 func IsUserInRole(user string, role string) (bool, error) {
 	found := false
 

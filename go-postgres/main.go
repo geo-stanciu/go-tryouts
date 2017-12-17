@@ -17,14 +17,14 @@ var (
 )
 
 type Test struct {
-	Date    time.Time
-	Version string
+	Date    time.Time `sql:"date"`
+	Version string    `sql:"version"`
 }
 
 type Test1 struct {
-	Dt  time.Time
-	Dtz time.Time
-	D   time.Time
+	Dt  time.Time `sql:"dt"`
+	Dtz time.Time `sql:"dtz"`
+	D   time.Time `sql:"d"`
 }
 
 func main() {

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"encoding/gob"
 
@@ -34,6 +35,7 @@ var (
 	db                  *sql.DB
 	dbUtils             = utils.DbUtils{}
 	config              = Configuration{}
+	timezone            *time.Location
 	appName             = "GoMeters"
 	appVersion          = "0.0.0.1"
 	authCookieStoreName = strings.Replace(appName, " ", "", -1)
@@ -77,6 +79,12 @@ func main() {
 		return
 	}
 	defer db.Close()
+
+	timezone, err = time.LoadLocation("Europe/Bucharest")
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	audit.SetLogger(appName+"/"+appVersion, log, &dbUtils)
 	audit.SetWaitGroup(&wg)

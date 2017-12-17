@@ -10,6 +10,7 @@ import (
 	"github.com/geo-stanciu/go-utils/utils"
 )
 
+// ResponseHelper - HTTPS response utils
 type ResponseHelper struct {
 	Title           string
 	Template        string
@@ -52,7 +53,7 @@ func (res *ResponseHelper) getResponseValue(controller interface{}, w http.Respo
 		return r.(models.ResponseModel), nil
 	}
 
-	return nil, fmt.Errorf("Function does not return the requested number of values.")
+	return nil, fmt.Errorf("Function does not return the requested number of values")
 }
 
 func getResponseHelperByURL(url string, requestType string) (*ResponseHelper, error) {

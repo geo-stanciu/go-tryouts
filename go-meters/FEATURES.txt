@@ -13,3 +13,4 @@
     - do not use repetitive groups of letters
     - must not contain the username
     - redirect user to change his password if password is temporary
+4. anti XRSF

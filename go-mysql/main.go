@@ -17,14 +17,14 @@ var (
 )
 
 type Test struct {
-	Date    time.Time
-	Version string
+	Date    time.Time `sql:"date"`
+	Version string    `sql:"version"`
 }
 
 type Test1 struct {
-	Dt  time.Time
-	Dtz time.Time
-	D   time.Time
+	Dt  time.Time `sql:"dt"`
+	Dtz time.Time `sql:"dtz"`
+	D   time.Time `sql:"d"`
 }
 
 func main() {
@@ -68,6 +68,7 @@ func main() {
 
 		fmt.Println("Date: ", test2.Date)
 		fmt.Println("Date - local:", test2.Date.In(loc))
+		fmt.Println("Version: ", test2.Version)
 	})
 
 	if err != nil {
