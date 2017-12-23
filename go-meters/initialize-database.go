@@ -68,12 +68,13 @@ func addRequests(tx *sql.Tx) error {
 	}
 
 	queryExists := dbUtils.PQuery(`
-		select exists(
+		select CASE WHEN EXISTS (
 		    select 1
 		      from request
 			where request_url = ?
 			  and request_type = ?
-		)
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
 	queryAdd := dbUtils.PQuery(`
@@ -139,11 +140,12 @@ func addRoles(tx *sql.Tx) error {
 	}
 
 	queryExists := dbUtils.PQuery(`
-		select exists(
+		select CASE WHEN EXISTS (
 		    select 1
 		      from role
 		    where lower(role) = lower(?)
-		)
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
 	queryAdd := dbUtils.PQuery(`
@@ -201,12 +203,13 @@ func addSystemParams(tx *sql.Tx) error {
 	}
 
 	queryExists := dbUtils.PQuery(`
-		select exists(
+		select CASE WHEN EXISTS (
 		    select 1
 		      from system_params
 		    where param_group = ?
 		      and param = ?
-		)
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
 	queryAdd := dbUtils.PQuery(`

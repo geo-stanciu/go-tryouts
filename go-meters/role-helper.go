@@ -22,11 +22,12 @@ func (r *MembershipRole) RoleExists(role string) (bool, error) {
 	found := false
 
 	query := dbUtils.PQuery(`
-		SELECT EXISTS(
+		SELECT CASE WHEN EXISTS (
 			SELECT 1
 			  FROM role
 			 WHERE lower(role) = lower(?)
-		)
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
 	err := db.QueryRow(query, role).Scan(&found)
@@ -101,12 +102,13 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 	var found bool
 
 	query := dbUtils.PQuery(`
-        SELECT EXISTS(
+        SELECT CASE WHEN EXISTS (
 			SELECT 1
 		      FROM role
 			 WHERE lower(role) = lower(?)
 			   AND role_id <> ?
-		)
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
 	stmt, err := tx.Prepare(query)
@@ -214,7 +216,7 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 	dt := time.Now().UTC()
 
 	query := dbUtils.PQuery(`
-		SELECT EXISTS(
+		SELECT CASE WHEN EXISTS (
 			SELECT 1
 			  FROM user_role ur
 			  JOIN user u ON (ur.user_id = u.user_id)
@@ -222,7 +224,8 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 			   AND ur.role_id        =  ?
 			   AND ur.valid_from     <= ?
 			   AND (ur.valid_until is null OR ur.valid_until > ?)
-		)
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
 	err := db.QueryRow(query, user, r.RoleID, dt, dt).Scan(&found)
@@ -244,14 +247,15 @@ func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 	dt := time.Now().UTC()
 
 	query := dbUtils.PQuery(`
-		SELECT EXISTS(
+		SELECT CASE WHEN EXISTS (
 			SELECT 1
 			  FROM user_role ur
 			 WHERE ur.user_id =  ?
 			   AND ur.role_id =  ?
 			   AND ur.valid_from <= ?
 			   AND (ur.valid_until is null OR ur.valid_until > ?)
-		)
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
 	err := db.QueryRow(query, userID, r.RoleID, dt, dt).Scan(&found)
@@ -273,7 +277,7 @@ func IsUserInRole(user string, role string) (bool, error) {
 	dt := time.Now().UTC()
 
 	query := dbUtils.PQuery(`
-		SELECT EXISTS(
+		SELECT CASE WHEN EXISTS (
 			SELECT 1
 			  FROM user_role ur
 			  JOIN user u ON (ur.user_id = u.user_id)
@@ -282,7 +286,8 @@ func IsUserInRole(user string, role string) (bool, error) {
 			   AND lower(r.role)     =  lower(?)
 			   AND ur.valid_from     <= ?
 			   AND (ur.valid_until is null OR ur.valid_until > ?)
-		)
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
 	err := db.QueryRow(query, user, role, dt, dt).Scan(&found)

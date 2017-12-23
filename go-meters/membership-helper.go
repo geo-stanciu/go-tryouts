@@ -43,12 +43,13 @@ func (u *MembershipUser) UserExists(user string) (bool, error) {
 	found := false
 
 	query := dbUtils.PQuery(`
-		SELECT EXISTS(
+		SELECT CASE WHEN EXISTS (
 			SELECT 1
 		      FROM user
 		 WHERE loweredusername = lower(?)
-		)
-    	`)
+		) THEN 1 ELSE 0 END
+		FROM dual
+	`)
 
 	err := db.QueryRow(query, user).Scan(&found)
 
@@ -138,12 +139,13 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 	var found bool
 
 	query := dbUtils.PQuery(`
-		SELECT EXISTS(
+		SELECT CASE WHEN EXISTS (
 			SELECT 1
 		 FROM user
 		WHERE loweredusername = LOWER(?)
 		  AND user_id <> ?
-		)
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
 	stmt, err := tx.Prepare(query)
@@ -310,8 +312,8 @@ func (u *MembershipUser) GetUserRoles() ([]MembershipRole, error) {
 		       r.role
 	      FROM user_role ur
 		  JOIN role r ON (ur.role_id = r.role_id)
-		 WHERE ur.user_id =  ?
-		   AND ur.valid_from     <= ?
+		 WHERE ur.user_id = ?
+		   AND ur.valid_from <= ?
 		   AND (ur.valid_until is null OR ur.valid_until > ?)
 		 ORDER BY r.role
 	`)
@@ -741,31 +743,22 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		SELECT ip FROM user_ip WHERE user_id = ?
 	`)
 
-	rows, err := db.Query(query, testUser.UserID)
-	if err != nil {
-		return ValidationFailed, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
 		hasIPs = true
 		var addr string
 		err = rows.Scan(&addr)
 		if err != nil {
-			return ValidationFailed, err
+			return
 		}
 
 		if addr == ip {
 			foundIP = true
-			break
 		}
-	}
+	}, testUser.UserID)
 
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return ValidationFailed, err
 	}
-
-	rows.Close()
 
 	if hasIPs && !foundIP {
 		return ValidationFailed, fmt.Errorf("IP not accepted for \"%s\"", user)

@@ -7,7 +7,3 @@
 2. menu allocation on roles.
 
 -----------------------------
-
-3. switch sql's to utils ForEachRow
-
------------------------------

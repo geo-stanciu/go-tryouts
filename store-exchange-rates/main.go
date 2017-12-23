@@ -165,7 +165,12 @@ func prepareCurrencies() error {
 	}
 	defer tx.Rollback()
 
-	query := "SELECT EXISTS(SELECT 1 FROM currency)"
+	query := `
+		SELECT CASE WHEN EXISTS (
+			SELECT 1 FROM currency
+		) THEN 1 ELSE 0 END
+		FROM dual
+	`
 
 	err = tx.QueryRow(query).Scan(&found)
 
@@ -256,21 +261,17 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 		return err
 	}
 
-	dData, err := utils.String2date(date, utils.ISODate)
-	if err != nil {
-		return err
-	}
-
 	query = dbUtils.PQuery(`
-		SELECT EXISTS(
+		SELECT CASE WHEN EXISTS (
 			SELECT 1
 			FROM exchange_rate 
 		   WHERE currency_id = ? 
-		     AND exchange_date = ?
-		)
+		     AND exchange_date = DATE ?
+		) THEN 1 ELSE 0 END
+		FROM dual
 	`)
 
-	err = tx.QueryRow(query, currencyID, dData).Scan(&found)
+	err = tx.QueryRow(query, currencyID, date).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -286,10 +287,10 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 				exchange_date,
 				rate
 			)
-			VALUES (?, ?, ?)
+			VALUES (?, DATE ?, ?)
 		`)
 
-		_, err = tx.Exec(query, currencyID, dData, exchRate/multiplier)
+		_, err = tx.Exec(query, currencyID, date, exchRate/multiplier)
 		if err != nil {
 			return err
 		}

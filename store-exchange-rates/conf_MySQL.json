@@ -1,0 +1,6 @@
+{
+    "DbType": "mysql",
+    "DbURL1": "geo:geo@tcp(localhost:3306)/devel?parseTime=true&loc=UTC&time_zone=%27%2B00:00%27&sql_mode=%27ORACLE,TRADITIONAL%27",
+    "DbURL": "geo:geo@tcp(localhost:3306)/devel?parseTime=true&sql_mode=%27ORACLE,TRADITIONAL%27",
+    "RatesXMLUrl": "http://bnro.ro/nbrfxrates.xml"
+}

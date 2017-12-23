@@ -1,3 +1,5 @@
+create or replace view dual as select 'X' AS dummy;
+
 create table if not exists currency (
     currency_id serial primary key,
     currency    varchar(8) not null,

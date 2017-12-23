@@ -368,48 +368,37 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 		date = ""
 	}
 
-	queryAux := "select max(exchange_date) from exchange_rate"
-
-	if len(date) > 0 {
-		queryAux += " where exchange_date <= DATE ? "
+	if len(date) == 0 {
+		dt := time.Now()
+		date = utils.Date2string(dt, utils.ISODate)
 	}
 
 	query := dbUtils.PQuery(`
-		select c.currency, r.exchange_date, r.rate
-		  from exchange_rate r
-		  join currency c on (r.currency_id = c.currency_id)
-		 where exchange_date = (` + queryAux + `)
-		 order by c.currency, r.exchange_date
+		SELECT c.currency, r.exchange_date, r.rate
+		  FROM exchange_rate r
+		  JOIN currency c ON (r.currency_id = c.currency_id)
+		  WHERE exchange_date = (
+			  SELECT max(exchange_date)
+				FROM exchange_rate
+			   WHERE exchange_date <= DATE ?
+		  )
+		 ORDER BY c.currency, r.exchange_date
 	`)
 
 	var err error
-	var rows *sql.Rows
-
-	if len(date) > 0 {
-		rows, err = db.Query(query, date)
-	} else {
-		rows, err = db.Query(query)
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
+	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
 		var r models.Rate
-		err = rows.Scan(&r.Currency, &r.Date, &r.Value)
+		err = row.Scan(&r.Currency, &r.Date, &r.Value)
 		if err != nil {
-			return nil, err
+			return
 		}
 
 		lres.Rates = append(lres.Rates, r)
-	}
+	}, date)
 
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return nil, err
 	}
-
-	rows.Close()
 
 	return &lres, nil
 }
