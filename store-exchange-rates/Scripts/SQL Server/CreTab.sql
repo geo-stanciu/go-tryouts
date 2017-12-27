@@ -17,7 +17,7 @@ create table audit_log (
     audit_log_id   bigint identity(1,1) PRIMARY KEY,
     log_source     varchar(64) not null,
     log_time       datetime not null,
-    audit_msg      text not null
+    audit_msg      ntext not null
 );
 
 create index idx_time_audit_log on audit_log (log_time);

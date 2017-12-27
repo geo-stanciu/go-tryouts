@@ -100,7 +100,7 @@ create table audit_log (
   audit_log_id   bigint auto_increment PRIMARY KEY,
   log_source     varchar(64) not null,
   log_time       datetime(3) not null,
-  audit_msg      MEDIUMTEXT not null
+  audit_msg      JSON not null
 );
 
 CREATE TABLE cookie_encode_key (

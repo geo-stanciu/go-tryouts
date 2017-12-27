@@ -225,7 +225,7 @@ func startBk(tx *sql.Tx, bkLabel string) (string, error) {
 func finishBk(tx *sql.Tx) (string, error) {
 	var archFile2Keep string
 
-	query := "SELECT file_name from pg_xlogfile_name_offset(pg_stop_backup())"
+	query := "SELECT file_name from pg_walfile_name_offset(pg_stop_backup())"
 
 	err := tx.QueryRow(query).Scan(&archFile2Keep)
 

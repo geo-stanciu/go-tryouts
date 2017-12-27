@@ -205,6 +205,11 @@ func prepareCurrencies() error {
 		}
 	}
 
+	err = storeRate(tx, "1970-01-01", "RON", 1.0, 1.0)
+	if err != nil {
+		return err
+	}
+
 	tx.Commit()
 
 	return nil
