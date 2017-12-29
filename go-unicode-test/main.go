@@ -21,8 +21,7 @@ var (
 func main() {
 	var err error
 
-	//cfgFile := "./conf.json"
-	cfgFile := "./conf_SQLSRV.json"
+	cfgFile := "./conf.json"
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		panic(err)
@@ -34,18 +33,33 @@ func main() {
 	}
 	defer db.Close()
 
+	tx, err := db.Begin()
+	if err != nil {
+		panic(err)
+	}
+	defer tx.Rollback()
+
 	query := dbUtils.PQuery(`
+		DELETE FROM test_unicode
+	`)
+
+	_, err = tx.Exec(query)
+	if err != nil {
+		panic(err)
+	}
+
+	query = dbUtils.PQuery(`
 		INSERT INTO test_unicode (c1) VALUES (?)
 	`)
 
-	_, err = db.Exec(query, "Hello, 世界")
+	_, err = tx.Exec(query, "Hello, 世界")
 	if err != nil {
 		panic(err)
 	}
 
 	query = dbUtils.PQuery(`SELECT c1 FROM test_unicode`)
 
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRowTx(tx, query, func(row *sql.Rows) {
 		var c1 string
 		err = row.Scan(&c1)
 		if err != nil {
@@ -54,4 +68,6 @@ func main() {
 
 		fmt.Println("c1: ", c1)
 	})
+
+	tx.Commit()
 }

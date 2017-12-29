@@ -483,8 +483,18 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 	var passwordSalt string
 
 	query := dbUtils.PQuery(`
-		SELECT case when password is null then '' else password end AS password,
-		       case when password_salt is null then '' else password_salt end AS password_salt
+		SELECT CASE
+				 WHEN password is null THEN
+				   '-'
+				 ELSE
+				   password
+			   END AS password,
+			   CASE
+				 WHEN password_salt is null THEN
+				   '-'
+				 ELSE
+				   password_salt
+			   END AS password_salt
 		  FROM user_password
 		 WHERE user_id = ?
 		 ORDER BY password_id DESC
@@ -701,8 +711,18 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 
 	query := dbUtils.PQuery(`
 		SELECT u.user_id,
-		       case when p.password is null then '' else p.password end AS hashed_password,
-		       case when p.password_salt is null then '' else p.password_salt end AS password_salt,
+			   CASE
+				 WHEN p.password is null THEN
+				   '-'
+				 ELSE
+				   p.password
+			   END AS hashed_password,
+			   CASE
+				 WHEN p.password_salt is null THEN
+				   '-'
+				 ELSE
+				   p.password_salt
+			   END AS password_salt,
 		       activated,
 		       locked_out,
 		       valid,
@@ -746,7 +766,7 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
 		hasIPs = true
 		var addr string
-		err = rows.Scan(&addr)
+		err = row.Scan(&addr)
 		if err != nil {
 			return
 		}
@@ -815,12 +835,12 @@ func failedUserPasswordValidation(userID int, user string) {
 
 	query := dbUtils.PQuery(`
 		SELECT failed_password_atmpts,
-			   case
-				    when first_failed_password is null then
-					    TIMESTAMP ?
-					else
-					    first_failed_password
-			    end AS first_failed_password
+			   CASE
+				 WHEN first_failed_password is null then
+				   TIMESTAMP ?
+				 ELSE
+				   first_failed_password
+			    END AS first_failed_password
 		  FROM user u
 		 WHERE user_id = ?
 	`)
