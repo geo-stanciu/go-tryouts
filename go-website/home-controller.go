@@ -230,14 +230,16 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 
 	if isRequestFromLocalhost(r) && strings.ToLower(u.Username) == "admin" {
 		err = u.AddToRole("Administrator")
+	} else {
+		err = u.AddToRole("Member")
+	}
 
-		if err != nil {
-			lres.BError = true
-			lres.SError = err.Error()
-			audit.Log(err, "register", lres.SError, "user", user, "email", email)
+	if err != nil {
+		lres.BError = true
+		lres.SError = err.Error()
+		audit.Log(err, "register", lres.SError, "user", user, "email", email)
 
-			return &lres, err
-		}
+		return &lres, err
 	}
 
 	lres.BError = false

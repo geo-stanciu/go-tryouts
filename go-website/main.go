@@ -36,7 +36,7 @@ var (
 	dbUtils             = utils.DbUtils{}
 	config              = Configuration{}
 	timezone            *time.Location
-	appName             = "GoMeters"
+	appName             = "GoWebsiteExample"
 	appVersion          = "0.0.0.1"
 	authCookieStoreName = strings.Replace(appName, " ", "", -1)
 	errCookieStoreName  = strings.Replace(appName, " ", "", -1) + "Err"
