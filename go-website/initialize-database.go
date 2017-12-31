@@ -68,27 +68,27 @@ func addRequests(tx *sql.Tx) error {
 	}
 
 	queryExists := dbUtils.PQuery(`
-		select CASE WHEN EXISTS (
-		    select 1
-		      from request
-			where request_url = ?
-			  and request_type = ?
-		) THEN 1 ELSE 0 END
-		FROM dual
+	    select CASE WHEN EXISTS (
+	       select 1
+	         from request
+	        where request_url = ?
+	          and request_type = ?
+	    ) THEN 1 ELSE 0 END
+	      FROM dual
 	`)
 
 	queryAdd := dbUtils.PQuery(`
-		insert into request (
-			request_title,
-			request_template,
-			request_url,
-			request_type,
-			controller,
-			action,
-			redirect_url,
-			redirect_on_error
-		)
-		values (?, ?, ?, ?, ?, ?, ?, ?)
+	    insert into request (
+	        request_title,
+	        request_template,
+	        request_url,
+	        request_type,
+	        controller,
+	        action,
+	        redirect_url,
+	        redirect_on_error
+	    )
+	    values (?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 
 	stmtE, err := tx.Prepare(queryExists)
@@ -140,19 +140,19 @@ func addRoles(tx *sql.Tx) error {
 	}
 
 	queryExists := dbUtils.PQuery(`
-		select CASE WHEN EXISTS (
-		    select 1
-		      from role
-		    where lower(role) = lower(?)
-		) THEN 1 ELSE 0 END
-		FROM dual
+	    select CASE WHEN EXISTS (
+	      select 1
+	        from role
+	       where lower(role) = lower(?)
+	    ) THEN 1 ELSE 0 END
+	    FROM dual
 	`)
 
 	queryAdd := dbUtils.PQuery(`
-		insert into role (
-			role
-		)
-		values (?)
+	    insert into role (
+	        role
+	    )
+	    values (?)
 	`)
 
 	stmtE, err := tx.Prepare(queryExists)
@@ -203,22 +203,22 @@ func addSystemParams(tx *sql.Tx) error {
 	}
 
 	queryExists := dbUtils.PQuery(`
-		select CASE WHEN EXISTS (
-		    select 1
-		      from system_params
-		    where param_group = ?
-		      and param = ?
-		) THEN 1 ELSE 0 END
-		FROM dual
+	    select CASE WHEN EXISTS (
+	        select 1
+	          from system_params
+	         where param_group = ?
+	           and param = ?
+	    ) THEN 1 ELSE 0 END
+	    FROM dual
 	`)
 
 	queryAdd := dbUtils.PQuery(`
-		insert into system_params (
-			param_group,
-			param,
-			val
-		)
-		values (?, ?, ?)
+	   insert into system_params (
+	       param_group,
+	       param,
+	       val
+	    )
+	    values (?, ?, ?)
 	`)
 
 	stmtE, err := tx.Prepare(queryExists)

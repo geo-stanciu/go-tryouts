@@ -46,10 +46,10 @@ func (p *SystemParams) LoadByGroup(group string) error {
 	p.Params = make(map[string]string)
 
 	query := dbUtils.PQuery(`
-		SELECT param, val
-		  FROM system_params
-		 WHERE param_group = ?
-		 ORDER BY param
+	    SELECT param, val
+	      FROM system_params
+	     WHERE param_group = ?
+	     ORDER BY param
 	`)
 
 	var err error

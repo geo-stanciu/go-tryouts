@@ -66,9 +66,9 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 		var surname string
 
 		query := dbUtils.PQuery(`
-			SELECT name, surname
-			  FROM user
-			 WHERE loweredusername = lower(?)
+		    SELECT name, surname
+		      FROM "user"
+		     WHERE loweredusername = lower(?)
 		`)
 
 		err = db.QueryRow(query, user).Scan(&name, &surname)
@@ -86,10 +86,10 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 		dt := time.Now().UTC()
 
 		query = dbUtils.PQuery(`
-			UPDATE user
-			   SET last_connect_time = ?,
-			       last_connect_ip   = ?
-			 WHERE loweredusername = lower(?)
+		    UPDATE "user"
+		       SET last_connect_time = ?,
+		           last_connect_ip   = ?
+		     WHERE loweredusername = lower(?)
 		`)
 
 		_, err = db.Exec(query, dt, ip, user)
@@ -230,6 +230,10 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 
 	if isRequestFromLocalhost(r) && strings.ToLower(u.Username) == "admin" {
 		err = u.AddToRole("Administrator")
+
+		if err == nil {
+			err = u.Activate()
+		}
 	} else {
 		err = u.AddToRole("Member")
 	}
@@ -376,21 +380,34 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 	}
 
 	query := dbUtils.PQuery(`
-		SELECT c.currency, r.exchange_date, r.rate
-		  FROM exchange_rate r
+	    WITH c_rates AS (
+			SELECT currency_id, max(exchange_date) max_data
+			  FROM exchange_rate
+	         WHERE exchange_date <= DATE ?
+			 GROUP BY currency_id
+		)
+		SELECT rc.currency AS reference_currency,
+			   c.currency,
+			   r.exchange_date,
+		       r.rate
+	      FROM exchange_rate r
 		  JOIN currency c ON (r.currency_id = c.currency_id)
-		  WHERE exchange_date = (
-			  SELECT max(exchange_date)
-				FROM exchange_rate
-			   WHERE exchange_date <= DATE ?
+		  JOIN currency rc ON (r.reference_currency_id = rc.currency_id)
+		  JOIN c_rates cr ON (
+			r.currency_id = cr.currency_id AND
+			r.exchange_date = cr.max_data
 		  )
-		 ORDER BY c.currency, r.exchange_date
+	     ORDER BY c.currency, r.exchange_date
 	`)
 
 	var err error
 	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
 		var r models.Rate
-		err = row.Scan(&r.Currency, &r.Date, &r.Value)
+		err = row.Scan(
+			&r.ReferenceCurrency,
+			&r.Currency,
+			&r.Date,
+			&r.Value)
 		if err != nil {
 			return
 		}

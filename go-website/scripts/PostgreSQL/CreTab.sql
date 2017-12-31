@@ -4,14 +4,40 @@ SET search_path TO public;
 
 create or replace view dual as select 'X' AS dummy;
 
+CREATE TABLE IF NOT EXISTS currency (
+    currency_id serial primary key,
+    currency    varchar(8) not null,
+    constraint currency_uk unique (currency)
+);
+
+CREATE TABLE IF NOT EXISTS exchange_rate (
+    currency_id           int            not null,
+    exchange_date         date           not null,       
+    rate                  numeric(18, 6) not null,
+    reference_currency_id int            not null,
+    constraint exchange_rate_pk primary key (currency_id, exchange_date),
+    constraint exchange_rate_currency_fk foreign key (currency_id)
+        references currency (currency_id),
+    constraint exchange_rate_ref_currency_fk foreign key (reference_currency_id)
+        references currency (currency_id)
+);
+
 CREATE TABLE IF NOT EXISTS audit_log (
-    audit_log_id   bigserial PRIMARY KEY,
+    audit_log_id   bigserial primary key,
     log_source     varchar(64) not null,
     log_time       timestamp not null,
     audit_msg      jsonb     not null
 );
 
+create index idx_time_audit_log on audit_log (log_time);
+
+
+
+
 SET search_path TO wmeter,public;
+
+
+
 
 CREATE TABLE IF NOT EXISTS system_params (
     system_params_id serial PRIMARY KEY,

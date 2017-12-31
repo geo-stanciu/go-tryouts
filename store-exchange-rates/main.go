@@ -205,7 +205,19 @@ func prepareCurrencies() error {
 		}
 	}
 
-	err = storeRate(tx, "1970-01-01", "RON", 1.0, 1.0)
+	var refCurrencyID int32
+	query = dbUtils.PQuery("SELECT currency_id FROM currency WHERE currency = ?")
+
+	err = tx.QueryRow(query, "RON").Scan(&refCurrencyID)
+
+	switch {
+	case err == sql.ErrNoRows:
+		return nil
+	case err != nil:
+		return err
+	}
+
+	err = storeRate(tx, "1970-01-01", refCurrencyID, "RON", 1.0, 1.0)
 	if err != nil {
 		return err
 	}
@@ -217,8 +229,20 @@ func prepareCurrencies() error {
 
 func storeRates(tx *sql.Tx, cube Cube) error {
 	var err error
+	var refCurrencyID int32
 
 	audit.Log(nil, "import exchange rates", "Importing exchange rates...", "data", cube.Date)
+
+	query := dbUtils.PQuery("SELECT currency_id FROM currency WHERE currency = ?")
+
+	err = tx.QueryRow(query, "RON").Scan(&refCurrencyID)
+
+	switch {
+	case err == sql.ErrNoRows:
+		return nil
+	case err != nil:
+		return err
+	}
 
 	for _, rate := range cube.Rate {
 		multiplier := 1.0
@@ -242,7 +266,7 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 			}
 		}
 
-		err = storeRate(tx, cube.Date, rate.Currency, multiplier, exchRate)
+		err = storeRate(tx, cube.Date, refCurrencyID, rate.Currency, multiplier, exchRate)
 		if err != nil {
 			return err
 		}
@@ -251,7 +275,7 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 	return nil
 }
 
-func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exchRate float64) error {
+func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, multiplier float64, exchRate float64) error {
 	var currencyID int32
 	var found bool
 
@@ -288,14 +312,22 @@ func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exc
 	if !found {
 		query = dbUtils.PQuery(`
 			INSERT INTO exchange_rate (
+				reference_currency_id,
 				currency_id,
 				exchange_date,
 				rate
 			)
-			VALUES (?, DATE ?, ?)
+			VALUES (?, ?, DATE ?, ?)
 		`)
 
-		_, err = tx.Exec(query, currencyID, date, exchRate/multiplier)
+		_, err = tx.Exec(
+			query,
+			refCurrencyID,
+			currencyID,
+			date,
+			exchRate/multiplier,
+		)
+
 		if err != nil {
 			return err
 		}

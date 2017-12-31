@@ -22,12 +22,12 @@ func (r *MembershipRole) RoleExists(role string) (bool, error) {
 	found := false
 
 	query := dbUtils.PQuery(`
-		SELECT CASE WHEN EXISTS (
-			SELECT 1
-			  FROM role
-			 WHERE lower(role) = lower(?)
-		) THEN 1 ELSE 0 END
-		FROM dual
+	    SELECT CASE WHEN EXISTS (
+	        SELECT 1
+	          FROM role
+	         WHERE lower(role) = lower(?)
+	    ) THEN 1 ELSE 0 END
+	    FROM dual
 	`)
 
 	err := db.QueryRow(query, role).Scan(&found)
@@ -48,11 +48,11 @@ func (r *MembershipRole) GetRoleByName(role string) error {
 	defer r.Unlock()
 
 	query := dbUtils.PQuery(`
-        SELECT role_id,
-		       role
-          FROM role
-         WHERE lower(role) = lower(?)
-    `)
+	    SELECT role_id,
+	           role
+	      FROM role
+	     WHERE lower(role) = lower(?)
+	`)
 
 	err := db.QueryRow(query, role).Scan(
 		&r.RoleID,
@@ -74,11 +74,11 @@ func (r *MembershipRole) GetRoleByID(roleID int) error {
 	defer r.Unlock()
 
 	query := dbUtils.PQuery(`
-        SELECT role_id,
-		       role
-          FROM role
-         WHERE role_id = ?
-    `)
+	    SELECT role_id,
+	           role
+	      FROM role
+	     WHERE role_id = ?
+	`)
 
 	err := db.QueryRow(query, roleID).Scan(
 		&r.RoleID,
@@ -102,13 +102,13 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 	var found bool
 
 	query := dbUtils.PQuery(`
-        SELECT CASE WHEN EXISTS (
-			SELECT 1
-		      FROM role
-			 WHERE lower(role) = lower(?)
-			   AND role_id <> ?
-		) THEN 1 ELSE 0 END
-		FROM dual
+	    SELECT CASE WHEN EXISTS (
+	        SELECT 1
+	          FROM role
+	         WHERE lower(role) = lower(?)
+	           AND role_id <> ?
+	    ) THEN 1 ELSE 0 END
+	    FROM dual
 	`)
 
 	stmt, err := tx.Prepare(query)
@@ -151,10 +151,10 @@ func (r *MembershipRole) Save() error {
 
 	if r.RoleID < 0 {
 		query := dbUtils.PQuery(`
-			INSERT INTO role (
-				role
-			)
-			VALUES (?)
+		    INSERT INTO role (
+		        role
+		    )
+		    VALUES (?)
 		`)
 
 		_, err = tx.Exec(
@@ -188,7 +188,7 @@ func (r *MembershipRole) Save() error {
 		}
 
 		query := dbUtils.PQuery(`
-			UPDATE role SET role = ? WHERE role_id = ?
+		    UPDATE role SET role = ? WHERE role_id = ?
 		`)
 
 		_, err = tx.Exec(
@@ -216,16 +216,16 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 	dt := time.Now().UTC()
 
 	query := dbUtils.PQuery(`
-		SELECT CASE WHEN EXISTS (
-			SELECT 1
-			  FROM user_role ur
-			  JOIN user u ON (ur.user_id = u.user_id)
-			 WHERE u.loweredusername =  lower(?)
-			   AND ur.role_id        =  ?
-			   AND ur.valid_from     <= ?
-			   AND (ur.valid_until is null OR ur.valid_until > ?)
-		) THEN 1 ELSE 0 END
-		FROM dual
+	    SELECT CASE WHEN EXISTS (
+	        SELECT 1
+	          FROM user_role ur
+	          JOIN "user" u ON (ur.user_id = u.user_id)
+	         WHERE u.loweredusername =  lower(?)
+	           AND ur.role_id        =  ?
+	           AND ur.valid_from     <= ?
+	           AND (ur.valid_until is null OR ur.valid_until > ?)
+	    ) THEN 1 ELSE 0 END
+	    FROM dual
 	`)
 
 	err := db.QueryRow(query, user, r.RoleID, dt, dt).Scan(&found)
@@ -247,15 +247,15 @@ func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 	dt := time.Now().UTC()
 
 	query := dbUtils.PQuery(`
-		SELECT CASE WHEN EXISTS (
-			SELECT 1
-			  FROM user_role ur
-			 WHERE ur.user_id =  ?
-			   AND ur.role_id =  ?
-			   AND ur.valid_from <= ?
-			   AND (ur.valid_until is null OR ur.valid_until > ?)
-		) THEN 1 ELSE 0 END
-		FROM dual
+	    SELECT CASE WHEN EXISTS (
+	        SELECT 1
+	          FROM user_role ur
+	         WHERE ur.user_id =  ?
+	           AND ur.role_id =  ?
+	           AND ur.valid_from <= ?
+	           AND (ur.valid_until is null OR ur.valid_until > ?)
+	    ) THEN 1 ELSE 0 END
+	    FROM dual
 	`)
 
 	err := db.QueryRow(query, userID, r.RoleID, dt, dt).Scan(&found)
@@ -277,17 +277,17 @@ func IsUserInRole(user string, role string) (bool, error) {
 	dt := time.Now().UTC()
 
 	query := dbUtils.PQuery(`
-		SELECT CASE WHEN EXISTS (
-			SELECT 1
-			  FROM user_role ur
-			  JOIN user u ON (ur.user_id = u.user_id)
-			  JOIN role r ON (ur.role_id = r.role_id)
-			 WHERE u.loweredusername =  lower(?)
-			   AND lower(r.role)     =  lower(?)
-			   AND ur.valid_from     <= ?
-			   AND (ur.valid_until is null OR ur.valid_until > ?)
-		) THEN 1 ELSE 0 END
-		FROM dual
+	    SELECT CASE WHEN EXISTS (
+	        SELECT 1
+	          FROM user_role ur
+	          JOIN "user" u ON (ur.user_id = u.user_id)
+	          JOIN role r ON (ur.role_id = r.role_id)
+	         WHERE u.loweredusername =  lower(?)
+	           AND lower(r.role)     =  lower(?)
+	           AND ur.valid_from     <= ?
+	           AND (ur.valid_until is null OR ur.valid_until > ?)
+	    ) THEN 1 ELSE 0 END
+	    FROM dual
 	`)
 
 	err := db.QueryRow(query, user, role, dt, dt).Scan(&found)

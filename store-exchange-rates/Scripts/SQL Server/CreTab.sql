@@ -7,10 +7,15 @@ create table currency (
 );
 
 create table exchange_rate (
-    currency_id      int            not null,
-    exchange_date    date           not null,       
-    rate             numeric(18, 6) not null,
-    constraint exchange_rate_pk primary key (currency_id, exchange_date)
+    currency_id           int            not null,
+    exchange_date         date           not null,       
+    rate                  numeric(18, 6) not null,
+    reference_currency_id int            not null,
+    constraint exchange_rate_pk primary key (currency_id, exchange_date),
+    constraint exchange_rate_currency_fk foreign key (currency_id)
+        references currency (currency_id),
+    constraint exchange_rate_ref_currency_fk foreign key (reference_currency_id)
+        references currency (currency_id)
 );
 
 create table audit_log (

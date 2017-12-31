@@ -67,15 +67,15 @@ func getResponseHelperByURL(url string, requestType string) (*ResponseHelper, er
 	}
 
 	query := dbUtils.PQuery(`
-        select request_title,
-		       request_template,
-		       controller,
-               action,
-			   redirect_url,
-			   redirect_on_error
-          from request
-		 where request_url = ?
-		   and request_type = ?
+	    select request_title,
+	           request_template,
+	           controller,
+	           action,
+	           redirect_url,
+	           redirect_on_error
+	      from request
+	     where request_url = ?
+	       and request_type = ?
     `)
 
 	err := db.QueryRow(query, sURL, requestType).Scan(

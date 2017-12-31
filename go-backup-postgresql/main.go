@@ -270,7 +270,7 @@ func getLastNeededArchFile(tx *sql.Tx, nrBackups2Keep int) (string, int, error) 
 			   backup_log_id
 		  from backup_log
 		 order by backup_log_id desc
-		 limit ?
+		 LIMIT ?
 	`)
 
 	rows, err := tx.Query(query, nrBackups2Keep)
