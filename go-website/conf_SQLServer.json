@@ -2,5 +2,6 @@
     "Port": "8080",
     "DbType": "mssql",
     "DbURL": "server=localhost;database=devel;user id=geo;password=geo;port=1433;app name=GoWebsiteExample",
+    "Timezone": "Europe/Bucharest",
     "isHTTPS": false
 }

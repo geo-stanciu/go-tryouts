@@ -81,7 +81,7 @@ func main() {
 	}
 	defer db.Close()
 
-	timezone, err = time.LoadLocation("Europe/Bucharest")
+	timezone, err = time.LoadLocation(config.Timezone)
 	if err != nil {
 		log.Println(err)
 		return

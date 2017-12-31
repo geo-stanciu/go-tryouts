@@ -138,7 +138,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 
 	if response.Template != "-" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Cache-Control", "private, max-age=600, no-store")
+		w.Header().Set("Cache-Control", "private, max-age=600, no-store, must-revalidate")
 		w.Header().Set("X-Frame-Options", "DENY")
 
 		if config.IsHTTPS {
