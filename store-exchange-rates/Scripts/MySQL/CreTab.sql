@@ -24,3 +24,4 @@ create table if not exists audit_log (
 );
 
 create index idx_time_audit_log on audit_log (log_time);
+CREATE INDEX idx_log_source_audit_log ON audit_log (log_source);

@@ -26,6 +26,7 @@ create table audit_log (
 );
 
 create index idx_time_audit_log on audit_log (log_time);
+CREATE INDEX idx_log_source_audit_log ON audit_log (log_source);
 
 
 CREATE TABLE system_params (

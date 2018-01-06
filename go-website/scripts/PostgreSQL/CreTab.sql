@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
     audit_msg      jsonb     not null
 );
 
-create index idx_time_audit_log on audit_log (log_time);
-
+CREATE index idx_time_audit_log ON audit_log (log_time);
+CREATE INDEX idx_log_source_audit_log ON audit_log (log_source);
 
 
 
