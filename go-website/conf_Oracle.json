@@ -1,0 +1,7 @@
+{
+    "Port": "8080",
+    "DbType": "oci8",
+    "DbURL": "geo/geo@db1",
+    "Timezone": "Europe/Bucharest",
+    "isHTTPS": false
+}

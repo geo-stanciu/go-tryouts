@@ -1,0 +1,5 @@
+{
+    "DbType": "oci8",
+    "DbURL": "geo/geo@db1",
+    "RatesXMLUrl": "http://bnro.ro/nbrfxrates.xml"
+}

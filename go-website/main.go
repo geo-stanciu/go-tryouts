@@ -24,6 +24,7 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-oci8"
 )
 
 var (
@@ -66,8 +67,9 @@ func main() {
 	var err error
 	var wg sync.WaitGroup
 
-	cfgFile := "./conf.json"
+	//cfgFile := "./conf.json"
 	//cfgFile := "./conf_SQLServer.json"
+	cfgFile := "./conf_Oracle.json"
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		log.Println(err)

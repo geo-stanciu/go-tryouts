@@ -27,9 +27,9 @@ type template0Data struct {
 func handler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
-	if r.Method == "GET" {
+	if r.Method == http.MethodGet {
 		handleGetRequest(w, r)
-	} else if r.Method == "POST" {
+	} else if r.Method == http.MethodPost {
 		handlePostRequest(w, r)
 	} else {
 		http.Error(w, "Method not allowed", 405)
