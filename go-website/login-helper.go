@@ -167,7 +167,7 @@ func getNewCookieStore() (*sessions.CookieStore, error) {
 }
 
 func saveCookieEncodeKeys(keys [][]byte) error {
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    INSERT INTO cookie_encode_key (
 	        encode_key,
 	        valid_from,
@@ -185,7 +185,7 @@ func saveCookieEncodeKeys(keys [][]byte) error {
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare(query)
+	stmt, err := tx.Prepare(pq.Query)
 	if err != nil {
 		return err
 	}
@@ -208,17 +208,19 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 	var keys [][]byte
 	dt := time.Now().UTC()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT encode_key
 	      FROM cookie_encode_key
 	     WHERE valid_from  <= ?
 	       AND valid_until >= ?
 	     ORDER BY cookie_encode_key_id
 	     LIMIT ?
-	`)
+	`, dt,
+		dt,
+		4)
 
 	var err error
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		var encodeKey string
 
 		err = row.Scan(&encodeKey)
@@ -232,10 +234,7 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 		}
 
 		keys = append(keys, key)
-	}, dt,
-		dt,
-		4,
-	)
+	})
 
 	if err != nil {
 		return nil, err

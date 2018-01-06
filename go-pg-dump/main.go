@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -47,21 +48,41 @@ func main() {
 
 	log.Printf("start dump backup \"%s\"\n", dumpFile)
 
-	dump, err := os.OpenFile(dumpFile, os.O_RDWR|os.O_CREATE, 0666)
+	/*
+		On Windows:
+
+		 You must edit C:\Users\geo\AppData\Roaming\postgresql\pgpass.conf on Windows
+		 (1 row for each database !):
+
+		 #hostname:port:database:username:password
+
+		 On Linux:
+
+		 su - postgres      //this will land in the home directory set for postgres user
+		 vi .pgpass         //enter all users entries
+		 chmod 0600 .pgpass // change the ownership to 0600 to avoid errors
+
+		 #hostname:port:database:username:password
+	*/
+
+	var outb, errb bytes.Buffer
+
+	cmd := exec.Command(
+		"pg_dump",
+		"-f", dumpFile,
+		"-v",
+		config.DbName)
+
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+	err = cmd.Run()
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	defer dump.Close()
 
-	cmd := exec.Command("pg_dump", config.DbName)
-	cmd.Stdout = dump
-
-	err = cmd.Start()
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	log.Println(outb.String())
+	log.Println("Error:", errb.String())
 
 	log.Printf("end dump backup")
 }

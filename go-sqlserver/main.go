@@ -48,7 +48,7 @@ func main() {
 	}
 
 	test := Test{}
-	query := dbUtils.PQuery("select current_timestamp date, @@version version")
+	pq := dbUtils.PQuery("select current_timestamp date, @@version version")
 	err = dbUtils.RunQuery(query, &test)
 	if err != nil {
 		panic(err)
@@ -88,26 +88,27 @@ func main() {
 		panic(err)
 	}
 
-	/*query = dbUtils.PQuery(`
-		insert into test1 (
-			dt,
-			dtz,
-			d
-		)
-		values (?, ?, ?)
-	`)
+	/*
+		now = time.Now().UTC()
 
-	now = time.Now().UTC()
-	_, err = db.Exec(query, now, now, now)
+		pq = dbUtils.PQuery(`
+			insert into test1 (
+				dt,
+				dtz,
+				d
+			)
+			values (?, ?, ?)
+		`, now, now, now)
 
-	if err != nil {
-		panic(err)
-	}*/
+		_, err = dbUtils.Exec(pq)
+		if err != nil {
+			panic(err)
+		}*/
 
-	query = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
+	pq = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
 
 	sc.Clear()
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		test1 := Test1{}
 		err = sc.Scan(&dbUtils, row, &test1)
 		if err != nil {

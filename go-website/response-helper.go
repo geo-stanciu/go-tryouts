@@ -66,7 +66,7 @@ func getResponseHelperByURL(url string, requestType string) (*ResponseHelper, er
 		sURL = strings.Replace(url[1:], ".html", "", 1)
 	}
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    select request_title,
 	           request_template,
 	           controller,
@@ -76,9 +76,10 @@ func getResponseHelperByURL(url string, requestType string) (*ResponseHelper, er
 	      from request
 	     where request_url = ?
 	       and request_type = ?
-    `)
+	`, sURL,
+		requestType)
 
-	err := db.QueryRow(query, sURL, requestType).Scan(
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(
 		&res.Title,
 		&res.Template,
 		&res.Controller,

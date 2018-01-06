@@ -67,7 +67,7 @@ func addRequests(tx *sql.Tx) error {
 		{"Exchange Rates", "-", "exchange-rates", "POST", "Home", "GetExchangeRates", "-", "-"},
 	}
 
-	queryExists := dbUtils.PQuery(`
+	pqExists := dbUtils.PQuery(`
 	    select CASE WHEN EXISTS (
 	       select 1
 	         from request
@@ -77,7 +77,7 @@ func addRequests(tx *sql.Tx) error {
 	      FROM dual
 	`)
 
-	queryAdd := dbUtils.PQuery(`
+	pqAdd := dbUtils.PQuery(`
 	    insert into request (
 	        request_title,
 	        request_template,
@@ -91,13 +91,13 @@ func addRequests(tx *sql.Tx) error {
 	    values (?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 
-	stmtE, err := tx.Prepare(queryExists)
+	stmtE, err := tx.Prepare(pqExists.Query)
 	if err != nil {
 		return err
 	}
 	defer stmtE.Close()
 
-	stmtAdd, err := tx.Prepare(queryAdd)
+	stmtAdd, err := tx.Prepare(pqAdd.Query)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func addRoles(tx *sql.Tx) error {
 		{"Member"},
 	}
 
-	queryExists := dbUtils.PQuery(`
+	pqExists := dbUtils.PQuery(`
 	    select CASE WHEN EXISTS (
 	      select 1
 	        from role
@@ -148,20 +148,20 @@ func addRoles(tx *sql.Tx) error {
 	    FROM dual
 	`)
 
-	queryAdd := dbUtils.PQuery(`
+	pqAdd := dbUtils.PQuery(`
 	    insert into role (
 	        role
 	    )
 	    values (?)
 	`)
 
-	stmtE, err := tx.Prepare(queryExists)
+	stmtE, err := tx.Prepare(pqExists.Query)
 	if err != nil {
 		return err
 	}
 	defer stmtE.Close()
 
-	stmtAdd, err := tx.Prepare(queryAdd)
+	stmtAdd, err := tx.Prepare(pqAdd.Query)
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func addSystemParams(tx *sql.Tx) error {
 		{"password-rules", "can-contain-username", "0"},
 	}
 
-	queryExists := dbUtils.PQuery(`
+	pqExists := dbUtils.PQuery(`
 	    select CASE WHEN EXISTS (
 	        select 1
 	          from system_params
@@ -212,7 +212,7 @@ func addSystemParams(tx *sql.Tx) error {
 	    FROM dual
 	`)
 
-	queryAdd := dbUtils.PQuery(`
+	pqAdd := dbUtils.PQuery(`
 	   insert into system_params (
 	       param_group,
 	       param,
@@ -221,13 +221,13 @@ func addSystemParams(tx *sql.Tx) error {
 	    values (?, ?, ?)
 	`)
 
-	stmtE, err := tx.Prepare(queryExists)
+	stmtE, err := tx.Prepare(pqExists.Query)
 	if err != nil {
 		return err
 	}
 	defer stmtE.Close()
 
-	stmtAdd, err := tx.Prepare(queryAdd)
+	stmtAdd, err := tx.Prepare(pqAdd.Query)
 	if err != nil {
 		return err
 	}

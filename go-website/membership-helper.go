@@ -42,16 +42,16 @@ func (u *MembershipUser) UserExists(user string) (bool, error) {
 
 	found := false
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT CASE WHEN EXISTS (
 	        SELECT 1
 	          FROM "user"
 	         WHERE loweredusername = lower(?)
 	    ) THEN 1 ELSE 0 END
 	    FROM dual
-	`)
+	`, user)
 
-	err := db.QueryRow(query, user).Scan(&found)
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -68,7 +68,7 @@ func (u *MembershipUser) GetUserByName(user string) error {
 	u.Lock()
 	defer u.Unlock()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT user_id,
 	           username,
 	           name,
@@ -76,9 +76,9 @@ func (u *MembershipUser) GetUserByName(user string) error {
 	           email
 	      FROM "user"
 	     WHERE loweredusername = lower(?)
-	`)
+	`, user)
 
-	err := db.QueryRow(query, user).Scan(
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(
 		&u.UserID,
 		&u.Username,
 		&u.Name,
@@ -100,7 +100,7 @@ func (u *MembershipUser) GetUserByID(userID int) error {
 	u.Lock()
 	defer u.Unlock()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT user_id,
 	        username,
 	        name,
@@ -108,9 +108,9 @@ func (u *MembershipUser) GetUserByID(userID int) error {
 	        email
 	     FROM "user"
 	    WHERE user_id = ?
-	`)
+	`, userID)
 
-	err := db.QueryRow(query, userID).Scan(
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(
 		&u.UserID,
 		&u.Username,
 		&u.Name,
@@ -138,7 +138,7 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 
 	var found bool
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT CASE WHEN EXISTS (
 	        SELECT 1
 	          FROM "user"
@@ -146,15 +146,10 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 	           AND user_id <> ?
 	    ) THEN 1 ELSE 0 END
 	    FROM dual
-	`)
+	`, u.Username,
+		u.UserID)
 
-	stmt, err := tx.Prepare(query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	err = stmt.QueryRow(u.Username, u.UserID).Scan(&found)
+	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -172,8 +167,6 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 
 // Save - save user details
 func (u *MembershipUser) Save() error {
-	var query string
-
 	u.Lock()
 	defer u.Unlock()
 
@@ -191,7 +184,7 @@ func (u *MembershipUser) Save() error {
 	dt := time.Now().UTC()
 
 	if u.UserID <= 0 {
-		query := dbUtils.PQuery(`
+		pq := dbUtils.PQuery(`
 		    INSERT INTO "user" (
 		        username,
 		        loweredusername,
@@ -203,29 +196,25 @@ func (u *MembershipUser) Save() error {
 		        last_update
 		    )
 		    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		`)
-
-		_, err = tx.Exec(
-			query,
-			u.Username,
+		`, u.Username,
 			strings.ToLower(u.Username),
 			u.Name,
 			u.Surname,
 			u.Email,
 			strings.ToLower(u.Email),
 			dt,
-			dt,
-		)
+			dt)
 
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}
 
-		query = dbUtils.PQuery(`
+		pq = dbUtils.PQuery(`
 		    SELECT user_id FROM "user" WHERE loweredusername = ?
-		`)
+		`, strings.ToLower(u.Username))
 
-		err = tx.QueryRow(query, strings.ToLower(u.Username)).Scan(&u.UserID)
+		err = tx.QueryRow(pq.Query, pq.Args...).Scan(&u.UserID)
 
 		switch {
 		case err == sql.ErrNoRows:
@@ -254,7 +243,7 @@ func (u *MembershipUser) Save() error {
 		dt := time.Now().UTC()
 
 		if !u.Equals(&old) {
-			query = dbUtils.PQuery(`
+			pq := dbUtils.PQuery(`
 			    UPDATE "user"
 			       SET username     = ?,
 			           loweredusername = ?,
@@ -264,20 +253,16 @@ func (u *MembershipUser) Save() error {
 			           loweredemail    = ?,
 			           last_update     = ?
 			     WHERE user_id = ?
-			`)
-
-			_, err = tx.Exec(
-				query,
-				u.Username,
+			`, u.Username,
 				strings.ToLower(u.Username),
 				u.Name,
 				u.Surname,
 				u.Email,
 				strings.ToLower(u.Email),
 				dt,
-				u.UserID,
-			)
+				u.UserID)
 
+			_, err = dbUtils.ExecTx(tx, pq)
 			if err != nil {
 				return err
 			}
@@ -300,24 +285,20 @@ func (u *MembershipUser) Save() error {
 
 // Activate - activates the user
 func (u *MembershipUser) Activate() error {
-	query := dbUtils.PQuery(`
+	dt := time.Now().UTC()
+
+	pq := dbUtils.PQuery(`
 		UPDATE "user"
 		   SET activated       = ?,
 			   activation_time = ?
 		 WHERE user_id = ?
 	       AND activated = ?
-	`)
-
-	dt := time.Now().UTC()
-
-	_, err := db.Exec(
-		query,
-		1,
+	`, 1,
 		dt,
 		u.UserID,
-		0,
-	)
+		0)
 
+	_, err := dbUtils.Exec(pq)
 	if err != nil {
 		return err
 	}
@@ -334,7 +315,7 @@ func (u *MembershipUser) GetUserRoles() ([]*MembershipRole, error) {
 
 	dt := time.Now().UTC()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT r.role_id,
 	           r.role
 	      FROM user_role ur
@@ -343,10 +324,12 @@ func (u *MembershipUser) GetUserRoles() ([]*MembershipRole, error) {
 	       AND ur.valid_from <= ?
 	       AND (ur.valid_until is null OR ur.valid_until > ?)
 	     ORDER BY r.role
-	`)
+	`, u.UserID,
+		dt,
+		dt)
 
 	var err error
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		var r MembershipRole
 		err = row.Scan(&r.RoleID, &r.Rolename)
 		if err != nil {
@@ -354,9 +337,7 @@ func (u *MembershipUser) GetUserRoles() ([]*MembershipRole, error) {
 		}
 
 		roles = append(roles, &r)
-	}, u.UserID,
-		dt,
-		dt)
+	})
 
 	if err != nil {
 		return nil, err
@@ -387,22 +368,18 @@ func (u *MembershipUser) AddToRole(role string) error {
 
 	dt := time.Now().UTC()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    INSERT INTO user_role (
 	        user_id,
 	        role_id,
 	        valid_from
 	    )
 	    VALUES (?, ?, ?)
-	`)
-
-	_, err = db.Exec(
-		query,
-		u.UserID,
+	`, u.UserID,
 		r.RoleID,
-		dt,
-	)
+		dt)
 
+	_, err = dbUtils.Exec(pq)
 	if err != nil {
 		return err
 	}
@@ -440,54 +417,42 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 
 	dt := time.Now().UTC()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    UPDATE user_role
 	       SET valid_until = ?
 	     WHERE user_id = ?
 	       AND role_id = ?
-	`)
-
-	_, err = tx.Exec(
-		query,
-		dt,
+	`, dt,
 		u.UserID,
-		r.RoleID,
-	)
+		r.RoleID)
 
+	_, err = dbUtils.ExecTx(tx, pq)
 	if err != nil {
 		return err
 	}
 
-	query = dbUtils.PQuery(`
+	pq = dbUtils.PQuery(`
 	    INSERT INTO user_role_history
 	    SELECT *
 	      FROM user_role
 	     WHERE user_id = ?
 	       AND role_id = ?
-	`)
+	`, u.UserID,
+		r.RoleID)
 
-	_, err = tx.Exec(
-		query,
-		u.UserID,
-		r.RoleID,
-	)
-
+	_, err = dbUtils.ExecTx(tx, pq)
 	if err != nil {
 		return err
 	}
 
-	query = dbUtils.PQuery(`
+	pq = dbUtils.PQuery(`
 	    DELETE FROM user_role
 	     WHERE user_id = ?
 	       AND role_id = ?
-	`)
+	`, u.UserID,
+		r.RoleID)
 
-	_, err = tx.Exec(
-		query,
-		u.UserID,
-		r.RoleID,
-	)
-
+	_, err = dbUtils.ExecTx(tx, pq)
 	if err != nil {
 		return err
 	}
@@ -509,7 +474,7 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 	var hashedPassword string
 	var passwordSalt string
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT CASE
 	             WHEN password is null THEN
 	               '-'
@@ -526,10 +491,11 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 	     WHERE user_id = ?
 	     ORDER BY password_id DESC
 	     LIMIT ?
-	`)
+	`, u.UserID,
+		notRepeatPasswords)
 
 	var err error
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		err = row.Scan(&hashedPassword, &passwordSalt)
 		if err != nil {
 			return
@@ -545,8 +511,7 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 		if err == nil {
 			return
 		}
-	}, u.UserID,
-		notRepeatPasswords)
+	})
 
 	if err != nil {
 		return true, notRepeatPasswords, err
@@ -644,15 +609,18 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 
 	dt := time.Now().UTC()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    UPDATE user_password
 	       SET valid_until = ?
 	     WHERE user_id = ?
 	       AND valid_from <= ?
 	       AND (valid_until is null OR valid_until > ?)
-	`)
+	`, dt,
+		u.UserID,
+		dt,
+		dt)
 
-	_, err = tx.Exec(query, dt, u.UserID, dt, dt)
+	_, err = dbUtils.ExecTx(tx, pq)
 	if err != nil {
 		return err
 	}
@@ -660,7 +628,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	until := dt.Add(time.Duration(changeInterval*24) * time.Hour)
 
 	if changeInterval > 0 {
-		query = dbUtils.PQuery(`
+		pq = dbUtils.PQuery(`
 			INSERT INTO user_password (
 				user_id,
 				password,
@@ -669,18 +637,15 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 				valid_until
 			)
 			VALUES(?, ?, ?, ?, ?)
-		`)
-
-		_, err = tx.Exec(
-			query,
-			u.UserID,
+		`, u.UserID,
 			password,
 			salt,
 			dt,
-			until,
-		)
+			until)
+
+		_, err = dbUtils.ExecTx(tx, pq)
 	} else {
-		query = dbUtils.PQuery(`
+		pq = dbUtils.PQuery(`
 			INSERT INTO user_password (
 				user_id,
 				password,
@@ -688,28 +653,26 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 				valid_from
 			)
 			VALUES(?, ?, ?, ?)
-		`)
-
-		_, err = tx.Exec(
-			query,
-			u.UserID,
+		`, u.UserID,
 			password,
 			salt,
-			dt,
-		)
+			dt)
+
+		_, err = dbUtils.ExecTx(tx, pq)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	query = dbUtils.PQuery(`
+	pq = dbUtils.PQuery(`
 	    UPDATE "user"
 	       SET last_password_change = ?
 	     WHERE user_id = ?
-	`)
+	`, dt,
+		u.UserID)
 
-	_, err = tx.Exec(query, dt, u.UserID)
+	_, err = dbUtils.ExecTx(tx, pq)
 	if err != nil {
 		return err
 	}
@@ -747,7 +710,7 @@ type validateUserUtil struct {
 func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 	dt := time.Now().UTC()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT u.user_id,
 	           CASE
 	             WHEN p.password is null THEN
@@ -770,10 +733,12 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 	     WHERE loweredusername = lower(?)
 	       AND p.valid_from <= ?
 	       AND (p.valid_until is null OR p.valid_until > ?)
-	`)
+	`, user,
+		dt,
+		dt)
 
 	testUser := validateUserUtil{}
-	err := dbUtils.RunQuery(query, &testUser, user, dt, dt)
+	err := dbUtils.RunQuery(pq, &testUser)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -797,11 +762,11 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 	hasIPs := false
 	foundIP := false
 
-	query = dbUtils.PQuery(`
+	pq = dbUtils.PQuery(`
 		SELECT ip FROM user_ip WHERE user_id = ?
-	`)
+	`, testUser.UserID)
 
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		hasIPs = true
 		var addr string
 		err = row.Scan(&addr)
@@ -812,7 +777,7 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		if addr == ip {
 			foundIP = true
 		}
-	}, testUser.UserID)
+	})
 
 	if err != nil {
 		return ValidationFailed, err
@@ -871,7 +836,7 @@ func failedUserPasswordValidation(userID int, user string) {
 	}
 	defer tx.Rollback()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT failed_password_atmpts,
 	           CASE
 	             WHEN first_failed_password is null then
@@ -881,9 +846,10 @@ func failedUserPasswordValidation(userID int, user string) {
 	            END AS first_failed_password
 	      FROM "user" u
 	     WHERE user_id = ?
-	`)
+	`, "1970-01-01 00:00:00",
+		userID)
 
-	err = tx.QueryRow(query, "1970-01-01 00:00:00", userID).Scan(
+	err = tx.QueryRow(pq.Query, pq.Args...).Scan(
 		&failedPasswordAtempts,
 		&firstFailedPassword,
 	)
@@ -907,7 +873,7 @@ func failedUserPasswordValidation(userID int, user string) {
 
 	dt := time.Now().UTC()
 
-	query = dbUtils.PQuery(`
+	pq = dbUtils.PQuery(`
 	    UPDATE "user"
 	       SET failed_password_atmpts = CASE WHEN ? = 1 THEN
 	                                        1
@@ -921,22 +887,25 @@ func failedUserPasswordValidation(userID int, user string) {
 	                                    END,
 	           last_failed_password   = ?
 	     WHERE user_id = ?
-	`)
+	`, newFail,
+		newFail,
+		dt,
+		dt,
+		userID)
 
-	_, err = tx.Exec(query, newFail, newFail, dt, dt, userID)
-
+	_, err = dbUtils.ExecTx(tx, pq)
 	if err != nil {
 		audit.Log(err, "failed-login", "Failed to setup failed password params.", "user", user)
 		return
 	}
 
-	query = dbUtils.PQuery(`
+	pq = dbUtils.PQuery(`
 	    SELECT failed_password_atmpts
 	      FROM "user" u
 	     WHERE user_id = ?
-	`)
+	`, userID)
 
-	err = tx.QueryRow(query, userID).Scan(
+	err = tx.QueryRow(pq.Query, pq.Args...).Scan(
 		&failedPasswordAtempts,
 	)
 
@@ -952,14 +921,13 @@ func failedUserPasswordValidation(userID int, user string) {
 	}
 
 	if failedPasswordAtempts >= maxAllowedFailedAtmpts {
-		query = dbUtils.PQuery(`
+		pq = dbUtils.PQuery(`
 		    UPDATE "user"
 		       SET locked_out = 1
 		     WHERE user_id = ?
-		`)
+		`, userID)
 
-		_, err = tx.Exec(query, userID)
-
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			audit.Log(err, "failed-login", "User locked out.", "user", user)
 			// return // commented on purpose - Geo 18.03.2017
@@ -967,15 +935,18 @@ func failedUserPasswordValidation(userID int, user string) {
 
 		dt := time.Now().UTC()
 
-		query = dbUtils.PQuery(`
+		pq = dbUtils.PQuery(`
 		    UPDATE user_password
 		       SET valid_until = ?
 		     WHERE user_id = ?
 		       AND valid_from <= ?
 		       AND (valid_until is null OR valid_until > ?)
-		`)
+		`, dt,
+			userID,
+			dt,
+			dt)
 
-		_, err = tx.Exec(query, dt, userID, dt, dt)
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			audit.Log(err, "failed-login", "Failed to invalidate user password.", "user", user)
 			// return // commented on purpose - Geo 17.03.2017

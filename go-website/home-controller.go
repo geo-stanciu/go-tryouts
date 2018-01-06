@@ -65,13 +65,13 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 		var name string
 		var surname string
 
-		query := dbUtils.PQuery(`
+		pq := dbUtils.PQuery(`
 		    SELECT name, surname
 		      FROM "user"
 		     WHERE loweredusername = lower(?)
-		`)
+		`, user)
 
-		err = db.QueryRow(query, user).Scan(&name, &surname)
+		err = db.QueryRow(pq.Query, pq.Args...).Scan(&name, &surname)
 		if err != nil {
 			lres, err = loginerr(&lres, err, user, throwErr2Client)
 			return &lres, err
@@ -85,14 +85,16 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 
 		dt := time.Now().UTC()
 
-		query = dbUtils.PQuery(`
+		pq = dbUtils.PQuery(`
 		    UPDATE "user"
 		       SET last_connect_time = ?,
 		           last_connect_ip   = ?
 		     WHERE loweredusername = lower(?)
-		`)
+		`, dt,
+			ip,
+			user)
 
-		_, err = db.Exec(query, dt, ip, user)
+		_, err = dbUtils.Exec(pq)
 		if err != nil {
 			lres, err = loginerr(&lres, err, user, throwErr2Client)
 			return &lres, err
@@ -379,7 +381,7 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 		date = utils.Date2string(dt, utils.ISODate)
 	}
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    WITH c_rates AS (
 			SELECT currency_id, max(exchange_date) max_data
 			  FROM exchange_rate
@@ -398,10 +400,10 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 			r.exchange_date = cr.max_data
 		  )
 	     ORDER BY c.currency, r.exchange_date
-	`)
+	`, date)
 
 	var err error
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		var r models.Rate
 		err = row.Scan(
 			&r.ReferenceCurrency,
@@ -412,8 +414,8 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 			return
 		}
 
-		lres.Rates = append(lres.Rates, r)
-	}, date)
+		lres.Rates = append(lres.Rates, &r)
+	})
 
 	if err != nil {
 		return nil, err

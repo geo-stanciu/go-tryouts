@@ -39,27 +39,27 @@ func main() {
 	}
 	defer tx.Rollback()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 		DELETE FROM test_unicode
 	`)
 
-	_, err = tx.Exec(query)
+	_, err = tx.Exec(pq.Query)
 	if err != nil {
 		panic(err)
 	}
 
-	query = dbUtils.PQuery(`
+	pq = dbUtils.PQuery(`
 		INSERT INTO test_unicode (c1) VALUES (?)
-	`)
+	`, "Hello, 世界")
 
-	_, err = tx.Exec(query, "Hello, 世界")
+	_, err = tx.Exec(pq.Query, pq.Args...)
 	if err != nil {
 		panic(err)
 	}
 
-	query = dbUtils.PQuery(`SELECT c1 FROM test_unicode`)
+	pq = dbUtils.PQuery(`SELECT c1 FROM test_unicode`)
 
-	err = dbUtils.ForEachRowTx(tx, query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows) {
 		var c1 string
 		err = row.Scan(&c1)
 		if err != nil {

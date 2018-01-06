@@ -21,16 +21,16 @@ func (r *MembershipRole) RoleExists(role string) (bool, error) {
 
 	found := false
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT CASE WHEN EXISTS (
 	        SELECT 1
 	          FROM role
 	         WHERE lower(role) = lower(?)
 	    ) THEN 1 ELSE 0 END
 	    FROM dual
-	`)
+	`, role)
 
-	err := db.QueryRow(query, role).Scan(&found)
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -47,14 +47,14 @@ func (r *MembershipRole) GetRoleByName(role string) error {
 	r.Lock()
 	defer r.Unlock()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT role_id,
 	           role
 	      FROM role
 	     WHERE lower(role) = lower(?)
-	`)
+	`, role)
 
-	err := db.QueryRow(query, role).Scan(
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(
 		&r.RoleID,
 		&r.Rolename)
 
@@ -73,14 +73,14 @@ func (r *MembershipRole) GetRoleByID(roleID int) error {
 	r.Lock()
 	defer r.Unlock()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT role_id,
 	           role
 	      FROM role
 	     WHERE role_id = ?
-	`)
+	`, roleID)
 
-	err := db.QueryRow(query, roleID).Scan(
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(
 		&r.RoleID,
 		&r.Rolename)
 
@@ -101,7 +101,7 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 
 	var found bool
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT CASE WHEN EXISTS (
 	        SELECT 1
 	          FROM role
@@ -109,15 +109,10 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 	           AND role_id <> ?
 	    ) THEN 1 ELSE 0 END
 	    FROM dual
-	`)
+	`, r.Rolename,
+		r.RoleID)
 
-	stmt, err := tx.Prepare(query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	err = stmt.QueryRow(r.Rolename, r.RoleID).Scan(&found)
+	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -150,27 +145,23 @@ func (r *MembershipRole) Save() error {
 	}
 
 	if r.RoleID < 0 {
-		query := dbUtils.PQuery(`
+		pq := dbUtils.PQuery(`
 		    INSERT INTO role (
 		        role
 		    )
 		    VALUES (?)
-		`)
+		`, r.Rolename)
 
-		_, err = tx.Exec(
-			query,
-			r.Rolename,
-		)
-
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}
 
-		query = dbUtils.PQuery(`
+		pq = dbUtils.PQuery(`
 			SELECT role_id FROM role WHERE lower(role) = lower(?)
-		`)
+		`, r.Rolename)
 
-		err = tx.QueryRow(query, r.Rolename).Scan(&r.RoleID)
+		err = tx.QueryRow(pq.Query, pq.Args...).Scan(&r.RoleID)
 
 		switch {
 		case err == sql.ErrNoRows:
@@ -187,16 +178,12 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		query := dbUtils.PQuery(`
+		pq := dbUtils.PQuery(`
 		    UPDATE role SET role = ? WHERE role_id = ?
-		`)
+		`, r.Rolename,
+			r.RoleID)
 
-		_, err = tx.Exec(
-			query,
-			r.Rolename,
-			r.Rolename,
-		)
-
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}
@@ -215,7 +202,7 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 
 	dt := time.Now().UTC()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT CASE WHEN EXISTS (
 	        SELECT 1
 	          FROM user_role ur
@@ -226,9 +213,12 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 	           AND (ur.valid_until is null OR ur.valid_until > ?)
 	    ) THEN 1 ELSE 0 END
 	    FROM dual
-	`)
+	`, user,
+		r.RoleID,
+		dt,
+		dt)
 
-	err := db.QueryRow(query, user, r.RoleID, dt, dt).Scan(&found)
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -246,7 +236,7 @@ func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 
 	dt := time.Now().UTC()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT CASE WHEN EXISTS (
 	        SELECT 1
 	          FROM user_role ur
@@ -256,9 +246,12 @@ func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 	           AND (ur.valid_until is null OR ur.valid_until > ?)
 	    ) THEN 1 ELSE 0 END
 	    FROM dual
-	`)
+	`, userID,
+		r.RoleID,
+		dt,
+		dt)
 
-	err := db.QueryRow(query, userID, r.RoleID, dt, dt).Scan(&found)
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -276,7 +269,7 @@ func IsUserInRole(user string, role string) (bool, error) {
 
 	dt := time.Now().UTC()
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT CASE WHEN EXISTS (
 	        SELECT 1
 	          FROM user_role ur
@@ -288,9 +281,12 @@ func IsUserInRole(user string, role string) (bool, error) {
 	           AND (ur.valid_until is null OR ur.valid_until > ?)
 	    ) THEN 1 ELSE 0 END
 	    FROM dual
-	`)
+	`, user,
+		role,
+		dt,
+		dt)
 
-	err := db.QueryRow(query, user, role, dt, dt).Scan(&found)
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:

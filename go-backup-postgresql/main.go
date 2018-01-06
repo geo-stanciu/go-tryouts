@@ -171,7 +171,7 @@ func getBkFileName(tx *sql.Tx, sData string) (string, string, int, error) {
 	var bkFile string
 	var bkLabel string
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 		select CAST(last_file_index AS integer)
 		  from backup_log
 		 where backup_log_id = (
@@ -179,9 +179,9 @@ func getBkFileName(tx *sql.Tx, sData string) (string, string, int, error) {
 			   from backup_log
 			  where backup_time::date = to_date(?, 'yyyymmdd')
 		 )
-	`)
+	`, sData)
 
-	err := tx.QueryRow(query, sData).Scan(&i)
+	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&i)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -208,9 +208,9 @@ func getBkFileName(tx *sql.Tx, sData string) (string, string, int, error) {
 func startBk(tx *sql.Tx, bkLabel string) (string, error) {
 	var startBk string
 
-	query := dbUtils.PQuery("SELECT pg_start_backup(?)::text")
+	pq := dbUtils.PQuery("SELECT pg_start_backup(?)::text", bkLabel)
 
-	err := tx.QueryRow(query, bkLabel).Scan(&startBk)
+	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&startBk)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -241,19 +241,21 @@ func finishBk(tx *sql.Tx) (string, error) {
 
 func logBackup(tx *sql.Tx, bkFile string, archFile string, lastFileIndex int) error {
 	dt := time.Now().UTC()
+	sIndex := fmt.Sprintf("%02d", lastFileIndex)
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 		insert into backup_log (
 			backup_time,
 			backup_file,
 			arch_file,
 			last_file_index
 		) values (?, ?, ?, ?)
-	`)
+	`, dt,
+		bkFile,
+		archFile,
+		sIndex)
 
-	sIndex := fmt.Sprintf("%02d", lastFileIndex)
-
-	_, err := tx.Exec(query, dt, bkFile, archFile, sIndex)
+	_, err := tx.Exec(pq.Query, pq.Args...)
 	if err != nil {
 		return err
 	}
@@ -264,33 +266,27 @@ func logBackup(tx *sql.Tx, bkFile string, archFile string, lastFileIndex int) er
 func getLastNeededArchFile(tx *sql.Tx, nrBackups2Keep int) (string, int, error) {
 	var archFile string
 	var logID int
+	var err error
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 		select arch_file,
 			   backup_log_id
 		  from backup_log
 		 order by backup_log_id desc
 		 LIMIT ?
-	`)
-
-	rows, err := tx.Query(query, nrBackups2Keep)
-	if err != nil {
-		return "", 0, err
-	}
-	defer rows.Close()
+	`, nrBackups2Keep)
 
 	i := 0
 
-	for rows.Next() {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		i++
-
-		err = rows.Scan(&archFile, &logID)
+		err = row.Scan(&archFile, &logID)
 		if err != nil {
-			return "", 0, err
+			return
 		}
-	}
+	})
 
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return "", 0, err
 	}
 
@@ -304,24 +300,19 @@ func getLastNeededArchFile(tx *sql.Tx, nrBackups2Keep int) (string, int, error) 
 
 func deleteOldBackups(tx *sql.Tx, logID int, archFile2Keep string) error {
 	var bkFile string
+	var err error
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 		select backup_file
 		  from backup_log
 		 where backup_log_id < ?
 		 order by backup_log_id
-	`)
+	`, logID)
 
-	rows, err := tx.Query(query, logID)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err = rows.Scan(&bkFile)
+	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows) {
+		err = row.Scan(&bkFile)
 		if err != nil {
-			return err
+			return
 		}
 
 		log.Printf("Delete \"%s\"\n", bkFile)
@@ -329,22 +320,24 @@ func deleteOldBackups(tx *sql.Tx, logID int, archFile2Keep string) error {
 		if _, err := os.Stat(bkFile); err == nil {
 			err = os.Remove(bkFile)
 			if err != nil {
-				return err
+				return
 			}
 		}
 
 		if err != nil {
-			return err
+			return
 		}
-	}
+	})
 
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		return err
 	}
 
-	query = dbUtils.PQuery("delete from backup_log where backup_log_id < ?")
+	pq = dbUtils.PQuery(`
+		delete from backup_log where backup_log_id < ?
+	`, logID)
 
-	_, err = tx.Exec(query, logID)
+	_, err = dbUtils.ExecTx(tx, pq)
 	if err != nil {
 		return err
 	}

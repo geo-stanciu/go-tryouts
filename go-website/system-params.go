@@ -45,15 +45,15 @@ func (p *SystemParams) LoadByGroup(group string) error {
 	p.Group = strings.ToLower(group)
 	p.Params = make(map[string]string)
 
-	query := dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 	    SELECT param, val
 	      FROM system_params
 	     WHERE param_group = ?
 	     ORDER BY param
-	`)
+	`, p.Group)
 
 	var err error
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		var key string
 		var val string
 
@@ -63,7 +63,7 @@ func (p *SystemParams) LoadByGroup(group string) error {
 		}
 
 		p.Params[key] = val
-	}, p.Group)
+	})
 
 	if err != nil {
 		return err

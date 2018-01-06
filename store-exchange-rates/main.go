@@ -33,17 +33,20 @@ func init() {
 	log.Level = logrus.DebugLevel
 }
 
+// Rate - Exchange rate struct
 type Rate struct {
 	Currency   string `xml:"currency,attr"`
 	Multiplier string `xml:"multiplier,attr"`
 	Rate       string `xml:",chardata"`
 }
 
+// Cube - colection of exchange rates
 type Cube struct {
 	Date string `xml:"date,attr"`
 	Rate []Rate
 }
 
+// ParseSourceStream - Parse Source Stream
 type ParseSourceStream func(source io.Reader) error
 
 func main() {
@@ -165,14 +168,14 @@ func prepareCurrencies() error {
 	}
 	defer tx.Rollback()
 
-	query := `
+	pq := dbUtils.PQuery(`
 		SELECT CASE WHEN EXISTS (
 			SELECT 1 FROM currency
 		) THEN 1 ELSE 0 END
 		FROM dual
-	`
+	`)
 
-	err = tx.QueryRow(query).Scan(&found)
+	err = tx.QueryRow(pq.Query).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -182,33 +185,41 @@ func prepareCurrencies() error {
 	}
 
 	if !found {
-		query = dbUtils.PQuery("INSERT INTO currency (currency) VALUES (?)")
+		pq = dbUtils.PQuery(`
+			INSERT INTO currency (currency) VALUES (?)
+		`)
 
-		_, err = tx.Exec(query, "RON")
+		pq.SetArg(0, "RON")
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}
 
-		_, err = tx.Exec(query, "EUR")
+		pq.SetArg(0, "EUR")
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}
 
-		_, err = tx.Exec(query, "USD")
+		pq.SetArg(0, "USD")
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}
 
-		_, err = tx.Exec(query, "CHF")
+		pq.SetArg(0, "CHF")
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}
 	}
 
 	var refCurrencyID int32
-	query = dbUtils.PQuery("SELECT currency_id FROM currency WHERE currency = ?")
+	pq = dbUtils.PQuery(`
+		SELECT currency_id FROM currency WHERE currency = ?
+	`, "RON")
 
-	err = tx.QueryRow(query, "RON").Scan(&refCurrencyID)
+	err = tx.QueryRow(pq.Query, pq.Args...).Scan(&refCurrencyID)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -233,9 +244,11 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 
 	audit.Log(nil, "import exchange rates", "Importing exchange rates...", "data", cube.Date)
 
-	query := dbUtils.PQuery("SELECT currency_id FROM currency WHERE currency = ?")
+	pq := dbUtils.PQuery(`
+		SELECT currency_id FROM currency WHERE currency = ?
+	`, "RON")
 
-	err = tx.QueryRow(query, "RON").Scan(&refCurrencyID)
+	err = tx.QueryRow(pq.Query, pq.Args...).Scan(&refCurrencyID)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -279,9 +292,11 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 	var currencyID int32
 	var found bool
 
-	query := dbUtils.PQuery("SELECT currency_id FROM currency WHERE currency = ?")
+	pq := dbUtils.PQuery(`
+		SELECT currency_id FROM currency WHERE currency = ?
+	`, currency)
 
-	err := tx.QueryRow(query, currency).Scan(&currencyID)
+	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&currencyID)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -290,7 +305,7 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 		return err
 	}
 
-	query = dbUtils.PQuery(`
+	pq = dbUtils.PQuery(`
 		SELECT CASE WHEN EXISTS (
 			SELECT 1
 			FROM exchange_rate 
@@ -298,9 +313,10 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 		     AND exchange_date = DATE ?
 		) THEN 1 ELSE 0 END
 		FROM dual
-	`)
+	`, currencyID,
+		date)
 
-	err = tx.QueryRow(query, currencyID, date).Scan(&found)
+	err = tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -310,7 +326,7 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 	}
 
 	if !found {
-		query = dbUtils.PQuery(`
+		pq = dbUtils.PQuery(`
 			INSERT INTO exchange_rate (
 				reference_currency_id,
 				currency_id,
@@ -318,16 +334,12 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 				rate
 			)
 			VALUES (?, ?, DATE ?, ?)
-		`)
-
-		_, err = tx.Exec(
-			query,
-			refCurrencyID,
+		`, refCurrencyID,
 			currencyID,
 			date,
-			exchRate/multiplier,
-		)
+			exchRate/multiplier)
 
+		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}
