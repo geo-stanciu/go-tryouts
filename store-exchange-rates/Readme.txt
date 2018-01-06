@@ -1,3 +1,29 @@
+This is a demo.
+
+Needs:
+- golang: https://golang.org
+
+As a first step after cloning this repository, you might need to run the following command:
+
+go get -d
+
+This downloads the needed dependencies.
+
+---------------------------------------------------
+
+Uses the following sql pachages:
+- "github.com/denisenkom/go-mssqldb"
+- "github.com/go-sql-driver/mysql"
+- "github.com/lib/pq"
+- "github.com/mattn/go-oci8"
+
+If support is not needed for all of the above databases, remove some of the above imported packages.
+
+---------------------------------------------------
+
+For Oracle driver:
+
+0. Only usable for Oracle 12.1 for now.
 1. Put oci8.pc path to your PKG_CONFIG_PATH environment variable.
 2. You need:
    - go
