@@ -149,10 +149,7 @@ func addRoles(tx *sql.Tx) error {
 	`)
 
 	pqAdd := dbUtils.PQuery(`
-	    insert into role (
-	        role
-	    )
-	    values (?)
+	    insert into role (role) values (?)
 	`)
 
 	stmtE, err := tx.Prepare(pqExists.Query)

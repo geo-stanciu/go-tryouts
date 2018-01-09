@@ -68,7 +68,7 @@ func main() {
 	}
 	defer db.Close()
 
-	audit.SetLogger(appName+"/"+appVersion, log, &dbUtils)
+	audit.SetLogger(appName+"/"+appVersion, log, dbUtils)
 	audit.SetWaitGroup(&wg)
 
 	mw := io.MultiWriter(os.Stdout, audit)
@@ -177,11 +177,7 @@ func prepareCurrencies() error {
 	`)
 
 	err = tx.QueryRow(pq.Query).Scan(&found)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return err
-	case err != nil:
+	if err != nil {
 		return err
 	}
 
@@ -318,11 +314,7 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 		date)
 
 	err = tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return nil
-	case err != nil:
+	if err != nil {
 		return err
 	}
 

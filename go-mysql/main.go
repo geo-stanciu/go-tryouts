@@ -13,7 +13,7 @@ import (
 var (
 	db      *sql.DB
 	config  = Configuration{}
-	dbUtils = utils.DbUtils{}
+	dbUtils *utils.DbUtils
 )
 
 type Test struct {
@@ -25,6 +25,11 @@ type Test1 struct {
 	Dt  time.Time `sql:"dt"`
 	Dtz time.Time `sql:"dtz"`
 	D   time.Time `sql:"d"`
+}
+
+func init() {
+	// init databaseutils
+	dbUtils = new(utils.DbUtils)
 }
 
 func main() {
@@ -59,9 +64,9 @@ func main() {
 	//fmt.Println(test.Version)
 
 	sc := utils.SQLScanHelper{}
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		test2 := Test{}
-		err = sc.Scan(&dbUtils, row, &test2)
+		err = sc.Scan(dbUtils, row, &test2)
 		if err != nil {
 			panic(err)
 		}
@@ -75,7 +80,7 @@ func main() {
 		panic(err)
 	}
 
-	query = `
+	query := `
 		create table if not exists test1 (
 			dt datetime(3),
 			dtz timestamp,
@@ -112,7 +117,7 @@ func main() {
 	sc.Clear()
 	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		test1 := Test1{}
-		err = sc.Scan(&dbUtils, row, &test1)
+		err = sc.Scan(dbUtils, row, &test1)
 		if err != nil {
 			panic(err)
 		}

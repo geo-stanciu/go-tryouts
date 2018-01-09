@@ -27,11 +27,11 @@ const (
 // MembershipUser - membership user helper
 type MembershipUser struct {
 	sync.RWMutex
-	UserID   int
-	Username string
-	Name     string
-	Surname  string
-	Email    string
+	UserID   int    `sql:"user_id"`
+	Username string `sql:"username"`
+	Name     string `sql:"name"`
+	Surname  string `sql:"surname"`
+	Email    string `sql:"email"`
 	Password string `json:"-"`
 }
 
@@ -52,11 +52,7 @@ func (u *MembershipUser) UserExists(user string) (bool, error) {
 	`, user)
 
 	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return false, nil
-	case err != nil:
+	if err != nil {
 		return false, err
 	}
 
@@ -78,12 +74,7 @@ func (u *MembershipUser) GetUserByName(user string) error {
 	     WHERE loweredusername = lower(?)
 	`, user)
 
-	err := db.QueryRow(pq.Query, pq.Args...).Scan(
-		&u.UserID,
-		&u.Username,
-		&u.Name,
-		&u.Surname,
-		&u.Email)
+	err := dbUtils.RunQuery(pq, u)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -110,12 +101,7 @@ func (u *MembershipUser) GetUserByID(userID int) error {
 	    WHERE user_id = ?
 	`, userID)
 
-	err := db.QueryRow(pq.Query, pq.Args...).Scan(
-		&u.UserID,
-		&u.Username,
-		&u.Name,
-		&u.Surname,
-		&u.Email)
+	err := dbUtils.RunQuery(pq, u)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -150,11 +136,7 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 		u.UserID)
 
 	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
-
-	switch {
-	case err == sql.ErrNoRows:
-		found = false
-	case err != nil:
+	if err != nil {
 		return err
 	}
 
@@ -267,7 +249,7 @@ func (u *MembershipUser) Save() error {
 				return err
 			}
 
-			audit.Log(nil, "update-user", "Update user.", "old", old, "new", u)
+			audit.Log(nil, "update-user", "Update user.", "old", &old, "new", u)
 		}
 
 		if len(u.Password) > 0 {
@@ -329,9 +311,10 @@ func (u *MembershipUser) GetUserRoles() ([]*MembershipRole, error) {
 		dt)
 
 	var err error
+	sc := utils.SQLScanHelper{}
 	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		var r MembershipRole
-		err = row.Scan(&r.RoleID, &r.Rolename)
+		err = sc.Scan(dbUtils, row, &r)
 		if err != nil {
 			return
 		}
@@ -806,14 +789,17 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 	return ValidationOK, nil
 }
 
+type failedUserPassword struct {
+	FailedPasswords int       `sql:"failed_password_atmpts"`
+	FirstFail       time.Time `sql:"first_failed_password"`
+}
+
 var passFailLock sync.Mutex
 
 func failedUserPasswordValidation(userID int, user string) {
 	passFailLock.Lock()
 	defer passFailLock.Unlock()
 
-	var failedPasswordAtempts int
-	var firstFailedPassword time.Time
 	var maxAllowedFailedAtmpts int
 	var passwordFailInterval int
 	var passwordStartInterval time.Time
@@ -849,10 +835,8 @@ func failedUserPasswordValidation(userID int, user string) {
 	`, "1970-01-01 00:00:00",
 		userID)
 
-	err = tx.QueryRow(pq.Query, pq.Args...).Scan(
-		&failedPasswordAtempts,
-		&firstFailedPassword,
-	)
+	failedPass := failedUserPassword{}
+	err = dbUtils.RunQueryTx(tx, pq, &failedPass)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -867,7 +851,7 @@ func failedUserPasswordValidation(userID int, user string) {
 
 	passwordStartInterval = time.Now().UTC().Add(time.Duration(-1*passwordFailInterval) * time.Minute)
 
-	if firstFailedPassword.Before(passwordStartInterval) {
+	if failedPass.FirstFail.Before(passwordStartInterval) {
 		newFail = 1
 	}
 
@@ -906,7 +890,7 @@ func failedUserPasswordValidation(userID int, user string) {
 	`, userID)
 
 	err = tx.QueryRow(pq.Query, pq.Args...).Scan(
-		&failedPasswordAtempts,
+		&failedPass.FailedPasswords,
 	)
 
 	switch {
@@ -920,7 +904,7 @@ func failedUserPasswordValidation(userID int, user string) {
 		return
 	}
 
-	if failedPasswordAtempts >= maxAllowedFailedAtmpts {
+	if failedPass.FailedPasswords >= maxAllowedFailedAtmpts {
 		pq = dbUtils.PQuery(`
 		    UPDATE "user"
 		       SET locked_out = 1

@@ -10,8 +10,8 @@ import (
 // MembershipRole - role utils
 type MembershipRole struct {
 	sync.RWMutex
-	RoleID   int
-	Rolename string
+	RoleID   int    `sql:"role_id"`
+	Rolename string `sql:"role"`
 }
 
 // RoleExists - role exists
@@ -31,11 +31,7 @@ func (r *MembershipRole) RoleExists(role string) (bool, error) {
 	`, role)
 
 	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return false, nil
-	case err != nil:
+	if err != nil {
 		return false, err
 	}
 
@@ -54,9 +50,7 @@ func (r *MembershipRole) GetRoleByName(role string) error {
 	     WHERE lower(role) = lower(?)
 	`, role)
 
-	err := db.QueryRow(pq.Query, pq.Args...).Scan(
-		&r.RoleID,
-		&r.Rolename)
+	err := dbUtils.RunQuery(pq, r)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -80,9 +74,7 @@ func (r *MembershipRole) GetRoleByID(roleID int) error {
 	     WHERE role_id = ?
 	`, roleID)
 
-	err := db.QueryRow(pq.Query, pq.Args...).Scan(
-		&r.RoleID,
-		&r.Rolename)
+	err := dbUtils.RunQuery(pq, r)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -113,11 +105,7 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 		r.RoleID)
 
 	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
-
-	switch {
-	case err == sql.ErrNoRows:
-		found = false
-	case err != nil:
+	if err != nil {
 		return err
 	}
 
@@ -146,10 +134,7 @@ func (r *MembershipRole) Save() error {
 
 	if r.RoleID < 0 {
 		pq := dbUtils.PQuery(`
-		    INSERT INTO role (
-		        role
-		    )
-		    VALUES (?)
+		    INSERT INTO role (role) VALUES (?)
 		`, r.Rolename)
 
 		_, err = dbUtils.ExecTx(tx, pq)
@@ -188,7 +173,7 @@ func (r *MembershipRole) Save() error {
 			return err
 		}
 
-		audit.Log(nil, "update-role", "Add new role.", "old", old, "new", r)
+		audit.Log(nil, "update-role", "Update role.", "old", &old, "new", r)
 	}
 
 	tx.Commit()
@@ -219,11 +204,7 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 		dt)
 
 	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return false, nil
-	case err != nil:
+	if err != nil {
 		return false, err
 	}
 
@@ -252,11 +233,7 @@ func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
 		dt)
 
 	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return false, nil
-	case err != nil:
+	if err != nil {
 		return false, err
 	}
 
@@ -287,11 +264,7 @@ func IsUserInRole(user string, role string) (bool, error) {
 		dt)
 
 	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return false, nil
-	case err != nil:
+	if err != nil {
 		return false, err
 	}
 

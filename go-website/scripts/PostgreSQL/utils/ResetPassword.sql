@@ -32,14 +32,15 @@ begin
         password,
         password_salt,
         valid_until,
-        temporary
+        temporary,
+        valid_from
     )
     select _user_id,
            _password,
            _password_salt,
            current_timestamp + interval '30' day,
-           0 -- temporary
-           ;
+           0, -- temporary
+           current_timestamp at time zone 'UTC';
 
     UPDATE wmeter.user
        SET last_password_change = current_timestamp

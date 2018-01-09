@@ -13,7 +13,7 @@ import (
 var (
 	db      *sql.DB
 	config  = Configuration{}
-	dbUtils = utils.DbUtils{}
+	dbUtils *utils.DbUtils
 )
 
 type Test struct {
@@ -25,6 +25,11 @@ type Test1 struct {
 	Dt  time.Time `sql:"dt"`
 	Dtz time.Time `sql:"dtz"`
 	D   time.Time `sql:"d"`
+}
+
+func init() {
+	// init databaseutils
+	dbUtils = new(utils.DbUtils)
 }
 
 func main() {
@@ -49,7 +54,7 @@ func main() {
 
 	test := Test{}
 	pq := dbUtils.PQuery("select current_timestamp date, @@version version")
-	err = dbUtils.RunQuery(query, &test)
+	err = dbUtils.RunQuery(pq, &test)
 	if err != nil {
 		panic(err)
 	}
@@ -58,9 +63,9 @@ func main() {
 	fmt.Println("Date - local:", test.Date.In(loc))
 
 	sc := utils.SQLScanHelper{}
-	err = dbUtils.ForEachRow(query, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		test2 := Test{}
-		err = sc.Scan(&dbUtils, row, &test2)
+		err = sc.Scan(dbUtils, row, &test2)
 		if err != nil {
 			panic(err)
 		}
@@ -73,7 +78,7 @@ func main() {
 		panic(err)
 	}
 
-	query = `
+	query := `
 		if not exists (select * from sysobjects where xtype = 'U' and name = 'test1')
 		create table test1 (
 			dt datetime,
@@ -110,7 +115,7 @@ func main() {
 	sc.Clear()
 	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
 		test1 := Test1{}
-		err = sc.Scan(&dbUtils, row, &test1)
+		err = sc.Scan(dbUtils, row, &test1)
 		if err != nil {
 			panic(err)
 		}

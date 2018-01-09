@@ -34,7 +34,7 @@ var (
 	templates           *template.Template
 	addr                *string
 	db                  *sql.DB
-	dbUtils             = utils.DbUtils{}
+	dbUtils             *utils.DbUtils
 	config              = Configuration{}
 	timezone            *time.Location
 	appName             = "GoWebsiteExample"
@@ -48,6 +48,9 @@ func init() {
 	// Log as JSON instead of the default ASCII formatter.
 	log.Formatter = new(logrus.JSONFormatter)
 	log.Level = logrus.DebugLevel
+
+	// init databaseutils
+	dbUtils = new(utils.DbUtils)
 
 	// register SessionData for cookie use
 	gob.Register(&SessionData{})
@@ -67,9 +70,9 @@ func main() {
 	var err error
 	var wg sync.WaitGroup
 
-	//cfgFile := "./conf.json"
+	cfgFile := "./conf.json"
 	//cfgFile := "./conf_SQLServer.json"
-	cfgFile := "./conf_Oracle.json"
+	//cfgFile := "./conf_Oracle.json"
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		log.Println(err)
@@ -89,7 +92,7 @@ func main() {
 		return
 	}
 
-	audit.SetLogger(appName+"/"+appVersion, log, &dbUtils)
+	audit.SetLogger(appName+"/"+appVersion, log, dbUtils)
 	audit.SetWaitGroup(&wg)
 
 	mw := io.MultiWriter(os.Stdout, audit)
