@@ -1,9 +1,0 @@
-1. password rules for register + change password
-
-    - do not use common words
-
------------------------------
-
-2. menu allocation on roles.
-
------------------------------
