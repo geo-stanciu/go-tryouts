@@ -24,7 +24,7 @@ var (
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
-	dbUtils    = utils.DbUtils{}
+	dbUtils    *utils.DbUtils
 	config     = Configuration{}
 )
 
@@ -32,6 +32,8 @@ func init() {
 	// Log as JSON instead of the default ASCII formatter.
 	log.Formatter = new(logrus.JSONFormatter)
 	log.Level = logrus.DebugLevel
+
+	dbUtils = new(utils.DbUtils)
 }
 
 // Rate - Exchange rate struct
@@ -289,6 +291,8 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 	var currencyID int32
 	var found bool
 
+	rate := exchRate / multiplier
+
 	pq := dbUtils.PQuery(`
 		SELECT currency_id FROM currency WHERE currency = ?
 	`, currency)
@@ -330,12 +334,19 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 		`, refCurrencyID,
 			currencyID,
 			date,
-			exchRate/multiplier)
+			rate)
 
 		_, err = dbUtils.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}
+
+		audit.Log(nil,
+			"import exchange rates",
+			"add exchange rate",
+			"data", date,
+			"currency", currency,
+			"rate", rate)
 	}
 
 	return nil

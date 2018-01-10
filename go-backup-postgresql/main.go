@@ -25,9 +25,14 @@ type Configuration struct {
 
 var (
 	db      *sql.DB
-	dbUtils = utils.DbUtils{}
+	dbUtils *utils.DbUtils
 	config  = Configuration{}
 )
+
+func init() {
+	// init databaseutils
+	dbUtils = new(utils.DbUtils)
+}
 
 func main() {
 	t := time.Now().UTC()

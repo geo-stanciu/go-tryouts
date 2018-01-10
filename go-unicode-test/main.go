@@ -15,8 +15,13 @@ import (
 var (
 	db      *sql.DB
 	config  = Configuration{}
-	dbUtils = utils.DbUtils{}
+	dbUtils *utils.DbUtils
 )
+
+func init() {
+	// init databaseutils
+	dbUtils = new(utils.DbUtils)
+}
 
 func main() {
 	var err error
