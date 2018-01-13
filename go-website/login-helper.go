@@ -220,20 +220,22 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 		4)
 
 	var err error
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
 		var encodeKey string
 
 		err = row.Scan(&encodeKey)
 		if err != nil {
-			return
+			return err
 		}
 
 		key, err := base64.StdEncoding.DecodeString(encodeKey)
 		if err != nil {
-			return
+			return err
 		}
 
 		keys = append(keys, key)
+
+		return nil
 	})
 
 	if err != nil {

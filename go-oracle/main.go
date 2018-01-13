@@ -68,16 +68,18 @@ func main() {
 
 	sc := utils.SQLScanHelper{}
 
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
 		test2 := Test{}
 		err = sc.Scan(dbUtils, row, &test2)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		fmt.Println("Date:", test2.Date)
 		fmt.Println("Date - local:", test2.Date.In(loc))
 		//fmt.Println(test2.Version)
+
+		return nil
 	})
 
 	if err != nil {
@@ -118,17 +120,19 @@ func main() {
 	/*pq = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
 
 	sc.Clear()
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
 		test1 := Test1{}
 		err = sc.Scan(dbUtils, row, &test1)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		fmt.Println(test1.Dt)
 		fmt.Println(test1.Dt.In(loc))
 		fmt.Println(test1.Dtz)
 		fmt.Println(test1.D)
+
+		return nil
 	})
 
 	if err != nil {

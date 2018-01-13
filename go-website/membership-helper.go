@@ -312,14 +312,16 @@ func (u *MembershipUser) GetUserRoles() ([]*MembershipRole, error) {
 
 	var err error
 	sc := utils.SQLScanHelper{}
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
 		var r MembershipRole
 		err = sc.Scan(dbUtils, row, &r)
 		if err != nil {
-			return
+			return err
 		}
 
 		roles = append(roles, &r)
+
+		return nil
 	})
 
 	if err != nil {
@@ -478,22 +480,21 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 		notRepeatPasswords)
 
 	var err error
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
 		err = row.Scan(&hashedPassword, &passwordSalt)
 		if err != nil {
-			return
+			return err
 		}
 
 		passBytes := []byte(passwordSalt + u.Password)
 		hashBytes, err := base64.StdEncoding.DecodeString(hashedPassword)
 		if err != nil {
-			return
+			return err
 		}
 
 		err = bcrypt.CompareHashAndPassword(hashBytes, passBytes)
-		if err == nil {
-			return
-		}
+
+		return err
 	})
 
 	if err != nil {
@@ -749,17 +750,19 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		SELECT ip FROM user_ip WHERE user_id = ?
 	`, testUser.UserID)
 
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
 		hasIPs = true
 		var addr string
 		err = row.Scan(&addr)
 		if err != nil {
-			return
+			return err
 		}
 
 		if addr == ip {
 			foundIP = true
 		}
+
+		return nil
 	})
 
 	if err != nil {

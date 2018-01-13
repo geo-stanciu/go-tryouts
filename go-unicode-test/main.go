@@ -64,14 +64,16 @@ func main() {
 
 	pq = dbUtils.PQuery(`SELECT c1 FROM test_unicode`)
 
-	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows) {
+	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows) error {
 		var c1 string
 		err = row.Scan(&c1)
 		if err != nil {
-			return
+			return err
 		}
 
 		fmt.Println("c1: ", c1)
+
+		return nil
 	})
 
 	tx.Commit()

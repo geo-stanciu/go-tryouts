@@ -44,7 +44,7 @@ func main() {
 		return
 	}
 
-	dumpFile := path.Join(config.DumpDir, fmt.Sprintf("save_devel_%s.dmp", sData))
+	dumpFile := path.Join(config.DumpDir, fmt.Sprintf("save_devel_%s.bak", sData))
 
 	log.Printf("start dump backup \"%s\"\n", dumpFile)
 
@@ -65,11 +65,18 @@ func main() {
 		 #hostname:port:database:username:password
 	*/
 
+	/*
+		Restore with
+		pg_restore -Fc -C save_devel_yyyymmdd.bak
+	*/
+
 	var outb, errb bytes.Buffer
 
 	cmd := exec.Command(
 		"pg_dump",
 		"-f", dumpFile,
+		"--clean",
+		"--format=c",
 		"-v",
 		config.DbName)
 

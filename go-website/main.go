@@ -73,6 +73,7 @@ func main() {
 	cfgFile := "./conf.json"
 	//cfgFile := "./conf_SQLServer.json"
 	//cfgFile := "./conf_Oracle.json"
+	//cfgFile := "./conf_Oracle11g.json"
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		log.Println(err)

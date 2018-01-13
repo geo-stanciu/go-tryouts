@@ -53,16 +53,18 @@ func (p *SystemParams) LoadByGroup(group string) error {
 	`, p.Group)
 
 	var err error
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
 		var key string
 		var val string
 
 		err = row.Scan(&key, &val)
 		if err != nil {
-			return
+			return err
 		}
 
 		p.Params[key] = val
+
+		return nil
 	})
 
 	if err != nil {

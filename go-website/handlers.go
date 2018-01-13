@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/gorilla/csrf"
 )
 
@@ -245,22 +246,7 @@ func getEndIdxOfBaseURL(url string) int {
 	firstQ := strings.Index(url, "?")
 	lastHash := strings.LastIndex(url, "#")
 
-	idx := getMinGreaterThanZero(firstQ, lastHash)
+	idx := utils.GetMinGreaterThanZero(firstQ, lastHash)
 
 	return idx
-}
-
-func getMinGreaterThanZero(a, b int) int {
-	if a > 0 && b > 0 {
-		if a <= b {
-			return a
-		}
-		return b
-	} else if a > 0 {
-		return a
-	} else if b > 0 {
-		return b
-	}
-
-	return -1
 }

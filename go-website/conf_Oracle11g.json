@@ -1,0 +1,7 @@
+{
+    "Port": "8080",
+    "DbType": "oracle11g",
+    "DbURL": "geo/geo@db1",
+    "Timezone": "Europe/Bucharest",
+    "isHTTPS": false
+}
