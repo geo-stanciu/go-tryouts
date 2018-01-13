@@ -53,7 +53,7 @@ func (p *SystemParams) LoadByGroup(group string) error {
 	`, p.Group)
 
 	var err error
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
 		var key string
 		var val string
 

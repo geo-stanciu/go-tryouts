@@ -403,8 +403,7 @@ func (HomeController) GetExchangeRates(w http.ResponseWriter, r *http.Request, r
 	`, date)
 
 	var err error
-	sc := utils.SQLScanHelper{}
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
 		var r models.Rate
 		err = sc.Scan(dbUtils, row, &r)
 		if err != nil {

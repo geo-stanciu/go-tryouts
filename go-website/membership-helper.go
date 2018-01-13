@@ -311,8 +311,7 @@ func (u *MembershipUser) GetUserRoles() ([]*MembershipRole, error) {
 		dt)
 
 	var err error
-	sc := utils.SQLScanHelper{}
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
 		var r MembershipRole
 		err = sc.Scan(dbUtils, row, &r)
 		if err != nil {
@@ -320,7 +319,6 @@ func (u *MembershipUser) GetUserRoles() ([]*MembershipRole, error) {
 		}
 
 		roles = append(roles, &r)
-
 		return nil
 	})
 
@@ -480,7 +478,7 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 		notRepeatPasswords)
 
 	var err error
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
 		err = row.Scan(&hashedPassword, &passwordSalt)
 		if err != nil {
 			return err
@@ -750,7 +748,7 @@ func ValidateUserPassword(user string, pass string, ip string) (int, error) {
 		SELECT ip FROM user_ip WHERE user_id = ?
 	`, testUser.UserID)
 
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
 		hasIPs = true
 		var addr string
 		err = row.Scan(&addr)

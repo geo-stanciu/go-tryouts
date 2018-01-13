@@ -9,6 +9,7 @@ import (
 
 	"time"
 
+	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/satori/go.uuid"
@@ -220,7 +221,7 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 		4)
 
 	var err error
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
 		var encodeKey string
 
 		err = row.Scan(&encodeKey)

@@ -283,7 +283,7 @@ func getLastNeededArchFile(tx *sql.Tx, nrBackups2Keep int) (string, int, error) 
 
 	i := 0
 
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
 		i++
 		err = row.Scan(&archFile, &logID)
 		return err
@@ -312,7 +312,7 @@ func deleteOldBackups(tx *sql.Tx, logID int, archFile2Keep string) error {
 		 order by backup_log_id
 	`, logID)
 
-	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows) error {
+	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
 		err = row.Scan(&bkFile)
 		if err != nil {
 			return err
