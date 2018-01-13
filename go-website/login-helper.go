@@ -221,7 +221,7 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 		4)
 
 	var err error
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		var encodeKey string
 
 		err = row.Scan(&encodeKey)
@@ -235,7 +235,6 @@ func getCookiesEncodeKeys() ([][]byte, error) {
 		}
 
 		keys = append(keys, key)
-
 		return nil
 	})
 

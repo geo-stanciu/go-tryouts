@@ -64,7 +64,7 @@ func main() {
 
 	pq = dbUtils.PQuery(`SELECT c1 FROM test_unicode`)
 
-	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
+	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		var c1 string
 		err = row.Scan(&c1)
 		if err != nil {

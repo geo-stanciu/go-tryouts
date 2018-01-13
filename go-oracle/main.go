@@ -66,7 +66,7 @@ func main() {
 	fmt.Println("Date - local:", test.Date.In(loc))
 	fmt.Println(test.Version)
 
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		test2 := Test{}
 		err = sc.Scan(dbUtils, row, &test2)
 		if err != nil {
@@ -118,7 +118,7 @@ func main() {
 	/*pq = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
 
 	sc.Clear()
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScanHelper) error {
+	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		test1 := Test1{}
 		err = sc.Scan(dbUtils, row, &test1)
 		if err != nil {
