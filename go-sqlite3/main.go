@@ -3,24 +3,68 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"time"
+
+	"github.com/geo-stanciu/go-utils/utils"
 
 	_ "github.com/mattn/go-sqlite3"
-	//"os"
 )
 
-func main() {
-	//os.Remove("./foo.db")
+var (
+	db      *sql.DB
+	config  = Configuration{}
+	dbUtils *utils.DbUtils
+)
 
-	//db, err := sql.Open("sqlite3", "./foo.db")
-	db, err := sql.Open("sqlite3", "file:test.db?cache=shared&mode=memory")
+type Test struct {
+	Date    time.Time `sql:"date"`
+	Version string    `sql:"version"`
+}
+
+type Test1 struct {
+	Dt    time.Time      `sql:"dt"`
+	Dtz   time.Time      `sql:"dtz"`
+	D     time.Time      `sql:"d"`
+	DNull utils.NullTime `sql:"d_null"`
+}
+
+func init() {
+	// init databaseutils
+	dbUtils = new(utils.DbUtils)
+}
+
+func main() {
+	var err error
+
+	cfgFile := "./conf.json"
+	err = config.ReadFromFile(cfgFile)
 	if err != nil {
-		log.Println(err)
-		return
+		panic(err)
+	}
+
+	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
+	if err != nil {
+		panic(err)
 	}
 	defer db.Close()
 
-	sqlStmt := `
+	loc, err := time.LoadLocation("Europe/Bucharest")
+	if err != nil {
+		panic(err)
+	}
+
+	test := Test{}
+	pq := dbUtils.PQuery("select current_timestamp date, sqlite_version() as version")
+	err = dbUtils.RunQuery(pq, &test)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Date: ", test.Date)
+	fmt.Println("Date - local: ", test.Date.In(loc))
+	//fmt.Println(test.Version)
+
+	/*sqlStmt := `
 		create table foo (id integer not null primary key, name text);
 		delete from foo;
 	`
@@ -159,5 +203,5 @@ func main() {
 		return
 	}
 
-	rows.Close()
+	rows.Close()*/
 }

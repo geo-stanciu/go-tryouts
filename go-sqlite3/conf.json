@@ -1,0 +1,4 @@
+{
+    "DbType": "sqlite3",
+    "DbURL": "file:test.sqlite?cache=shared&mode=memory"
+}

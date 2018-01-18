@@ -22,9 +22,10 @@ type Test struct {
 }
 
 type Test1 struct {
-	Dt  time.Time `sql:"dt"`
-	Dtz time.Time `sql:"dtz"`
-	D   time.Time `sql:"d"`
+	Dt    time.Time      `sql:"dt"`
+	Dtz   time.Time      `sql:"dtz"`
+	D     time.Time      `sql:"d"`
+	DNull utils.NullTime `sql:"d_null"`
 }
 
 func init() {
@@ -85,7 +86,8 @@ func main() {
 		create table if not exists test1 (
 			dt datetime(3),
 			dtz timestamp,
-			d date
+			d date,
+			d_null datetime(3)
 		)
 	`
 
@@ -124,7 +126,7 @@ func main() {
 		}
 	}
 
-	pq = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
+	pq = dbUtils.PQuery(`select dt, dtz, d, d_null from test1 order by 1`)
 
 	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		test1 := Test1{}
@@ -137,6 +139,12 @@ func main() {
 		fmt.Println("Dt - local:", test1.Dt.In(loc))
 		fmt.Println("Dtz:", test1.Dtz)
 		fmt.Println("D:", test1.D)
+
+		if test1.DNull.Valid {
+			fmt.Println("D NUll:", test1.DNull.Time)
+		} else {
+			fmt.Println("D NUll: null")
+		}
 
 		return nil
 	})
