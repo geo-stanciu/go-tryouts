@@ -1,1 +1,1 @@
-go run main.go
+start go-backup-postgresql.exe

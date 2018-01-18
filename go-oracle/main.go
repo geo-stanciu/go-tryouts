@@ -64,7 +64,7 @@ func main() {
 
 	fmt.Println("Date:", test.Date)
 	fmt.Println("Date - local:", test.Date.In(loc))
-	fmt.Println(test.Version)
+	//fmt.Println(test.Version)
 
 	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		test2 := Test{}
@@ -84,22 +84,48 @@ func main() {
 		panic(err)
 	}
 
-	/*query := `
-			create table test1 (
-				dt date,
-				dtz timestamp,
-				d date
-			)
-		`
+	query := `
+	    select CASE WHEN EXISTS (
+			select 1 from user_tables where table_name = 'TEST1'
+		) THEN 1 ELSE 0 END
+		FROM dual
+	`
 
-	_, err = db.Exec(query)
-
+	found := false
+	err = db.QueryRow(query).Scan(&found)
 	if err != nil {
 		panic(err)
-	}*/
+	}
 
-	/*
-		now = time.Now().UTC()
+	if !found {
+		query := `
+	    create table test1 (
+			dt date,
+			dtz timestamp,
+			d date
+		)
+	`
+
+		_, err = db.Exec(query)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	query = `
+	    select CASE WHEN EXISTS (
+			select 1 from test1
+		) THEN 1 ELSE 0 END
+		FROM dual
+	`
+
+	err = db.QueryRow(query).Scan(&found)
+	if err != nil {
+		panic(err)
+	}
+
+	if !found {
+		now := time.Now().UTC()
 
 		pq = dbUtils.PQuery(`
 			insert into test1 (
@@ -113,11 +139,11 @@ func main() {
 		_, err = dbUtils.Exec(pq)
 		if err != nil {
 			panic(err)
-		}*/
+		}
+	}
 
-	/*pq = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
+	pq = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
 
-	sc.Clear()
 	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		test1 := Test1{}
 		err = sc.Scan(dbUtils, row, &test1)
@@ -125,15 +151,15 @@ func main() {
 			return err
 		}
 
-		fmt.Println(test1.Dt)
-		fmt.Println(test1.Dt.In(loc))
-		fmt.Println(test1.Dtz)
-		fmt.Println(test1.D)
+		fmt.Println("Dt:", test1.Dt)
+		fmt.Println("Dt - local:", test1.Dt.In(loc))
+		fmt.Println("Dtz:", test1.Dtz)
+		fmt.Println("D:", test1.D)
 
 		return nil
 	})
 
 	if err != nil {
 		panic(err)
-	}*/
+	}
 }

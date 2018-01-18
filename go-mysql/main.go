@@ -90,12 +90,23 @@ func main() {
 	`
 
 	_, err = db.Exec(query)
-
 	if err != nil {
 		panic(err)
 	}
 
-	/*
+	query = `
+	    select CASE WHEN EXISTS (
+			select 1 from test1
+		) THEN 1 ELSE 0 END
+	`
+
+	found := false
+	err = db.QueryRow(query).Scan(&found)
+	if err != nil {
+		panic(err)
+	}
+
+	if !found {
 		now := time.Now().UTC()
 
 		pq = dbUtils.PQuery(`
@@ -108,14 +119,13 @@ func main() {
 		`, now, now, now)
 
 		_, err = dbUtils.Exec(pq)
-
 		if err != nil {
 			panic(err)
-		}*/
+		}
+	}
 
 	pq = dbUtils.PQuery(`select dt, dtz, d from test1 order by 1`)
 
-	sc.Clear()
 	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		test1 := Test1{}
 		err = sc.Scan(dbUtils, row, &test1)

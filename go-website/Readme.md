@@ -50,7 +50,6 @@ If support is not needed for all of the above databases, remove some of the abov
 
 ## For Oracle driver:
 
-0. Only usable for Oracle 12.1 for now.
 1. Put oci8.pc path to your PKG_CONFIG_PATH environment variable.
 2. You need:
    - go
