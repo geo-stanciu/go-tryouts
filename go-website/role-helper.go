@@ -18,9 +18,6 @@ var membershipRoleLock sync.RWMutex
 
 // RoleExists - role exists
 func (r *MembershipRole) RoleExists(role string) (bool, error) {
-	membershipRoleLock.RLock()
-	defer membershipRoleLock.RUnlock()
-
 	found := false
 
 	pq := dbUtils.PQuery(`

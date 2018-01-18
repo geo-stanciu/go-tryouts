@@ -39,9 +39,6 @@ var membershipUserLock sync.RWMutex
 
 // UserExists - user exists
 func (u *MembershipUser) UserExists(user string) (bool, error) {
-	membershipUserLock.RLock()
-	defer membershipUserLock.RUnlock()
-
 	found := false
 
 	pq := dbUtils.PQuery(`
