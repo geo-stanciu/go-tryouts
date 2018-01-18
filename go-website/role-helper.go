@@ -14,10 +14,12 @@ type MembershipRole struct {
 	Rolename string `sql:"role"`
 }
 
+var membershipRoleLock sync.RWMutex
+
 // RoleExists - role exists
 func (r *MembershipRole) RoleExists(role string) (bool, error) {
-	r.RLock()
-	defer r.RUnlock()
+	membershipRoleLock.RLock()
+	defer membershipRoleLock.RUnlock()
 
 	found := false
 
@@ -118,8 +120,8 @@ func (r *MembershipRole) testSaveRole(tx *sql.Tx) error {
 
 // Save - save role details
 func (r *MembershipRole) Save() error {
-	r.Lock()
-	defer r.Unlock()
+	membershipRoleLock.Lock()
+	defer membershipRoleLock.Unlock()
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -183,6 +185,9 @@ func (r *MembershipRole) Save() error {
 
 // HasMember - role has member
 func (r *MembershipRole) HasMember(user string) (bool, error) {
+	r.RLock()
+	defer r.RUnlock()
+
 	found := false
 
 	dt := time.Now().UTC()
@@ -213,6 +218,9 @@ func (r *MembershipRole) HasMember(user string) (bool, error) {
 
 // HasMemberID - has member ID
 func (r *MembershipRole) HasMemberID(userID int) (bool, error) {
+	r.RLock()
+	defer r.RUnlock()
+
 	found := false
 
 	dt := time.Now().UTC()

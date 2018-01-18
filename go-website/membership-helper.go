@@ -35,10 +35,12 @@ type MembershipUser struct {
 	Password string `json:"-"`
 }
 
+var membershipUserLock sync.RWMutex
+
 // UserExists - user exists
 func (u *MembershipUser) UserExists(user string) (bool, error) {
-	u.RLock()
-	defer u.RUnlock()
+	membershipUserLock.RLock()
+	defer membershipUserLock.RUnlock()
 
 	found := false
 
@@ -122,8 +124,6 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 		return fmt.Errorf("cannot create user with empty password")
 	}
 
-	var found bool
-
 	pq := dbUtils.PQuery(`
 	    SELECT CASE WHEN EXISTS (
 	        SELECT 1
@@ -135,6 +135,7 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 	`, u.Username,
 		u.UserID)
 
+	var found bool
 	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
 	if err != nil {
 		return err
@@ -149,8 +150,8 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 
 // Save - save user details
 func (u *MembershipUser) Save() error {
-	u.Lock()
-	defer u.Unlock()
+	membershipUserLock.Lock()
+	defer membershipUserLock.Unlock()
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -267,6 +268,9 @@ func (u *MembershipUser) Save() error {
 
 // Activate - activates the user
 func (u *MembershipUser) Activate() error {
+	u.Lock()
+	defer u.Unlock()
+
 	dt := time.Now().UTC()
 
 	pq := dbUtils.PQuery(`
@@ -578,7 +582,10 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		}
 	}
 
-	saltBytes := uuid.NewV4()
+	saltBytes, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
 	salt := saltBytes.String()
 
 	passwordBytes := []byte(salt + u.Password)

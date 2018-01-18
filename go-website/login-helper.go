@@ -48,7 +48,10 @@ func clearSession(w http.ResponseWriter, r *http.Request) error {
 func createSession(w http.ResponseWriter, r *http.Request, user string, name string, surname string, tempPassword bool) (*SessionData, error) {
 	session, _ := cookieStore.Get(r, authCookieStoreName)
 
-	sessionID := uuid.NewV4()
+	sessionID, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
 
 	sessionData := SessionData{
 		LoggedIn:  true,
@@ -61,7 +64,7 @@ func createSession(w http.ResponseWriter, r *http.Request, user string, name str
 		},
 	}
 
-	err := saveSessionData(w, r, session, sessionData)
+	err = saveSessionData(w, r, session, sessionData)
 	if err != nil {
 		return nil, err
 	}

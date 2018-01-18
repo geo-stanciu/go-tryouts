@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"strings"
+	"sync"
 
 	"github.com/geo-stanciu/go-utils/utils"
 )
@@ -36,12 +37,16 @@ const (
 
 // SystemParams - structure helper for system settings
 type SystemParams struct {
+	sync.RWMutex
 	Group  string
 	Params map[string]string
 }
 
 // LoadByGroup - load settings by group
 func (p *SystemParams) LoadByGroup(group string) error {
+	p.Lock()
+	defer p.Unlock()
+
 	p.Group = strings.ToLower(group)
 	p.Params = make(map[string]string)
 
@@ -74,11 +79,17 @@ func (p *SystemParams) LoadByGroup(group string) error {
 }
 
 // GetString - Get setting as a string
-func (p SystemParams) GetString(key string) string {
+func (p *SystemParams) GetString(key string) string {
+	p.RLock()
+	defer p.RUnlock()
+
 	return p.Params[key]
 }
 
 // GetInt - Get setting as an int
-func (p SystemParams) GetInt(key string) int {
+func (p *SystemParams) GetInt(key string) int {
+	p.RLock()
+	defer p.RUnlock()
+
 	return utils.String2int(p.Params[key])
 }
