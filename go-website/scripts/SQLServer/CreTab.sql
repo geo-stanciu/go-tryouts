@@ -55,10 +55,41 @@ CREATE TABLE request (
 
 CREATE TABLE role (
   role_id   int identity(1,1) PRIMARY KEY,
-  role      varchar(64) not null
+  role      varchar(64) not null,
+  loweredrole varchar(64) not null
 );
 
-CREATE UNIQUE INDEX role_uk ON role (role);
+CREATE UNIQUE INDEX role_uk ON role (loweredrole);
+
+CREATE TABLE menu (
+    menu_id int identity(1,1) PRIMARY KEY,
+    index_level int NOT NULL,
+    order_number int NOT NULL,
+    request_id int,
+    CONSTRAINT menu_request_fk FOREIGN KEY (request_id)
+      REFERENCES request (request_id)
+);
+
+CREATE UNIQUE INDEX menu_uk ON menu (index_level, order_number);
+
+CREATE TABLE menu_name (
+    menu_id int NOT NULL,
+    language varchar(8) NOT NULL,
+    name nvarchar(64) NOT NULL,
+    constraint menu_name_pk PRIMARY KEY (menu_id, language),
+    constraint menu_name_fk FOREIGN KEY (menu_id)
+      REFERENCES menu (menu_id)
+);
+
+CREATE TABLE role_menu (
+    role_id int NOT NULL,
+    menu_id int NOT NULL,
+    constraint role_menu_pk PRIMARY KEY (role_id, menu_id),
+    constraint role_menu_fk FOREIGN KEY (role_id)
+      REFERENCES role (role_id),
+    constraint role_menu_menu_fk FOREIGN KEY (menu_id)
+      REFERENCES menu (menu_id)
+);
 
 CREATE TABLE "user" (
   user_id                bigint identity(1,1) PRIMARY KEY,

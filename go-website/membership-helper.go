@@ -27,6 +27,7 @@ const (
 // MembershipUser - membership user helper
 type MembershipUser struct {
 	sync.RWMutex
+	tx       *sql.Tx
 	UserID   int    `sql:"user_id"`
 	Username string `sql:"username"`
 	Name     string `sql:"name"`
@@ -37,8 +38,8 @@ type MembershipUser struct {
 
 var membershipUserLock sync.RWMutex
 
-// UserExists - user exists
-func (u *MembershipUser) UserExists(user string) (bool, error) {
+// Exists - user exists
+func (u *MembershipUser) Exists(user string) (bool, error) {
 	found := false
 
 	pq := dbUtils.PQuery(`
@@ -50,7 +51,7 @@ func (u *MembershipUser) UserExists(user string) (bool, error) {
 	    FROM dual
 	`, user)
 
-	err := db.QueryRow(pq.Query, pq.Args...).Scan(&found)
+	err := u.tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
 	if err != nil {
 		return false, err
 	}
@@ -58,8 +59,8 @@ func (u *MembershipUser) UserExists(user string) (bool, error) {
 	return found, nil
 }
 
-// GetUserByName - get user by name
-func (u *MembershipUser) GetUserByName(user string) error {
+// GetByName - get user by name
+func (u *MembershipUser) GetByName(user string) error {
 	u.Lock()
 	defer u.Unlock()
 
@@ -73,7 +74,7 @@ func (u *MembershipUser) GetUserByName(user string) error {
 	     WHERE loweredusername = lower(?)
 	`, user)
 
-	err := dbUtils.RunQuery(pq, u)
+	err := dbUtils.RunQueryTx(u.tx, pq, u)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -85,8 +86,8 @@ func (u *MembershipUser) GetUserByName(user string) error {
 	return nil
 }
 
-// GetUserByID - get user by id
-func (u *MembershipUser) GetUserByID(userID int) error {
+// GetByID - get user by id
+func (u *MembershipUser) GetByID(userID int) error {
 	u.Lock()
 	defer u.Unlock()
 
@@ -100,7 +101,7 @@ func (u *MembershipUser) GetUserByID(userID int) error {
 	    WHERE user_id = ?
 	`, userID)
 
-	err := dbUtils.RunQuery(pq, u)
+	err := dbUtils.RunQueryTx(u.tx, pq, u)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -112,7 +113,7 @@ func (u *MembershipUser) GetUserByID(userID int) error {
 	return nil
 }
 
-func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
+func (u *MembershipUser) testSave() error {
 	if len(u.Username) == 0 {
 		return fmt.Errorf("unknown user \"%s\"", u.Username)
 	}
@@ -133,7 +134,7 @@ func (u *MembershipUser) testSaveUser(tx *sql.Tx) error {
 		u.UserID)
 
 	var found bool
-	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
+	err := u.tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
 	if err != nil {
 		return err
 	}
@@ -150,13 +151,7 @@ func (u *MembershipUser) Save() error {
 	membershipUserLock.Lock()
 	defer membershipUserLock.Unlock()
 
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	err = u.testSaveUser(tx)
+	err := u.testSave()
 	if err != nil {
 		return err
 	}
@@ -185,7 +180,7 @@ func (u *MembershipUser) Save() error {
 			dt,
 			dt)
 
-		_, err = dbUtils.ExecTx(tx, pq)
+		_, err = dbUtils.ExecTx(u.tx, pq)
 		if err != nil {
 			return err
 		}
@@ -194,7 +189,7 @@ func (u *MembershipUser) Save() error {
 		    SELECT user_id FROM "user" WHERE loweredusername = ?
 		`, strings.ToLower(u.Username))
 
-		err = tx.QueryRow(pq.Query, pq.Args...).Scan(&u.UserID)
+		err = u.tx.QueryRow(pq.Query, pq.Args...).Scan(&u.UserID)
 
 		switch {
 		case err == sql.ErrNoRows:
@@ -207,15 +202,15 @@ func (u *MembershipUser) Save() error {
 			return fmt.Errorf("unknown user \"%s\"", u.Username)
 		}
 
-		err = u.changePassword(tx)
+		err = u.changePassword()
 		if err != nil {
 			return err
 		}
 
 		audit.Log(nil, "add-user", "Add new user.", "new", u)
 	} else {
-		var old MembershipUser
-		err = old.GetUserByID(u.UserID)
+		old := MembershipUser{tx: u.tx}
+		err = old.GetByID(u.UserID)
 		if err != nil {
 			return err
 		}
@@ -242,7 +237,7 @@ func (u *MembershipUser) Save() error {
 				dt,
 				u.UserID)
 
-			_, err = dbUtils.ExecTx(tx, pq)
+			_, err = dbUtils.ExecTx(u.tx, pq)
 			if err != nil {
 				return err
 			}
@@ -251,14 +246,12 @@ func (u *MembershipUser) Save() error {
 		}
 
 		if len(u.Password) > 0 {
-			err = u.changePassword(tx)
+			err = u.changePassword()
 			if err != nil {
 				return err
 			}
 		}
 	}
-
-	tx.Commit()
 
 	return nil
 }
@@ -281,7 +274,7 @@ func (u *MembershipUser) Activate() error {
 		u.UserID,
 		0)
 
-	_, err := dbUtils.Exec(pq)
+	_, err := dbUtils.ExecTx(u.tx, pq)
 	if err != nil {
 		return err
 	}
@@ -312,8 +305,8 @@ func (u *MembershipUser) GetUserRoles() ([]*MembershipRole, error) {
 		dt)
 
 	var err error
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
-		var r MembershipRole
+	err = dbUtils.ForEachRowTx(u.tx, pq, func(row *sql.Rows, sc *utils.SQLScan) error {
+		r := MembershipRole{tx: u.tx}
 		err = sc.Scan(dbUtils, row, &r)
 		if err != nil {
 			return err
@@ -335,8 +328,8 @@ func (u *MembershipUser) AddToRole(role string) error {
 	u.Lock()
 	defer u.Unlock()
 
-	var r MembershipRole
-	err := r.GetRoleByName(role)
+	r := MembershipRole{tx: u.tx}
+	err := r.GetByName(role)
 	if err != nil {
 		return err
 	}
@@ -363,7 +356,7 @@ func (u *MembershipUser) AddToRole(role string) error {
 		r.RoleID,
 		dt)
 
-	_, err = dbUtils.Exec(pq)
+	_, err = dbUtils.ExecTx(u.tx, pq)
 	if err != nil {
 		return err
 	}
@@ -378,8 +371,8 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 	u.Lock()
 	defer u.Unlock()
 
-	var r MembershipRole
-	err := r.GetRoleByName(role)
+	r := MembershipRole{tx: u.tx}
+	err := r.GetByName(role)
 	if err != nil {
 		return err
 	}
@@ -393,12 +386,6 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 		return nil
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
 	dt := time.Now().UTC()
 
 	pq := dbUtils.PQuery(`
@@ -410,7 +397,7 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 		u.UserID,
 		r.RoleID)
 
-	_, err = dbUtils.ExecTx(tx, pq)
+	_, err = dbUtils.ExecTx(u.tx, pq)
 	if err != nil {
 		return err
 	}
@@ -424,7 +411,7 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 	`, u.UserID,
 		r.RoleID)
 
-	_, err = dbUtils.ExecTx(tx, pq)
+	_, err = dbUtils.ExecTx(u.tx, pq)
 	if err != nil {
 		return err
 	}
@@ -436,19 +423,17 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 	`, u.UserID,
 		r.RoleID)
 
-	_, err = dbUtils.ExecTx(tx, pq)
+	_, err = dbUtils.ExecTx(u.tx, pq)
 	if err != nil {
 		return err
 	}
-
-	tx.Commit()
 
 	audit.Log(nil, "remove-user-role", "Remove user from role.", "user", u.Username, "role", r.Rolename)
 
 	return nil
 }
 
-func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (bool, int, error) {
+func (u *MembershipUser) passwordAlreadyUsed(params *SystemParams) (bool, int, error) {
 	notRepeatPasswords := params.GetInt(NotRepeatLastXPasswords)
 
 	if notRepeatPasswords <= 0 {
@@ -479,7 +464,7 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 		notRepeatPasswords)
 
 	var err error
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
+	err = dbUtils.ForEachRowTx(u.tx, pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		err = row.Scan(&hashedPassword, &passwordSalt)
 		if err != nil {
 			return err
@@ -503,14 +488,14 @@ func (u *MembershipUser) passwordAlreadyUsed(tx *sql.Tx, params *SystemParams) (
 	return false, notRepeatPasswords, nil
 }
 
-func (u *MembershipUser) changePassword(tx *sql.Tx) error {
+func (u *MembershipUser) changePassword() error {
 	params := SystemParams{}
 	err := params.LoadByGroup(PasswordRules)
 	if err != nil {
 		return err
 	}
 
-	alreadyUsed, notRepeatPasswords, err := u.passwordAlreadyUsed(tx, &params)
+	alreadyUsed, notRepeatPasswords, err := u.passwordAlreadyUsed(&params)
 	if err != nil {
 		return err
 	}
@@ -606,7 +591,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 		dt,
 		dt)
 
-	_, err = dbUtils.ExecTx(tx, pq)
+	_, err = dbUtils.ExecTx(u.tx, pq)
 	if err != nil {
 		return err
 	}
@@ -629,7 +614,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 			dt,
 			until)
 
-		_, err = dbUtils.ExecTx(tx, pq)
+		_, err = dbUtils.ExecTx(u.tx, pq)
 	} else {
 		pq = dbUtils.PQuery(`
 			INSERT INTO user_password (
@@ -644,7 +629,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 			salt,
 			dt)
 
-		_, err = dbUtils.ExecTx(tx, pq)
+		_, err = dbUtils.ExecTx(u.tx, pq)
 	}
 
 	if err != nil {
@@ -658,7 +643,7 @@ func (u *MembershipUser) changePassword(tx *sql.Tx) error {
 	`, dt,
 		u.UserID)
 
-	_, err = dbUtils.ExecTx(tx, pq)
+	_, err = dbUtils.ExecTx(u.tx, pq)
 	if err != nil {
 		return err
 	}

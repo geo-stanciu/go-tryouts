@@ -25,6 +25,7 @@ type User struct {
 
 // SessionData - session data
 type SessionData struct {
+	Lang      string
 	LoggedIn  bool
 	SessionID string
 	User      User
@@ -32,7 +33,7 @@ type SessionData struct {
 
 func clearSession(w http.ResponseWriter, r *http.Request) error {
 	session, _ := cookieStore.Get(r, authCookieStoreName)
-	sessionData := SessionData{}
+	sessionData := SessionData{Lang: "EN"}
 
 	session.Values["SessionData"] = sessionData
 
@@ -45,7 +46,7 @@ func clearSession(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func createSession(w http.ResponseWriter, r *http.Request, user string, name string, surname string, tempPassword bool) (*SessionData, error) {
+func createSession(w http.ResponseWriter, r *http.Request, lang string, user string, name string, surname string, tempPassword bool) (*SessionData, error) {
 	session, _ := cookieStore.Get(r, authCookieStoreName)
 
 	sessionID, err := uuid.NewV4()
@@ -54,6 +55,7 @@ func createSession(w http.ResponseWriter, r *http.Request, user string, name str
 	}
 
 	sessionData := SessionData{
+		Lang:      lang,
 		LoggedIn:  true,
 		SessionID: sessionID.String(),
 		User: User{
@@ -102,7 +104,7 @@ func getSessionData(r *http.Request) (*SessionData, error) {
 
 	// Retrieve our struct and type-assert it
 	val := session.Values["SessionData"]
-	var sessionData = &SessionData{}
+	var sessionData = &SessionData{Lang: "EN"}
 
 	if val == nil {
 		return sessionData, nil

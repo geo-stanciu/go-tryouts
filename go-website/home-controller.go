@@ -77,7 +77,7 @@ func (HomeController) Login(w http.ResponseWriter, r *http.Request, res *Respons
 			return &lres, err
 		}
 
-		sessionData, err = createSession(w, r, user, name, surname, lres.TemporaryPassword)
+		sessionData, err = createSession(w, r, sessionData.Lang, user, name, surname, lres.TemporaryPassword)
 		if err != nil {
 			lres, err = loginerr(&lres, err, user, throwErr2Client)
 			return &lres, err
@@ -211,7 +211,18 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 		return &lres, nil
 	}
 
+	tx, err := db.Begin()
+	if err != nil {
+		lres.BError = true
+		lres.SError = "Could not save the user"
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "register", lres.SError, "user", user, "email", email)
+		return &lres, nil
+	}
+	defer tx.Rollback()
+
 	u := MembershipUser{
+		tx:       tx,
 		UserID:   -1,
 		Username: user,
 		Name:     name,
@@ -252,6 +263,8 @@ func (HomeController) Register(w http.ResponseWriter, r *http.Request, res *Resp
 	lres.SError = "User registered"
 	audit.Log(nil, "register", lres.SError, "user", user, "email", email)
 
+	tx.Commit()
+
 	return &lres, nil
 }
 
@@ -276,8 +289,18 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 		return &lres, nil
 	}
 
-	var usr MembershipUser
-	err = usr.GetUserByName(sessionData.User.Username)
+	tx, err := db.Begin()
+	if err != nil {
+		lres.BError = true
+		lres.SError = "Could not change the password"
+		err = fmt.Errorf(lres.SError)
+		audit.Log(err, "change-password", lres.SError, "user", sessionData.User.Username, "email", "")
+		return &lres, nil
+	}
+	defer tx.Rollback()
+
+	usr := MembershipUser{tx: tx}
+	err = usr.GetByName(sessionData.User.Username)
 
 	if err != nil {
 		lres.BError = true
@@ -359,6 +382,8 @@ func (HomeController) ChangePassword(w http.ResponseWriter, r *http.Request, res
 	lres.BError = false
 	lres.SError = "User password changed"
 	audit.Log(nil, "change-password", lres.SError, "user", usr.Username, "email", usr.Email)
+
+	tx.Commit()
 
 	return &lres, nil
 }

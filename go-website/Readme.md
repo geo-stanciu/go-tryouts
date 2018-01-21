@@ -21,6 +21,7 @@ go get -d
 - Menu allocation on roles.
 
 ## Features
+- Requests, roles and membership menu distribution initialized from initialize-database.go.
 - Requests and controller + action are identified in the db.
   Calls to the propper action from a certain controller are made automatically.
 - Auth. cookies are encrypted.

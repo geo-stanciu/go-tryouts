@@ -111,7 +111,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 		Date:    t,
 	}
 
-	response, err := getResponseHelperByURL(url, r.Method)
+	response, err := getResponseHelperByURL(sessionData, url, r.Method)
 
 	if err != nil {
 		audit.Log(err, "no-context", "Failed request", "url", r.URL.Path)

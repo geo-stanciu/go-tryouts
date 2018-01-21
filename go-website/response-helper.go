@@ -12,12 +12,12 @@ import (
 
 // ResponseHelper - HTTPS response utils
 type ResponseHelper struct {
-	Title           string
-	Template        string
-	Controller      string
-	Action          string
-	RedirectURL     string
-	RedirectOnError string
+	Title           string `sql:"name"`
+	Template        string `sql:"request_template"`
+	Controller      string `sql:"controller"`
+	Action          string `sql:"action"`
+	RedirectURL     string `sql:"redirect_url"`
+	RedirectOnError string `sql:"redirect_on_error"`
 }
 
 func (res *ResponseHelper) getResponse(w http.ResponseWriter, r *http.Request) (models.ResponseModel, error) {
@@ -56,7 +56,7 @@ func (res *ResponseHelper) getResponseValue(controller interface{}, w http.Respo
 	return nil, fmt.Errorf("Function does not return the requested number of values")
 }
 
-func getResponseHelperByURL(url string, requestType string) (*ResponseHelper, error) {
+func getResponseHelperByURL(sessionData *SessionData, url string, requestType string) (*ResponseHelper, error) {
 	var res ResponseHelper
 	var sURL string
 
@@ -66,31 +66,61 @@ func getResponseHelperByURL(url string, requestType string) (*ResponseHelper, er
 		sURL = strings.Replace(url[1:], ".html", "", 1)
 	}
 
+	var suser string
+	var lang string
+	if sessionData != nil {
+		suser = sessionData.User.Username
+		lang = sessionData.Lang
+	}
+	if len(suser) == 0 {
+		suser = "-"
+	}
+	if len(lang) == 0 {
+		lang = "EN"
+	}
+
 	pq := dbUtils.PQuery(`
-	    select request_title,
-	           request_template,
-	           controller,
-	           action,
-	           redirect_url,
-	           redirect_on_error
-	      from request
-	     where request_url = ?
-	       and request_type = ?
-	`, sURL,
+		WITH access AS (
+			SELECT rr.request_id
+			  FROM "user" u, user_role ur, request_role rr
+			 WHERE u.user_id = ur.user_id
+			   AND ur.role_id = rr.role_id
+			   AND u.loweredusername = lower(?)
+			UNION ALL
+			SELECT rr.request_id 
+              FROM role r, request_role rr
+			 WHERE r.role_id = rr.role_id
+			   AND r.loweredrole = lower(?)
+		),
+		name AS (
+			SELECT request_id, name
+			  FROM request_name
+			 WHERE language = ?
+		)
+		SELECT case when nm.name is null then '-' else nm.name end AS name,
+			r.request_template,
+			r.controller,
+			r.action,
+			r.redirect_url,
+			r.redirect_on_error
+		FROM request r
+		LEFT OUTER JOIN name nm ON (r.request_id = nm.request_id)
+		WHERE r.request_url = ?
+		AND r.request_type = ?
+		AND r.request_id IN (
+			select request_id from access
+		)
+	`, suser,
+		"All",
+		lang,
+		sURL,
 		requestType)
 
-	err := db.QueryRow(pq.Query, pq.Args...).Scan(
-		&res.Title,
-		&res.Template,
-		&res.Controller,
-		&res.Action,
-		&res.RedirectURL,
-		&res.RedirectOnError,
-	)
+	err := dbUtils.RunQuery(pq, &res)
 
 	switch {
 	case err == sql.ErrNoRows:
-		err = fmt.Errorf("%s not found", url)
+		err = fmt.Errorf("request \"%s\" - not found or access denied", url)
 		return nil, err
 	case err != nil:
 		return nil, err
