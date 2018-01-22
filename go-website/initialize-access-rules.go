@@ -94,12 +94,12 @@ func setAccessRules(tx *sql.Tx, reqType string, menus []*menu) error {
 
 	for _, m := range menus {
 		if m.requestURL == allOtherRequests {
+			// MySQL does not support except or minus queries at this time
 			pq = dbUtils.PQuery(`
-				SELECT request_id
-				  FROM request
-				EXCEPT
-				SELECT request_id
-				  FROM request_role
+				SELECT r.request_id
+				  FROM request r
+				  LEFT OUTER JOIN request_role rr ON (r.request_id = rr.request_id)
+				 WHERE rr.request_id is null
 			`)
 
 			// kinda ridiculos
