@@ -21,8 +21,8 @@ type menu struct {
 	roles      []userRole
 }
 
-func addMenu(tx *sql.Tx) error {
-	menus := []menu{
+func addGetRequestsAccessRules(tx *sql.Tx) error {
+	menus := []*menu{
 		{"index",
 			[]menuName{{"EN", "Index"}},
 			[]userRole{{"Member"}},
@@ -47,12 +47,45 @@ func addMenu(tx *sql.Tx) error {
 			[]menuName{{"EN", "Change Password"}},
 			[]userRole{{"Member"}},
 		},
+	}
+
+	err := setAccessRules(tx, "GET", menus)
+	return err
+}
+
+func addPostRequestsAccessRules(tx *sql.Tx) error {
+	menus := []*menu{
+		{"login",
+			[]menuName{{"EN", "Login"}},
+			[]userRole{{"All"}},
+		},
+		{"logout",
+			[]menuName{{"EN", "Logout"}},
+			[]userRole{{"All"}},
+		},
+		{"register",
+			[]menuName{{"EN", "Register"}},
+			[]userRole{{"All"}},
+		},
+	}
+
+	err := setAccessRules(tx, "POST", menus)
+	return err
+}
+
+func addGeneralMemberRequestsAccessRules(tx *sql.Tx) error {
+	menus := []*menu{
 		{allOtherRequests,
 			[]menuName{},
 			[]userRole{{"Member"}},
 		},
 	}
 
+	err := setAccessRules(tx, "All", menus)
+	return err
+}
+
+func setAccessRules(tx *sql.Tx, reqType string, menus []*menu) error {
 	var found bool
 	var requestID int32
 	var err error
@@ -71,10 +104,11 @@ func addMenu(tx *sql.Tx) error {
 
 			// kinda ridiculos
 			// apparently on Postgres you need to close
-			// your work on a transaction
+			// your previous fetch on a transaction
 			// before you can work again on it
 			// for now: read id's in memory and run the next query on array
-			// reference: https://github.com/lib/pq/issues/81
+			// references: https://github.com/lib/pq/issues/81
+			//             https://github.com/lib/pq/issues/635
 			var reqId []int32
 			err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 				err = row.Scan(&requestID)
@@ -85,6 +119,9 @@ func addMenu(tx *sql.Tx) error {
 				reqId = append(reqId, requestID)
 				return nil
 			})
+			if err != nil {
+				return err
+			}
 
 			for _, req := range reqId {
 				for _, r := range m.roles {
@@ -102,7 +139,7 @@ func addMenu(tx *sql.Tx) error {
 				WHERE request_url = ?
 				AND request_type = ?
 			`, m.requestURL,
-				"GET")
+				reqType)
 
 			err = tx.QueryRow(pq.Query, pq.Args...).Scan(&requestID)
 			if err != nil {

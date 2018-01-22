@@ -38,6 +38,8 @@ go get -d
     - must not contain the username
     - redirect user to change his password if password is temporary
 - Anti XRSF
+- Router paths (Named here "Requests". See initialize-requests.go)
+- Acces control (see initialize-database.go and initialize-access-rules.go)
 
 ## Needs
 

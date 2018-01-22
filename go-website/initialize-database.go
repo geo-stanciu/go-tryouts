@@ -17,8 +17,14 @@ func initializeDatabase() error {
 	err = addRoles(tx)
 	audit.Log(err, "initialize", "roles")
 
-	err = addMenu(tx)
-	audit.Log(err, "initialize", "menus")
+	err = addGetRequestsAccessRules(tx)
+	audit.Log(err, "initialize", "access rules - GET")
+
+	err = addPostRequestsAccessRules(tx)
+	audit.Log(err, "initialize", "access rules - POST")
+
+	err = addGeneralMemberRequestsAccessRules(tx)
+	audit.Log(err, "initialize", "access rules - members")
 
 	err = addSystemParams(tx)
 	audit.Log(err, "initialize", "system params")
