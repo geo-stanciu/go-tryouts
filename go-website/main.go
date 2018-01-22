@@ -71,6 +71,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	cfgFile := "./conf.json"
+	//cfgFile := "./conf_MySQL.json"
 	//cfgFile := "./conf_SQLServer.json"
 	//cfgFile := "./conf_Oracle.json"
 	//cfgFile := "./conf_Oracle11g.json"

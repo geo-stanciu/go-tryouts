@@ -41,7 +41,6 @@ CREATE UNIQUE INDEX system_params_uk
 
 CREATE TABLE request (
   request_id        int identity(1,1) PRIMARY KEY,
-  request_title     varchar(64)  not null DEFAULT '-',
   request_template  varchar(64)  not null DEFAULT '-',
   request_url       varchar(128) not null DEFAULT '-',
   controller        varchar(64)  not null DEFAULT '-',
@@ -49,8 +48,15 @@ CREATE TABLE request (
   redirect_url      varchar(256) not null DEFAULT '-',
   redirect_on_error varchar(256) not null DEFAULT '-',
   request_type      varchar(8)   not null DEFAULT 'GET',
+  index_level       int,
+  order_number      int,
+  fire_event        int          not null DEFAULT 1,
   constraint request_url_uk unique (request_url, request_type),
-  constraint request_type_chk check (request_type in ('GET', 'POST'))
+  constraint request_type_chk check (request_type in ('GET', 'POST')),
+  -- Geo
+  -- can't insert multiple null index_level and null order_number rows
+  --constraint request_idx_uk unique (index_level, order_number),
+  constraint request_event_chk check (fire_event in (0, 1))
 );
 
 CREATE TABLE role (
@@ -61,34 +67,23 @@ CREATE TABLE role (
 
 CREATE UNIQUE INDEX role_uk ON role (loweredrole);
 
-CREATE TABLE menu (
-    menu_id int identity(1,1) PRIMARY KEY,
-    index_level int NOT NULL,
-    order_number int NOT NULL,
-    request_id int,
-    CONSTRAINT menu_request_fk FOREIGN KEY (request_id)
+CREATE TABLE request_name (
+    request_id int NOT NULL,
+    language varchar(8) NOT NULL,
+    name nvarchar(64) NOT NULL,
+    constraint request_name_pk PRIMARY KEY (request_id, language),
+    constraint request_name_fk FOREIGN KEY (request_id)
       REFERENCES request (request_id)
 );
 
-CREATE UNIQUE INDEX menu_uk ON menu (index_level, order_number);
-
-CREATE TABLE menu_name (
-    menu_id int NOT NULL,
-    language varchar(8) NOT NULL,
-    name nvarchar(64) NOT NULL,
-    constraint menu_name_pk PRIMARY KEY (menu_id, language),
-    constraint menu_name_fk FOREIGN KEY (menu_id)
-      REFERENCES menu (menu_id)
-);
-
-CREATE TABLE role_menu (
+CREATE TABLE request_role (
     role_id int NOT NULL,
-    menu_id int NOT NULL,
-    constraint role_menu_pk PRIMARY KEY (role_id, menu_id),
-    constraint role_menu_fk FOREIGN KEY (role_id)
+    request_id int NOT NULL,
+    constraint request_role_pk PRIMARY KEY (role_id, request_id),
+    constraint request_role_fk FOREIGN KEY (role_id)
       REFERENCES role (role_id),
-    constraint role_menu_menu_fk FOREIGN KEY (menu_id)
-      REFERENCES menu (menu_id)
+    constraint request_role_req_fk FOREIGN KEY (request_id)
+      REFERENCES request (request_id)
 );
 
 CREATE TABLE "user" (

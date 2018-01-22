@@ -47,7 +47,6 @@ create sequence s$request nocache start with 1;
 
 CREATE TABLE request (
     request_id        number default s$request.nextval PRIMARY KEY,
-    request_title     varchar2(64)  DEFAULT '-' not null,
     request_template  varchar2(64)  DEFAULT '-' not null,
     request_url       varchar2(128) DEFAULT '-' not null,
     controller        varchar2(64)  DEFAULT '-' not null,
@@ -55,18 +54,43 @@ CREATE TABLE request (
     redirect_url      varchar2(256) DEFAULT '-' not null,
     redirect_on_error varchar2(256) DEFAULT '-' not null,
     request_type      varchar2(8)   DEFAULT 'GET' not null,
+    index_level       number,
+    order_number      number,
+    fire_event        number        DEFAULT 1     not null,
     constraint request_url_uk unique (request_url, request_type),
-    constraint request_type_chk check (request_type in ('GET', 'POST'))
+    constraint request_type_chk check (request_type in ('GET', 'POST')),
+    constraint request_idx_uk unique (index_level, order_number),
+    constraint request_event_chk check (fire_event in (0, 1))
 );
 
 create sequence s$role nocache start with 1;
 
 CREATE TABLE role (
     role_id   number default s$role.nextval PRIMARY KEY,
-    role      varchar2(64) not null
+    role      varchar2(64) not null,
+    loweredrole varchar2(64) not null
 );
 
-CREATE UNIQUE INDEX role_uk ON role (role);
+CREATE UNIQUE INDEX role_uk ON role (loweredrole);
+
+CREATE TABLE request_name (
+    request_id number NOT NULL,
+    language varchar2(8) NOT NULL,
+    name nvarchar2(128) NOT NULL,
+    constraint request_name_pk PRIMARY KEY (request_id, language),
+    constraint request_name_fk FOREIGN KEY (request_id)
+      REFERENCES request (request_id)
+);
+
+CREATE TABLE request_role (
+    role_id number NOT NULL,
+    request_id number NOT NULL,
+    constraint request_role_pk PRIMARY KEY (role_id, request_id),
+    constraint request_role_fk FOREIGN KEY (role_id)
+      REFERENCES role (role_id),
+    constraint request_role_req_fk FOREIGN KEY (request_id)
+      REFERENCES request (request_id)
+);
 
 create sequence s$user nocache start with 1;
 
