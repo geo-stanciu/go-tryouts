@@ -109,21 +109,21 @@ func setAccessRules(tx *sql.Tx, reqType string, menus []*menu) error {
 			// for now: read id's in memory and run the next query on array
 			// references: https://github.com/lib/pq/issues/81
 			//             https://github.com/lib/pq/issues/635
-			var reqId []int32
+			var reqID []int32
 			err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 				err = row.Scan(&requestID)
 				if err != nil {
 					return err
 				}
 
-				reqId = append(reqId, requestID)
+				reqID = append(reqID, requestID)
 				return nil
 			})
 			if err != nil {
 				return err
 			}
 
-			for _, req := range reqId {
+			for _, req := range reqID {
 				for _, r := range m.roles {
 					err = addRequest2Role(tx, req, r.role)
 					if err != nil {
