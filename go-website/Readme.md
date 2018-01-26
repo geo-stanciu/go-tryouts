@@ -46,16 +46,16 @@ go get -d
 ### PostgreSQL
 ```xml
 <database>
-        <db-type>postgres</db-type>
-        <db-url>host=localhost port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=GoWebsiteExample --search_path=wmeter,public --client_encoding=UTF8'</db-url>
+  <db-type>postgres</db-type>
+  <db-url>host=localhost port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=GoWebsiteExample --search_path=wmeter,public --client_encoding=UTF8'</db-url>
 </database>
 ```
 
 ### MySql
 ```xml
 <database>
-        <db-type>mysql</db-type>
-        <db-url>geo:geo@tcp(localhost:3306)/devel?parseTime=true&amp;sql_mode=%27ORACLE,TRADITIONAL%27</db-url>
+  <db-type>mysql</db-type>
+  <db-url>geo:geo@tcp(localhost:3306)/devel?parseTime=true&amp;sql_mode=%27ORACLE,TRADITIONAL%27</db-url>
 </database>
 ```
 
