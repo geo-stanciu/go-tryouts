@@ -2,7 +2,7 @@ package main
 
 import "database/sql"
 
-func addRequests(tx *sql.Tx) error {
+func addRequests(tx *sql.Tx) (bool, error) {
 
 	/*
 		If no action (method) from controller is to be called, put -
@@ -155,24 +155,28 @@ func addRequests(tx *sql.Tx) error {
 		},
 	}
 
+	foundNew := false
+
 	for _, req := range requests {
 		r := RequestHelper{tx: tx}
 		r.Load(&req)
 
 		found, err := r.Exists()
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		if found {
 			continue
 		}
 
+		foundNew = true
+
 		err = r.Save()
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 
-	return nil
+	return foundNew, nil
 }

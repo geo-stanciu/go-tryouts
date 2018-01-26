@@ -37,18 +37,6 @@ CREATE INDEX idx_log_source_audit_log ON audit_log (log_source);
 SET search_path TO wmeter,public;
 
 
-
-
-CREATE TABLE IF NOT EXISTS system_params (
-    system_params_id serial PRIMARY KEY,
-    param_group      varchar(64) not null,
-    param            varchar(64) not null,
-    val              varchar(64) not null
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS system_params_uk
-    ON system_params (param_group, param);
-
 CREATE TABLE IF NOT EXISTS request (
     request_id        serial PRIMARY KEY,
     request_template  varchar(64)  not null DEFAULT '-',

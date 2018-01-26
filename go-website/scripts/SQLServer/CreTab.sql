@@ -29,16 +29,6 @@ create index idx_time_audit_log on audit_log (log_time);
 CREATE INDEX idx_log_source_audit_log ON audit_log (log_source);
 
 
-CREATE TABLE system_params (
-  system_params_id int identity(1,1) PRIMARY KEY,
-  param_group      varchar(64) not null,
-  param            varchar(64) not null,
-  val              varchar(64) not null
-);
-
-CREATE UNIQUE INDEX system_params_uk
-  ON system_params (param_group, param);
-
 CREATE TABLE request (
   request_id        int identity(1,1) PRIMARY KEY,
   request_template  varchar(64)  not null DEFAULT '-',

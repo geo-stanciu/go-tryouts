@@ -31,18 +31,6 @@ create index idx_time_audit_log on audit_log (log_time);
 CREATE INDEX idx_log_source_audit_log ON audit_log (log_source);
 
 
-create sequence s$system_params nocache start with 1;
-
-CREATE TABLE system_params (
-    system_params_id number default s$system_params.nextval PRIMARY KEY,
-    param_group      varchar2(64) not null,
-    param            varchar2(64) not null,
-    val              varchar2(64) not null
-);
-
-CREATE UNIQUE INDEX system_params_uk
-    ON system_params (param_group, param);
-
 create sequence s$request nocache start with 1;
 
 CREATE TABLE request (

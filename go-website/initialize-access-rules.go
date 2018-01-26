@@ -21,7 +21,7 @@ type menu struct {
 	roles      []userRole
 }
 
-func addGetRequestsAccessRules(tx *sql.Tx) error {
+func addGetRequestsAccessRules(tx *sql.Tx) (bool, error) {
 	menus := []*menu{
 		{"index",
 			[]menuName{{"EN", "Index"}},
@@ -49,11 +49,11 @@ func addGetRequestsAccessRules(tx *sql.Tx) error {
 		},
 	}
 
-	err := setAccessRules(tx, "GET", menus)
-	return err
+	foundNew, err := setAccessRules(tx, "GET", menus)
+	return foundNew, err
 }
 
-func addPostRequestsAccessRules(tx *sql.Tx) error {
+func addPostRequestsAccessRules(tx *sql.Tx) (bool, error) {
 	menus := []*menu{
 		{"login",
 			[]menuName{{"EN", "Login"}},
@@ -69,11 +69,11 @@ func addPostRequestsAccessRules(tx *sql.Tx) error {
 		},
 	}
 
-	err := setAccessRules(tx, "POST", menus)
-	return err
+	foundNew, err := setAccessRules(tx, "POST", menus)
+	return foundNew, err
 }
 
-func addGeneralMemberRequestsAccessRules(tx *sql.Tx) error {
+func addGeneralMemberRequestsAccessRules(tx *sql.Tx) (bool, error) {
 	menus := []*menu{
 		{allOtherRequests,
 			[]menuName{},
@@ -81,16 +81,17 @@ func addGeneralMemberRequestsAccessRules(tx *sql.Tx) error {
 		},
 	}
 
-	err := setAccessRules(tx, "All", menus)
-	return err
+	foundNew, err := setAccessRules(tx, "All", menus)
+	return foundNew, err
 }
 
-func setAccessRules(tx *sql.Tx, reqType string, menus []*menu) error {
+func setAccessRules(tx *sql.Tx, reqType string, menus []*menu) (bool, error) {
 	var found bool
 	var requestID int32
 	var err error
 
 	var pq *utils.PreparedQuery
+	foundNew := false
 
 	for _, m := range menus {
 		if m.requestURL == allOtherRequests {
@@ -120,14 +121,14 @@ func setAccessRules(tx *sql.Tx, reqType string, menus []*menu) error {
 				return nil
 			})
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			for _, req := range reqID {
 				for _, r := range m.roles {
-					err = addRequest2Role(tx, req, r.role)
+					foundNew, err = addRequest2Role(tx, req, r.role)
 					if err != nil {
-						return err
+						return false, err
 					}
 				}
 			}
@@ -143,7 +144,7 @@ func setAccessRules(tx *sql.Tx, reqType string, menus []*menu) error {
 
 			err = tx.QueryRow(pq.Query, pq.Args...).Scan(&requestID)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			for _, n := range m.name {
@@ -159,12 +160,14 @@ func setAccessRules(tx *sql.Tx, reqType string, menus []*menu) error {
 
 				err := tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
 				if err != nil {
-					return err
+					return false, err
 				}
 
 				if found {
 					continue
 				}
+
+				foundNew = true
 
 				pq = dbUtils.PQuery(`
 					INSERT INTO request_name (
@@ -179,23 +182,23 @@ func setAccessRules(tx *sql.Tx, reqType string, menus []*menu) error {
 
 				_, err = dbUtils.ExecTx(tx, pq)
 				if err != nil {
-					return err
+					return false, err
 				}
 			}
 
 			for _, r := range m.roles {
-				err = addRequest2Role(tx, requestID, r.role)
+				foundNew, err = addRequest2Role(tx, requestID, r.role)
 				if err != nil {
-					return err
+					return false, err
 				}
 			}
 		}
 	}
 
-	return nil
+	return foundNew, nil
 }
 
-func addRequest2Role(tx *sql.Tx, requestID int32, role string) error {
+func addRequest2Role(tx *sql.Tx, requestID int32, role string) (bool, error) {
 	var roleID int32
 	var found bool
 
@@ -207,7 +210,7 @@ func addRequest2Role(tx *sql.Tx, requestID int32, role string) error {
 
 	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&roleID)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	pq = dbUtils.PQuery(`
@@ -222,11 +225,11 @@ func addRequest2Role(tx *sql.Tx, requestID int32, role string) error {
 
 	err = tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if found {
-		return nil
+		return false, nil
 	}
 
 	pq = dbUtils.PQuery(`
@@ -240,8 +243,8 @@ func addRequest2Role(tx *sql.Tx, requestID int32, role string) error {
 
 	_, err = dbUtils.ExecTx(tx, pq)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }

@@ -433,8 +433,8 @@ func (u *MembershipUser) RemoveFromRole(role string) error {
 	return nil
 }
 
-func (u *MembershipUser) passwordAlreadyUsed(params *SystemParams) (bool, int, error) {
-	notRepeatPasswords := params.GetInt(NotRepeatLastXPasswords)
+func (u *MembershipUser) passwordAlreadyUsed() (bool, int, error) {
+	notRepeatPasswords := config.PasswordRules.NotRepeatLastXPasswords
 
 	if notRepeatPasswords <= 0 {
 		return false, notRepeatPasswords, nil
@@ -489,13 +489,7 @@ func (u *MembershipUser) passwordAlreadyUsed(params *SystemParams) (bool, int, e
 }
 
 func (u *MembershipUser) changePassword() error {
-	params := SystemParams{}
-	err := params.LoadByGroup(PasswordRules)
-	if err != nil {
-		return err
-	}
-
-	alreadyUsed, notRepeatPasswords, err := u.passwordAlreadyUsed(&params)
+	alreadyUsed, notRepeatPasswords, err := u.passwordAlreadyUsed()
 	if err != nil {
 		return err
 	}
@@ -504,14 +498,14 @@ func (u *MembershipUser) changePassword() error {
 		return fmt.Errorf("Password already used. Can't use the last %d passwords", notRepeatPasswords)
 	}
 
-	changeInterval := params.GetInt(ChangeInterval)
-	minCharacters := params.GetInt(MinCharacters)
-	minLetters := params.GetInt(MinLetters)
-	minCapitals := params.GetInt(MinCapitals)
-	minDigits := params.GetInt(MinDigits)
-	minNonAlphaNumerics := params.GetInt(MinNonAlphaNumerics)
-	allowRepetitiveCharacters := params.GetInt(AllowRepetitiveCharacters)
-	canContainUsername := params.GetInt(CanContainUsername)
+	changeInterval := config.PasswordRules.ChangeInterval
+	minCharacters := config.PasswordRules.MinCharacters
+	minLetters := config.PasswordRules.MinLetters
+	minCapitals := config.PasswordRules.MinCapitals
+	minDigits := config.PasswordRules.MinDigits
+	minNonAlphaNumerics := config.PasswordRules.MinNonAlphaNumerics
+	allowRepetitiveCharacters := config.PasswordRules.AllowRepetitiveCharacters
+	canContainUsername := config.PasswordRules.CanContainUsername
 
 	if minCharacters > 0 && len(u.Password) < minCharacters {
 		return fmt.Errorf("Password must have at least %d characters", minCharacters)
@@ -551,11 +545,11 @@ func (u *MembershipUser) changePassword() error {
 		return fmt.Errorf("Password must contain at least %d non alpha-numeric character(s)", minNonAlphaNumerics)
 	}
 
-	if allowRepetitiveCharacters <= 0 && utils.ContainsRepeatingGroups(u.Password) {
+	if !allowRepetitiveCharacters && utils.ContainsRepeatingGroups(u.Password) {
 		return fmt.Errorf("Password must not contain repetitive groups of characters")
 	}
 
-	if canContainUsername <= 0 {
+	if !canContainUsername {
 		lowerUsername := strings.ToLower(u.Username)
 		lowerPass := strings.ToLower(u.Password)
 
@@ -790,20 +784,11 @@ func failedUserPasswordValidation(userID int, user string) {
 	passFailLock.Lock()
 	defer passFailLock.Unlock()
 
-	var maxAllowedFailedAtmpts int
-	var passwordFailInterval int
 	var passwordStartInterval time.Time
 	newFail := 0
 
-	params := SystemParams{}
-	err := params.LoadByGroup(PasswordRules)
-	if err != nil {
-		audit.Log(err, "failed-login", "Operation error.", "user", user)
-		return
-	}
-
-	passwordFailInterval = params.GetInt(PasswordFailInterval)
-	maxAllowedFailedAtmpts = params.GetInt(MaxAllowedFailedAtmpts)
+	passwordFailInterval := config.PasswordRules.PasswordFailInterval
+	maxAllowedFailedAtmpts := config.PasswordRules.MaxAllowedFailedAtmpts
 
 	tx, err := db.Begin()
 	if err != nil {
