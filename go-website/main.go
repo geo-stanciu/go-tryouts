@@ -70,23 +70,21 @@ func main() {
 	var err error
 	var wg sync.WaitGroup
 
-	cfgFile := "./conf.json"
-	//cfgFile := "./conf_MySQL.json"
-	//cfgFile := "./conf_SQLServer.json"
+	cfgFile := "./app.config"
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
+	err = dbUtils.Connect2Database(&db, config.Database.DbType, config.Database.DbURL)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	defer db.Close()
 
-	timezone, err = time.LoadLocation(config.Timezone)
+	timezone, err = time.LoadLocation(config.General.Timezone)
 	if err != nil {
 		log.Println(err)
 		return
@@ -111,7 +109,7 @@ func main() {
 	}
 
 	// server flags
-	addr = flag.String("addr", ":"+config.Port, "http service address")
+	addr = flag.String("addr", ":"+config.General.Port, "http service address")
 
 	flag.Parse()
 
@@ -156,7 +154,7 @@ func main() {
 	err = http.ListenAndServe(*addr,
 		csrf.Protect(
 			key,
-			csrf.Secure(config.IsHTTPS),
+			csrf.Secure(config.General.IsHTTPS),
 			csrf.Path("/"),
 			csrf.FieldName("csrfToken"),
 			csrf.CookieName("csrfCookie"),

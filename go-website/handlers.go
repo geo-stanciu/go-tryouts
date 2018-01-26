@@ -142,7 +142,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, url string, sessionDa
 		w.Header().Set("Cache-Control", "private, max-age=600, no-store, must-revalidate")
 		w.Header().Set("X-Frame-Options", "DENY")
 
-		if config.IsHTTPS {
+		if config.General.IsHTTPS {
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		}
 

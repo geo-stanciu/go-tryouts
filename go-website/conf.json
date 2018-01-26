@@ -1,8 +1,0 @@
-{
-    "Port": "8080",
-    "DbType": "postgres",
-    "DbURL1": "host=localhost port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=GoWebsiteExample --search_path=wmeter,public --timezone=UTC --client_encoding=UTF8'",
-    "DbURL": "host=localhost port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=GoWebsiteExample --search_path=wmeter,public --client_encoding=UTF8'",
-    "Timezone": "Europe/Bucharest",
-    "isHTTPS": false
-}

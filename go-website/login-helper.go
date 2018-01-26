@@ -166,7 +166,7 @@ func getNewCookieStore() (*sessions.CookieStore, error) {
 		Path:     "/",
 		MaxAge:   0,
 		HttpOnly: true,
-		Secure:   config.IsHTTPS,
+		Secure:   config.General.IsHTTPS,
 	}
 
 	return cookieStore, nil

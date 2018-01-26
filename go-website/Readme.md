@@ -41,6 +41,47 @@ go get -d
 - Router paths (Named here "Requests". See initialize-requests.go)
 - Acces control (see initialize-database.go and initialize-access-rules.go)
 
+## Connect Strings Examples
+
+### PostgreSQL
+```xml
+<database>
+        <db-type>postgres</db-type>
+        <db-url>host=localhost port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=GoWebsiteExample --search_path=wmeter,public --client_encoding=UTF8'</db-url>
+</database>
+```
+
+### MySql
+```xml
+<database>
+        <db-type>mysql</db-type>
+        <db-url>geo:geo@tcp(localhost:3306)/devel?parseTime=true&sql_mode=%27ORACLE,TRADITIONAL%27</db-url>
+</database>
+```
+
+### Oracle12c
+```xml
+<database>
+  <db-type>oci8</db-type>
+  <db-url>geo/geo@db1</db-url>
+</database>
+```
+### Oracle11g
+```xml
+<database>
+  <db-type>oracle11g</db-type>
+  <db-url>geo/geo@db1</db-url>
+</database>
+```
+
+### Sql Server
+```xml
+<database>
+  <db-type>mssql</db-type>
+  <db-url>server=localhost;database=devel;user id=geo;password=geo;port=1433;app name=GoWebsiteExample</db-url>
+</database>
+```
+
 ## Needs
 
 Uses the following sql pachages:
