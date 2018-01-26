@@ -55,7 +55,7 @@ go get -d
 ```xml
 <database>
         <db-type>mysql</db-type>
-        <db-url>geo:geo@tcp(localhost:3306)/devel?parseTime=true&sql_mode=%27ORACLE,TRADITIONAL%27</db-url>
+        <db-url>geo:geo@tcp(localhost:3306)/devel?parseTime=true&amp;sql_mode=%27ORACLE,TRADITIONAL%27</db-url>
 </database>
 ```
 
