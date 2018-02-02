@@ -162,7 +162,7 @@ func parseXMLSource(source io.Reader) error {
 	return nil
 }
 
-func addCurrencyIfNotExists(tx *sql.Tx, currency string) (int32, error) {
+func getCurrencyIfExists(tx *sql.Tx, currency string) (int32, error) {
 	var currencyID int32
 
 	pq := dbUtils.PQuery(`
@@ -172,11 +172,19 @@ func addCurrencyIfNotExists(tx *sql.Tx, currency string) (int32, error) {
 	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&currencyID)
 	if err != nil && err != sql.ErrNoRows {
 		return -1, err
+	}
+	return currencyID, nil
+}
+
+func addCurrencyIfNotExists(tx *sql.Tx, currency string) (int32, error) {
+	currencyID, err := getCurrencyIfExists(tx, currency)
+	if err != nil {
+		return -1, err
 	} else if currencyID > 0 {
 		return currencyID, nil
 	}
 
-	pq = dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 		INSERT INTO currency (currency) VALUES (?)
 	`, currency)
 
@@ -184,6 +192,8 @@ func addCurrencyIfNotExists(tx *sql.Tx, currency string) (int32, error) {
 	if err != nil {
 		return -1, err
 	}
+
+	audit.Log(nil, "add currency", "Adding missing currency...", "currency", currency)
 
 	return addCurrencyIfNotExists(tx, currency)
 }
@@ -229,18 +239,10 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 	var err error
 	var refCurrencyID int32
 
-	audit.Log(nil, "import exchange rates", "Importing exchange rates...", "data", cube.Date)
+	audit.Log(nil, "exchange rates", "Importing exchange rates...", "date", cube.Date)
 
-	pq := dbUtils.PQuery(`
-		SELECT currency_id FROM currency WHERE currency = ?
-	`, "RON")
-
-	err = tx.QueryRow(pq.Query, pq.Args...).Scan(&refCurrencyID)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return nil
-	case err != nil:
+	refCurrencyID, err = addCurrencyIfNotExists(tx, "RON")
+	if err != nil {
 		return err
 	}
 
@@ -284,7 +286,7 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 	if config.AddMissingCurrencies {
 		currencyID, err = addCurrencyIfNotExists(tx, currency)
 	} else {
-		// get
+		currencyID, err = getCurrencyIfExists(tx, currency)
 	}
 
 	if err != nil {
@@ -327,8 +329,8 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 		}
 
 		audit.Log(nil,
-			"import exchange rates",
 			"add exchange rate",
+			"added value",
 			"data", date,
 			"currency", currency,
 			"rate", rate)
