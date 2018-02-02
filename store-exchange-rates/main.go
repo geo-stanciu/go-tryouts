@@ -20,7 +20,7 @@ import (
 
 var (
 	appName    = "GoExchRates"
-	appVersion = "0.0.0.1"
+	appVersion = "0.0.0.2"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
@@ -72,6 +72,7 @@ func main() {
 
 	audit.SetLogger(appName+"/"+appVersion, log, dbUtils)
 	audit.SetWaitGroup(&wg)
+	defer audit.Close()
 
 	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
@@ -94,7 +95,6 @@ func main() {
 	}
 
 	audit.Log(nil, "import exchange rates", "Import done.")
-
 	wg.Wait()
 }
 
@@ -162,68 +162,56 @@ func parseXMLSource(source io.Reader) error {
 	return nil
 }
 
-func prepareCurrencies() error {
-	var found bool
+func addCurrencyIfNotExists(tx *sql.Tx, currency string) (int32, error) {
+	var currencyID int32
 
+	pq := dbUtils.PQuery(`
+		SELECT currency_id FROM currency WHERE currency = ?
+	`, currency)
+
+	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&currencyID)
+	if err != nil && err != sql.ErrNoRows {
+		return -1, err
+	} else if currencyID > 0 {
+		return currencyID, nil
+	}
+
+	pq = dbUtils.PQuery(`
+		INSERT INTO currency (currency) VALUES (?)
+	`, currency)
+
+	_, err = dbUtils.ExecTx(tx, pq)
+	if err != nil {
+		return -1, err
+	}
+
+	return addCurrencyIfNotExists(tx, currency)
+}
+
+func prepareCurrencies() error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	pq := dbUtils.PQuery(`
-		SELECT CASE WHEN EXISTS (
-			SELECT 1 FROM currency
-		) THEN 1 ELSE 0 END
-		FROM dual
-	`)
-
-	err = tx.QueryRow(pq.Query).Scan(&found)
+	refCurrencyID, err := addCurrencyIfNotExists(tx, "RON")
 	if err != nil {
 		return err
 	}
 
-	if !found {
-		pq = dbUtils.PQuery(`
-			INSERT INTO currency (currency) VALUES (?)
-		`)
-
-		pq.SetArg(0, "RON")
-		_, err = dbUtils.ExecTx(tx, pq)
-		if err != nil {
-			return err
-		}
-
-		pq.SetArg(0, "EUR")
-		_, err = dbUtils.ExecTx(tx, pq)
-		if err != nil {
-			return err
-		}
-
-		pq.SetArg(0, "USD")
-		_, err = dbUtils.ExecTx(tx, pq)
-		if err != nil {
-			return err
-		}
-
-		pq.SetArg(0, "CHF")
-		_, err = dbUtils.ExecTx(tx, pq)
-		if err != nil {
-			return err
-		}
+	_, err = addCurrencyIfNotExists(tx, "EUR")
+	if err != nil {
+		return err
 	}
 
-	var refCurrencyID int32
-	pq = dbUtils.PQuery(`
-		SELECT currency_id FROM currency WHERE currency = ?
-	`, "RON")
+	_, err = addCurrencyIfNotExists(tx, "USD")
+	if err != nil {
+		return err
+	}
 
-	err = tx.QueryRow(pq.Query, pq.Args...).Scan(&refCurrencyID)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return nil
-	case err != nil:
+	_, err = addCurrencyIfNotExists(tx, "CHF")
+	if err != nil {
 		return err
 	}
 
@@ -288,25 +276,22 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 }
 
 func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, multiplier float64, exchRate float64) error {
-	var currencyID int32
 	var found bool
-
+	var currencyID int32
+	var err error
 	rate := exchRate / multiplier
 
-	pq := dbUtils.PQuery(`
-		SELECT currency_id FROM currency WHERE currency = ?
-	`, currency)
+	if config.AddMissingCurrencies {
+		currencyID, err = addCurrencyIfNotExists(tx, currency)
+	} else {
+		// get
+	}
 
-	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&currencyID)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return nil
-	case err != nil:
+	if err != nil {
 		return err
 	}
 
-	pq = dbUtils.PQuery(`
+	pq := dbUtils.PQuery(`
 		SELECT CASE WHEN EXISTS (
 			SELECT 1
 			FROM exchange_rate 

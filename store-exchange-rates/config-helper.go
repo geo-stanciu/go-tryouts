@@ -6,9 +6,10 @@ import (
 )
 
 type Configuration struct {
-	DbType      string `json:"DbType"`
-	DbURL       string `json:"DbURL"`
-	RatesXMLUrl string `json:"RatesXMLUrl"`
+	DbType               string `json:"DbType"`
+	DbURL                string `json:"DbURL"`
+	RatesXMLUrl          string `json:"RatesXMLUrl"`
+	AddMissingCurrencies bool   `json:"AddMissingCurrencies"`
 }
 
 func (c *Configuration) ReadFromFile(cfgFile string) error {
