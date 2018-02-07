@@ -74,10 +74,13 @@ func main() {
 	*/
 
 	i := 0
-	bkDirectory := path.Join(config.BackupDir, fmt.Sprintf("%s_%02d", sData, i))
-	bkLabel := fmt.Sprintf("BK %s base", fmt.Sprintf("%s %02d", sData, i))
+	bkDirectory := ""
+	bkLabel := ""
 
 	for {
+		bkDirectory = path.Join(config.BackupDir, fmt.Sprintf("%s_%02d", sData, i))
+		bkLabel = fmt.Sprintf("BK %s base", fmt.Sprintf("%s %02d", sData, i))
+
 		found, err := exists(bkDirectory)
 		if err != nil {
 			log.Println(err)
@@ -89,8 +92,6 @@ func main() {
 		}
 
 		i++
-		bkDirectory = path.Join(config.BackupDir, fmt.Sprintf("%s_%02d", sData, i))
-		bkLabel = fmt.Sprintf("BK %s base", fmt.Sprintf("%s %02d", sData, i))
 	}
 
 	err = createBackupTables()
