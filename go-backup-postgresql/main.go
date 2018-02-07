@@ -1,38 +1,33 @@
 package main
 
 import (
-	"database/sql"
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
+	"path"
+	"strings"
 	"time"
-
-	"github.com/geo-stanciu/go-utils/utils"
-	_ "github.com/lib/pq"
 )
 
+// Configuration - config struct
 type Configuration struct {
-	DbType               string `json:"DbType"`
-	DbURL                string `json:"DbURL"`
-	PgDataDir            string `json:"PG-data-dir"`
-	PgBackupDir          string `json:"PG-backup-dir"`
-	PgArchiveDir         string `json:"PG-archive-dir"`
+	DbHost               string `json:"DbHost"`
+	DbPort               string `json:"DbPort"`
+	DbUser               string `json:"DbUser"`
+	DbName               string `json:"DbName"`
+	BackupDir            string `json:"BackupDir"`
+	ArchiveDir           string `json:"ArchiveDir"`
 	NumberOfBackups2Keep int    `json:"NumberOfBackups2Keep"`
 }
 
 var (
-	db      *sql.DB
-	dbUtils *utils.DbUtils
-	config  = Configuration{}
+	config = Configuration{}
 )
-
-func init() {
-	// init databaseutils
-	dbUtils = new(utils.DbUtils)
-}
 
 func main() {
 	t := time.Now().UTC()
@@ -58,27 +53,47 @@ func main() {
 		return
 	}
 
-	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer db.Close()
+	/*
+		On Windows:
 
-	tx, err := db.Begin()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer tx.Rollback()
+		 You must edit C:\Users\geo\AppData\Roaming\postgresql\pgpass.conf on Windows
+		 (1 row for each database !):
 
-	err = createBackupTables(tx)
-	if err != nil {
-		log.Println(err)
-		return
+		 #hostname:port:database:username:password
+
+		 On Linux:
+
+		 su - postgres      //this will land in the home directory set for postgres user
+		 vi .pgpass         //enter all users entries
+		 chmod 0600 .pgpass // change the ownership to 0600 to avoid errors
+
+		 For backup, PLEASE note the * used instead of a database name
+
+		 #hostname:port:database:username:password
+		 host:5432:*:postgres:password
+	*/
+
+	i := 0
+	bkDirectory := path.Join(config.BackupDir, fmt.Sprintf("%s_%02d", sData, i))
+	bkLabel := fmt.Sprintf("BK %s base", fmt.Sprintf("%s %02d", sData, i))
+
+	for {
+		found, err := exists(bkDirectory)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		if !found {
+			break
+		}
+
+		i++
+		bkDirectory = path.Join(config.BackupDir, fmt.Sprintf("%s_%02d", sData, i))
+		bkLabel = fmt.Sprintf("BK %s base", fmt.Sprintf("%s %02d", sData, i))
 	}
 
-	bkFile, bkLabel, lastIndex, err := getBkFileName(tx, sData)
+	err = createBackupTables()
 	if err != nil {
 		log.Println(err)
 		return
@@ -86,27 +101,43 @@ func main() {
 
 	log.Printf("start backup with label \"%s\"\n", bkLabel)
 
-	startBk, err := startBk(tx, bkLabel)
+	var outb, errb bytes.Buffer
+
+	cmd := exec.Command(
+		"pg_basebackup",
+		"-D", bkDirectory,
+		"-F", "t",
+		"-r", "20M",
+		"-R",
+		"-X", "f",
+		"-z",
+		"-l", bkLabel,
+		"-v",
+		"-h", config.DbHost,
+		"-p", config.DbPort,
+		"-w",
+		"-U", config.DbUser,
+	)
+
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+	err = cmd.Run()
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	log.Printf("pg_start_backup: %s\n\n", startBk)
 
-	out, err := exec.Command("jar", "cvf", bkFile, config.PgDataDir).Output()
+	sout := outb.String()
+	serr := errb.String()
+	logStd(sout, serr)
+
+	archFile, err := getStartingArhiveLog(sout, serr)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	log.Println(string(out))
 
-	archFile, err := finishBk(tx)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	err = logBackup(tx, bkFile, archFile, lastIndex)
+	err = logBackup(bkDirectory, archFile)
 	if err != nil {
 		log.Println(err)
 		return
@@ -114,21 +145,11 @@ func main() {
 
 	log.Printf("\n\ncleanup:\n")
 
-	archFile2Keep, logID, err := getLastNeededArchFile(tx, config.NumberOfBackups2Keep)
+	err = keepOnlyNeededArchFiles(config.NumberOfBackups2Keep)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
-	err = deleteOldBackups(tx, logID, archFile2Keep)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	log.Printf("stop backup \"%s\"\n\n\n", bkLabel)
-
-	tx.Commit()
 }
 
 func (c *Configuration) readFromFile(cfgFile string) error {
@@ -152,18 +173,118 @@ func (c *Configuration) readFromFile(cfgFile string) error {
 	return nil
 }
 
-func createBackupTables(tx *sql.Tx) error {
-	t1 := `
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+func logStd(sout, serr string) {
+
+	so := strings.TrimSpace(sout)
+	if len(so) > 0 {
+		log.Println(so)
+	}
+
+	se := strings.TrimSpace(serr)
+	if len(se) > 0 {
+		log.Println(se)
+	}
+}
+
+func transform2SingleLine(query string) string {
+	q := query
+
+	q = strings.Replace(q, "\r\n", " ", -1)
+	q = strings.Replace(q, "\n", " ", -1)
+	q = strings.Replace(q, "\r", " ", -1)
+
+	return q
+}
+
+func escapeString(query string) string {
+	q := query
+
+	q = strings.Replace(q, "'", "''", -1)
+	q = strings.Replace(q, "\\", "\\\\", -1)
+	q = strings.Replace(q, "&", "' || chr(38) || '", -1)
+
+	return q
+}
+
+func execQuery(query string) error {
+	var outb, errb bytes.Buffer
+
+	cmd := exec.Command(
+		"psql",
+		"-c", transform2SingleLine(query),
+		"-d", config.DbName,
+		"-h", config.DbHost,
+		"-p", config.DbPort,
+		"-w",
+		"-U", config.DbUser,
+	)
+
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+	err := cmd.Run()
+	logStd(outb.String(), errb.String())
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func runQuery(query string) (string, error) {
+	var outb, errb bytes.Buffer
+
+	cmd := exec.Command(
+		"psql",
+		"-c", transform2SingleLine(query),
+		"-d", config.DbName,
+		"-h", config.DbHost,
+		"-p", config.DbPort,
+		"-t", // only the result
+		"-w",
+		"-U", config.DbUser,
+	)
+
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+	err := cmd.Run()
+
+	sout := outb.String()
+	serr := errb.String()
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(sout) > 0 {
+		return strings.TrimSpace(sout), nil
+	}
+
+	return strings.TrimSpace(serr), nil
+}
+
+func createBackupTables() error {
+	query := `
 		create table if not exists backup_log (
 			backup_log_id   serial PRIMARY KEY,
-			backup_time     timestamp not null,
-			backup_file     varchar(256) not null,
-			arch_file       varchar(256) not null,
-			last_file_index varchar(8)   not null
+			backup_time     timestamp not null default (now() at time zone 'UTC'),
+			backup_dir      varchar(256) not null,
+			arch_file       varchar(256) not null
 		)
 	`
 
-	_, err := tx.Exec(t1)
+	err := execQuery(query)
 	if err != nil {
 		return err
 	}
@@ -171,96 +292,53 @@ func createBackupTables(tx *sql.Tx) error {
 	return nil
 }
 
-func getBkFileName(tx *sql.Tx, sData string) (string, string, int, error) {
-	var i int
-	var bkFile string
-	var bkLabel string
+func getStartingArhiveLog(sout, serr string) (string, error) {
+	look4 := "write-ahead log start point: "
+	lookIn := sout
 
-	pq := dbUtils.PQuery(`
-		select CAST(last_file_index AS integer)
-		  from backup_log
-		 where backup_log_id = (
-			 select max(backup_log_id)
-			   from backup_log
-			  where backup_time::date = to_date(?, 'yyyymmdd')
-		 )
-	`, sData)
+	idx := strings.Index(lookIn, look4)
 
-	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&i)
-
-	switch {
-	case err == sql.ErrNoRows:
-		i = 0
-	case err != nil:
-		return "", "", 0, err
+	if idx < 0 {
+		lookIn = serr
+		idx = strings.Index(lookIn, look4)
 	}
 
-	for {
-		bkFile = fmt.Sprintf("%s/data_%s_%02d.zip", config.PgBackupDir, sData, i)
-		bkLabel = fmt.Sprintf("BK %s %02d", sData, i)
-
-		if _, err := os.Stat(bkFile); err == nil {
-			i++
-			continue
-		} else {
-			break
-		}
+	if idx < 0 {
+		return "", fmt.Errorf("write-ahead log start point not found")
 	}
 
-	return bkFile, bkLabel, i, nil
+	slog := strings.TrimSpace(lookIn[idx+len(look4):])
+	idx2 := strings.IndexAny(slog, " \t\r\n")
+
+	if idx2 >= 0 {
+		slog = strings.TrimSpace(slog[:idx2])
+	}
+
+	query := fmt.Sprintf(`
+		SELECT file_name from pg_walfile_name_offset('%s')
+	`, escapeString(slog))
+
+	archFile, err := runQuery(query)
+	if err != nil {
+		return "", err
+	}
+
+	return archFile, nil
 }
 
-func startBk(tx *sql.Tx, bkLabel string) (string, error) {
-	var startBk string
+func logBackup(bkDirectory string, archFile string) error {
 
-	pq := dbUtils.PQuery("SELECT pg_start_backup(?)::text", bkLabel)
-
-	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&startBk)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return "", err
-	case err != nil:
-		return "", err
-	}
-
-	return startBk, nil
-}
-
-func finishBk(tx *sql.Tx) (string, error) {
-	var archFile2Keep string
-
-	query := "SELECT file_name from pg_walfile_name_offset(pg_stop_backup())"
-
-	err := tx.QueryRow(query).Scan(&archFile2Keep)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return "", err
-	case err != nil:
-		return "", err
-	}
-
-	return archFile2Keep, nil
-}
-
-func logBackup(tx *sql.Tx, bkFile string, archFile string, lastFileIndex int) error {
-	dt := time.Now().UTC()
-	sIndex := fmt.Sprintf("%02d", lastFileIndex)
-
-	pq := dbUtils.PQuery(`
+	query := fmt.Sprintf(`
 		insert into backup_log (
-			backup_time,
-			backup_file,
-			arch_file,
-			last_file_index
-		) values (?, ?, ?, ?)
-	`, dt,
-		bkFile,
-		archFile,
-		sIndex)
+			backup_dir,
+			arch_file
+		) values ('%s', '%s')
+	`,
+		escapeString(bkDirectory),
+		escapeString(archFile),
+	)
 
-	_, err := tx.Exec(pq.Query, pq.Args...)
+	err := execQuery(query)
 	if err != nil {
 		return err
 	}
@@ -268,85 +346,84 @@ func logBackup(tx *sql.Tx, bkFile string, archFile string, lastFileIndex int) er
 	return nil
 }
 
-func getLastNeededArchFile(tx *sql.Tx, nrBackups2Keep int) (string, int, error) {
-	var archFile string
-	var logID int
-	var err error
-
-	pq := dbUtils.PQuery(`
-		select arch_file,
-			   backup_log_id
-		  from backup_log
-		 order by backup_log_id desc
-		 LIMIT ?
+func keepOnlyNeededArchFiles(nrBackups2Keep int) error {
+	query := fmt.Sprintf(`
+		WITH wals AS (
+			select backup_log_id
+			  from backup_log
+			 order by backup_log_id desc
+			 limit %d
+		), min_wal AS (
+			select min(backup_log_id) min_id from wals
+		)
+		select arch_file
+		  from backup_log b
+		  join min_wal m ON (b.backup_log_id = m.min_id)
 	`, nrBackups2Keep)
 
-	i := 0
-
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
-		i++
-		err = row.Scan(&archFile, &logID)
-		return err
-	})
-
+	archFile, err := runQuery(query)
 	if err != nil {
-		return "", 0, err
+		return err
 	}
 
-	if i < nrBackups2Keep {
-		archFile = ""
-		logID = -1
+	query = fmt.Sprintf(`
+		WITH wals AS (
+			select backup_log_id
+			  from backup_log
+			 order by backup_log_id desc
+			 offset %d
+		)
+		select backup_dir
+		  from backup_log b
+		  join wals w ON (b.backup_log_id = w.backup_log_id)
+	`, nrBackups2Keep)
+
+	backupFiles, err := runQuery(query)
+	if err != nil {
+		return err
 	}
 
-	return archFile, logID, nil
-}
+	query = fmt.Sprintf(`
+		WITH needed AS (
+			select min(backup_log_id) min_id
+			  from backup_log
+		     where arch_file = '%s'
+		), last_needed AS (
+			select case when min_id is null then -1 else min_id end AS min_id
+			  from needed
+		)
+		delete from backup_log b
+		 where b.backup_log_id in (
+			select backup_log_id
+			  from backup_log, last_needed l
+			 where backup_log_id < l.min_id
+			 order by backup_log_id
+		)
+	`, escapeString(archFile))
 
-func deleteOldBackups(tx *sql.Tx, logID int, archFile2Keep string) error {
-	var bkFile string
-	var err error
+	err = execQuery(query)
+	if err != nil {
+		return err
+	}
 
-	pq := dbUtils.PQuery(`
-		select backup_file
-		  from backup_log
-		 where backup_log_id < ?
-		 order by backup_log_id
-	`, logID)
-
-	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows, sc *utils.SQLScan) error {
-		err = row.Scan(&bkFile)
-		if err != nil {
-			return err
-		}
+	scanner := bufio.NewScanner(strings.NewReader(backupFiles))
+	for scanner.Scan() {
+		bkFile := strings.TrimSpace(scanner.Text())
 
 		log.Printf("Delete \"%s\"\n", bkFile)
 
 		if _, err := os.Stat(bkFile); err == nil {
-			err = os.Remove(bkFile)
+			err = os.RemoveAll(bkFile)
 			if err != nil {
 				return err
 			}
 		}
-
-		return err
-	})
-
-	if err != nil {
-		return err
 	}
 
-	pq = dbUtils.PQuery(`
-		delete from backup_log where backup_log_id < ?
-	`, logID)
+	if len(archFile) > 0 {
+		log.Printf("pg_archivecleanup -d %s %s\n", config.ArchiveDir, archFile)
 
-	_, err = dbUtils.ExecTx(tx, pq)
-	if err != nil {
-		return err
-	}
-
-	if len(archFile2Keep) > 0 {
-		log.Printf("pg_archivecleanup -d %s %s\n", config.PgArchiveDir, archFile2Keep)
-
-		out, err := exec.Command("pg_archivecleanup", "-d", config.PgArchiveDir, archFile2Keep).Output()
+		out, err := exec.Command("pg_archivecleanup", "-d", config.ArchiveDir, archFile).Output()
 		if err != nil {
 			return err
 		}

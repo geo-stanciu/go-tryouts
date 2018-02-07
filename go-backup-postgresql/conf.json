@@ -1,9 +1,9 @@
 {
-    "DbType": "postgres",
-    "DbURL1": "host=localhost port=5432 user=postgres password=postgres dbname=devel sslmode=disable options='--application_name=Backup --search_path=public --timezone=UTC --client_encoding=UTF8'",
-    "DbURL": "host=localhost port=5432 user=postgres password=postgres dbname=devel sslmode=disable options='--application_name=Backup --search_path=public --client_encoding=UTF8'",
-    "PG-data-dir": "d:/PostgreSQL/10/data",
-    "PG-backup-dir": "d:/backup",
-    "PG-archive-dir": "d:/backup/archive",
+    "DbHost": "localhost",
+    "DbPort": "5432",
+    "DbUser": "postgres",
+    "DbName": "devel",
+    "BackupDir": "d:/backup",
+    "ArchiveDir": "d:/backup/archive",
     "NumberOfBackups2Keep": 7
 }
