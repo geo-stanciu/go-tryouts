@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	db      *sql.DB
-	config  = Configuration{}
-	dbUtils *utils.DbUtils
+	db     *sql.DB
+	config = Configuration{}
+	dbutl  *utils.DbUtils
 )
 
 type Test struct {
@@ -30,7 +30,7 @@ type Test1 struct {
 
 func init() {
 	// init databaseutils
-	dbUtils = new(utils.DbUtils)
+	dbutl = new(utils.DbUtils)
 }
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 		panic(err)
 	}
 
-	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
+	err = dbutl.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
 		panic(err)
 	}
@@ -54,8 +54,8 @@ func main() {
 	}
 
 	test := Test{}
-	pq := dbUtils.PQuery("select current_timestamp date, @@version version")
-	err = dbUtils.RunQuery(pq, &test)
+	pq := dbutl.PQuery("select current_timestamp date, @@version version")
+	err = dbutl.RunQuery(pq, &test)
 	if err != nil {
 		panic(err)
 	}
@@ -63,9 +63,9 @@ func main() {
 	fmt.Println("Date:", test.Date)
 	fmt.Println("Date - local:", test.Date.In(loc))
 
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
+	err = dbutl.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		test2 := Test{}
-		err = sc.Scan(dbUtils, row, &test2)
+		err = sc.Scan(dbutl, row, &test2)
 		if err != nil {
 			return err
 		}
@@ -110,7 +110,7 @@ func main() {
 	if !found {
 		now := time.Now().UTC()
 
-		pq = dbUtils.PQuery(`
+		pq = dbutl.PQuery(`
 			insert into test1 (
 				dt,
 				dtz,
@@ -119,17 +119,17 @@ func main() {
 			values (?, ?, ?)
 		`, now, now, now)
 
-		_, err = dbUtils.Exec(pq)
+		_, err = dbutl.Exec(pq)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	pq = dbUtils.PQuery(`select dt, dtz, d, d_null from test1 order by 1`)
+	pq = dbutl.PQuery(`select dt, dtz, d, d_null from test1 order by 1`)
 
-	err = dbUtils.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
+	err = dbutl.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		test1 := Test1{}
-		err = sc.Scan(dbUtils, row, &test1)
+		err = sc.Scan(dbutl, row, &test1)
 		if err != nil {
 			return err
 		}

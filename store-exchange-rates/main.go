@@ -24,7 +24,7 @@ var (
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
-	dbUtils    *utils.DbUtils
+	dbutl      *utils.DbUtils
 	config     = Configuration{}
 )
 
@@ -33,7 +33,7 @@ func init() {
 	log.Formatter = new(logrus.JSONFormatter)
 	log.Level = logrus.DebugLevel
 
-	dbUtils = new(utils.DbUtils)
+	dbutl = new(utils.DbUtils)
 }
 
 // Rate - Exchange rate struct
@@ -63,14 +63,14 @@ func main() {
 		return
 	}
 
-	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
+	err = dbutl.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	defer db.Close()
 
-	audit.SetLogger(appName+"/"+appVersion, log, dbUtils)
+	audit.SetLogger(appName+"/"+appVersion, log, dbutl)
 	audit.SetWaitGroup(&wg)
 	defer audit.Close()
 
@@ -165,7 +165,7 @@ func parseXMLSource(source io.Reader) error {
 func getCurrencyIfExists(tx *sql.Tx, currency string) (int32, error) {
 	var currencyID int32
 
-	pq := dbUtils.PQuery(`
+	pq := dbutl.PQuery(`
 		SELECT currency_id FROM currency WHERE currency = ?
 	`, currency)
 
@@ -184,11 +184,11 @@ func addCurrencyIfNotExists(tx *sql.Tx, currency string) (int32, error) {
 		return currencyID, nil
 	}
 
-	pq := dbUtils.PQuery(`
+	pq := dbutl.PQuery(`
 		INSERT INTO currency (currency) VALUES (?)
 	`, currency)
 
-	_, err = dbUtils.ExecTx(tx, pq)
+	_, err = dbutl.ExecTx(tx, pq)
 	if err != nil {
 		return -1, err
 	}
@@ -293,7 +293,7 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 		return err
 	}
 
-	pq := dbUtils.PQuery(`
+	pq := dbutl.PQuery(`
 		SELECT CASE WHEN EXISTS (
 			SELECT 1
 			FROM exchange_rate 
@@ -310,7 +310,7 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 	}
 
 	if !found {
-		pq = dbUtils.PQuery(`
+		pq = dbutl.PQuery(`
 			INSERT INTO exchange_rate (
 				reference_currency_id,
 				currency_id,
@@ -323,7 +323,7 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 			date,
 			rate)
 
-		_, err = dbUtils.ExecTx(tx, pq)
+		_, err = dbutl.ExecTx(tx, pq)
 		if err != nil {
 			return err
 		}

@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	db      *sql.DB
-	config  = Configuration{}
-	dbUtils *utils.DbUtils
+	db     *sql.DB
+	config = Configuration{}
+	dbutl  *utils.DbUtils
 )
 
 type Test struct {
@@ -30,7 +30,7 @@ type Test1 struct {
 
 func init() {
 	// init databaseutils
-	dbUtils = new(utils.DbUtils)
+	dbutl = new(utils.DbUtils)
 }
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 		panic(err)
 	}
 
-	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
+	err = dbutl.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
 		panic(err)
 	}
@@ -54,8 +54,8 @@ func main() {
 	}
 
 	test := Test{}
-	pq := dbUtils.PQuery("select current_timestamp date, sqlite_version() as version")
-	err = dbUtils.RunQuery(pq, &test)
+	pq := dbutl.PQuery("select current_timestamp date, sqlite_version() as version")
+	err = dbutl.RunQuery(pq, &test)
 	if err != nil {
 		panic(err)
 	}

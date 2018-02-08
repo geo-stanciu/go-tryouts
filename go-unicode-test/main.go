@@ -13,14 +13,14 @@ import (
 )
 
 var (
-	db      *sql.DB
-	config  = Configuration{}
-	dbUtils *utils.DbUtils
+	db     *sql.DB
+	config = Configuration{}
+	dbutl  *utils.DbUtils
 )
 
 func init() {
 	// init databaseutils
-	dbUtils = new(utils.DbUtils)
+	dbutl = new(utils.DbUtils)
 }
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 		panic(err)
 	}
 
-	err = dbUtils.Connect2Database(&db, config.DbType, config.DbURL)
+	err = dbutl.Connect2Database(&db, config.DbType, config.DbURL)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +44,7 @@ func main() {
 	}
 	defer tx.Rollback()
 
-	pq := dbUtils.PQuery(`
+	pq := dbutl.PQuery(`
 		DELETE FROM test_unicode
 	`)
 
@@ -53,7 +53,7 @@ func main() {
 		panic(err)
 	}
 
-	pq = dbUtils.PQuery(`
+	pq = dbutl.PQuery(`
 		INSERT INTO test_unicode (c1) VALUES (?)
 	`, "Hello, 世界")
 
@@ -62,9 +62,9 @@ func main() {
 		panic(err)
 	}
 
-	pq = dbUtils.PQuery(`SELECT c1 FROM test_unicode`)
+	pq = dbutl.PQuery(`SELECT c1 FROM test_unicode`)
 
-	err = dbUtils.ForEachRowTx(tx, pq, func(row *sql.Rows, sc *utils.SQLScan) error {
+	err = dbutl.ForEachRowTx(tx, pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		var c1 string
 		err = row.Scan(&c1)
 		if err != nil {
