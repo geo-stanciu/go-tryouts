@@ -1,5 +1,5 @@
 {
-    "DbHost": "localhost",
+    "DbHost": "devel",
     "DbPort": "5432",
     "DbUser": "postgres",
     "DbName": "devel",

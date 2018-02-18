@@ -1,6 +1,6 @@
 {
     "DbType": "mssql",
-    "DbURL": "server=localhost;database=devel;user id=geo;password=geo;port=1433;app name=StoreExchRates",
+    "DbURL": "server=devel;database=devel;user id=geo;password=geo;port=1433;app name=StoreExchRates",
     "RatesXMLUrl": "http://bnro.ro/nbrfxrates.xml",
     "AddMissingCurrencies": true
 }
