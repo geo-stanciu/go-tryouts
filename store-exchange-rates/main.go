@@ -331,7 +331,7 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 		audit.Log(nil,
 			"add exchange rate",
 			"added value",
-			"data", date,
+			"date", date,
 			"currency", currency,
 			"rate", rate)
 	}
