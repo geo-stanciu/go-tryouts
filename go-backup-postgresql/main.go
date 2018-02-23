@@ -123,14 +123,15 @@ func main() {
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
 	err = cmd.Run()
-	if err != nil {
-		log.Println(err)
-		return
-	}
 
 	sout := outb.String()
 	serr := errb.String()
 	logStd(sout, serr)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	archFile, err := getStartingArhiveLog(sout, serr)
 	if err != nil {
