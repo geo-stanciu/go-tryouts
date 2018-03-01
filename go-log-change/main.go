@@ -140,7 +140,6 @@ func changeKeyName(msgType string, oldKeyName string) error {
 		if err != nil {
 			return err
 		}
-
 		content := string(bmsg)
 
 		pq.SetArg(0, content)

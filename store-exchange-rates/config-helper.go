@@ -5,14 +5,14 @@ import (
 	"os"
 )
 
-type Configuration struct {
+type configuration struct {
 	DbType               string `json:"DbType"`
 	DbURL                string `json:"DbURL"`
 	RatesXMLUrl          string `json:"RatesXMLUrl"`
 	AddMissingCurrencies bool   `json:"AddMissingCurrencies"`
 }
 
-func (c *Configuration) ReadFromFile(cfgFile string) error {
+func (c *configuration) ReadFromFile(cfgFile string) error {
 	if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
 		return err
 	}

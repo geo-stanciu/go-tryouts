@@ -14,7 +14,7 @@ import (
 
 var (
 	db     *sql.DB
-	config = Configuration{}
+	config = configuration{}
 	dbutl  *utils.DbUtils
 )
 

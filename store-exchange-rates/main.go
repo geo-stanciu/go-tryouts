@@ -25,7 +25,7 @@ var (
 	audit      = utils.AuditLog{}
 	db         *sql.DB
 	dbutl      *utils.DbUtils
-	config     = Configuration{}
+	config     = configuration{}
 )
 
 func init() {

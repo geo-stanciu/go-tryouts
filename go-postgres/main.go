@@ -12,16 +12,16 @@ import (
 
 var (
 	db     *sql.DB
-	config = Configuration{}
+	config = configuration{}
 	dbutl  *utils.DbUtils
 )
 
-type Test struct {
+type test struct {
 	Date    time.Time `sql:"date"`
 	Version string    `sql:"version"`
 }
 
-type Test1 struct {
+type test1 struct {
 	Dt    time.Time      `sql:"dt"`
 	Dtz   time.Time      `sql:"dtz"`
 	D     time.Time      `sql:"d"`
@@ -53,26 +53,26 @@ func main() {
 		panic(err)
 	}
 
-	test := Test{}
+	t1 := test{}
 	pq := dbutl.PQuery("select current_timestamp date, version() as version")
-	err = dbutl.RunQuery(pq, &test)
+	err = dbutl.RunQuery(pq, &t1)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Date: ", test.Date)
-	fmt.Println("Date - local: ", test.Date.In(loc))
+	fmt.Println("Date: ", t1.Date)
+	fmt.Println("Date - local: ", t1.Date.In(loc))
 	//fmt.Println(test.Version)
 
 	err = dbutl.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
-		test2 := Test{}
-		err = sc.Scan(dbutl, row, &test2)
+		t2 := test{}
+		err = sc.Scan(dbutl, row, &t2)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("Date: ", test2.Date)
-		fmt.Println("Date - local:", test2.Date.In(loc))
+		fmt.Println("Date: ", t2.Date)
+		fmt.Println("Date - local:", t2.Date.In(loc))
 
 		return nil
 	})
@@ -128,19 +128,19 @@ func main() {
 	pq = dbutl.PQuery(`select dt, dtz, d, d_null from test1 order by 1`)
 
 	err = dbutl.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
-		test1 := Test1{}
-		err = sc.Scan(dbutl, row, &test1)
+		t1 := test1{}
+		err = sc.Scan(dbutl, row, &t1)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("Dt:", test1.Dt)
-		fmt.Println("Dt - local:", test1.Dt.In(loc))
-		fmt.Println("Dtz:", test1.Dtz)
-		fmt.Println("D:", test1.D)
+		fmt.Println("Dt:", t1.Dt)
+		fmt.Println("Dt - local:", t1.Dt.In(loc))
+		fmt.Println("Dtz:", t1.Dtz)
+		fmt.Println("D:", t1.D)
 
-		if test1.DNull.Valid {
-			fmt.Println("D NUll:", test1.DNull.Time)
+		if t1.DNull.Valid {
+			fmt.Println("D NUll:", t1.DNull.Time)
 		} else {
 			fmt.Println("D NUll: null")
 		}

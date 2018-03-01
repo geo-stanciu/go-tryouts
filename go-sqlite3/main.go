@@ -12,16 +12,16 @@ import (
 
 var (
 	db     *sql.DB
-	config = Configuration{}
+	config = configuration{}
 	dbutl  *utils.DbUtils
 )
 
-type Test struct {
+type test struct {
 	Date    time.Time `sql:"date"`
 	Version string    `sql:"version"`
 }
 
-type Test1 struct {
+type test1 struct {
 	Dt    time.Time      `sql:"dt"`
 	Dtz   time.Time      `sql:"dtz"`
 	D     time.Time      `sql:"d"`
@@ -53,16 +53,16 @@ func main() {
 		panic(err)
 	}
 
-	test := Test{}
+	t1 := test{}
 	pq := dbutl.PQuery("select current_timestamp date, sqlite_version() as version")
-	err = dbutl.RunQuery(pq, &test)
+	err = dbutl.RunQuery(pq, &t1)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Date: ", test.Date)
-	fmt.Println("Date - local: ", test.Date.In(loc))
-	//fmt.Println(test.Version)
+	fmt.Println("Date: ", t1.Date)
+	fmt.Println("Date - local: ", t1.Date.In(loc))
+	//fmt.Println(t1.Version)
 
 	/*sqlStmt := `
 		create table foo (id integer not null primary key, name text);

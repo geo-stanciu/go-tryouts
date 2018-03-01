@@ -45,7 +45,7 @@ func main() {
 
 	var outb, errb bytes.Buffer
 
-	cmd := exec.Command("vacuumdb", "-avzwU", "postgres")
+	cmd := exec.Command("vacuumdb", "-avzw", "-h", "devel", "-U", "postgres")
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
 	err = cmd.Run()
