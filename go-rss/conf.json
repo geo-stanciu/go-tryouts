@@ -1,0 +1,32 @@
+{
+    "DbType": "postgres",
+    "DbURL1": "host=devel port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=RssGather --search_path=public --timezone=UTC --client_encoding=UTF8'",
+    "DbURL": "host=devel port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=RssGather --search_path=public --client_encoding=UTF8'",
+    "RSSSource": [
+        {
+            "SourceName": "BVB News",
+            "Lang": "EN",
+            "Link": "http://www.bvb.ro/Rss/BSENews.ashx"
+        },
+        {
+            "SourceName": "BVB Stiri",
+            "Lang": "RO",
+            "Link": "http://www.bvb.ro/Rss/StiriBVB.ashx"
+        },
+        {
+            "SourceName": "BVB ATS News",
+            "Lang": "EN",
+            "Link": "http://www.bvb.ro/Rss/ATSNews.ashx"
+        },
+        {
+            "SourceName": "BVB Stiri ATS",
+            "Lang": "RO",
+            "Link": "http://www.bvb.ro/Rss/StiriATS.ashx"
+        },
+        {
+            "SourceName": "BVB Comunicate",
+            "Lang": "RO",
+            "Link": "http://www.bvb.ro/Rss/OperatiuniSiComunicateBVB.ashx"
+        }
+    ]
+}
