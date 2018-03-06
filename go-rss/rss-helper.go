@@ -160,6 +160,22 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		}
 	}
 
+	if len(r.LastDate) > 0 {
+		var err1, err2 error
+		var lastDate time.Time
+		lastDate, err1 = utils.String2date(r.LastDate, utils.RSSDateTimeTZ)
+		if err1 != nil {
+			lastDate, err2 = utils.String2date(r.LastDate, utils.RSSDateTime)
+			if err2 != nil {
+				return err1
+			}
+		}
+
+		if !lastDate.After(r.LastRssDate) {
+			return nil
+		}
+	}
+
 	lastRss := epochStart
 
 	for _, rss := range r.Rss {

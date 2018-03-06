@@ -78,7 +78,7 @@ func main() {
 			return
 		}
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	audit.Log(nil, "gather rss", "Import done.")
