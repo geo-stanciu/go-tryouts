@@ -13,13 +13,17 @@ create table if not exists rss_source (
 );
 
 create table if not exists rss (
-    rss_id        bigserial primary key not null,
-    rss_source_id int not null,
-    title         text not null,
-    link          text,
-    description   text,
-    rss_date      timestamp not null,
-    add_date      timestamp not null,
+    rss_id             bigserial primary key not null,
+    rss_source_id      int not null,
+    title              text not null,
+    link               text,
+    description        text,
+    rss_date           timestamp not null,
+    add_date           timestamp not null,
+    category           text,
+    enclosure_link     text,
+    enclosure_length   int,
+    enclosure_filetype text,
     constraint rss_source_fk foreign key (rss_source_id)
         references rss_source (rss_source_id)
 );

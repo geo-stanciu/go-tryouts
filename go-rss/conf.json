@@ -27,6 +27,16 @@
             "SourceName": "BVB Comunicate",
             "Lang": "RO",
             "Link": "http://www.bvb.ro/Rss/OperatiuniSiComunicateBVB.ashx"
+        },
+        {
+            "SourceName": "Mediafax",
+            "Lang": "RO",
+            "Link": "http://www.mediafax.ro/rss/"
+        },
+        {
+            "SourceName": "Mediafax Comunicate",
+            "Lang": "RO",
+            "Link": "http://comunicate.mediafax.biz/rss.aspx"
         }
     ]
 }

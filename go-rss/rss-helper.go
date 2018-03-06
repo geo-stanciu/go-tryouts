@@ -8,14 +8,24 @@ import (
 	"github.com/geo-stanciu/go-utils/utils"
 )
 
+// RssEnclosure - RssEnclosure Item struct
+type RssEnclosure struct {
+	XMLName xml.Name `xml:"enclosure"`
+	URL     string   `xml:"url,attr"`
+	Length  int      `xml:"length,attr"`
+	Type    string   `xml:"type,attr"`
+}
+
 // RssItem - Rss Item struct
 type RssItem struct {
-	XMLName     xml.Name  `xml:"item"`
-	RssID       int64     `xml:"-" sql:"rss_id"`
-	Title       string    `xml:"title" sql:"title"`
-	Description string    `xml:"description" sql:"description"`
-	Link        string    `xml:"link" sql:"link"`
-	Date        string    `xml:"pubDate" sql:"sdate"`
+	XMLName     xml.Name `xml:"item"`
+	RssID       int64    `xml:"-" sql:"rss_id"`
+	Title       string   `xml:"title" sql:"title"`
+	Description string   `xml:"description" sql:"description"`
+	Link        string   `xml:"link" sql:"link"`
+	Date        string   `xml:"pubDate" sql:"sdate"`
+	Category    string   `xml:"category"`
+	Enclosure   RssEnclosure
 	RssDate     time.Time `sql:"rss_date"`
 }
 
@@ -196,16 +206,24 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 				title,
 				link,
 				description,
+				category,
+				enclosure_link,
+				enclosure_length,
+				enclosure_filetype,
 				rss_date,
 				add_date
 			)
 			VALUES (
-				?, ?, ?, ?, ?, ?
+				?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 			)
 		`, r.SourceID,
 			rss.Title,
 			rss.Link,
 			rss.Description,
+			rss.Category,
+			rss.Enclosure.URL,
+			rss.Enclosure.Length,
+			rss.Enclosure.Type,
 			rss.RssDate,
 			dt)
 

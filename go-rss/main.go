@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/sirupsen/logrus"
@@ -19,7 +20,7 @@ import (
 
 var (
 	appName    = "RssGather"
-	appVersion = "0.0.0.1"
+	appVersion = "0.0.0.2"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
@@ -76,6 +77,8 @@ func main() {
 			log.Println(err)
 			return
 		}
+
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	audit.Log(nil, "gather rss", "Import done.")
