@@ -190,9 +190,13 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 
 			rss.RssDate = time.Now().UTC()
 		} else {
-			rss.RssDate, err = utils.String2date(rss.Date, utils.RSSDateTime)
-			if err != nil {
-				return err
+			var err1, err2 error
+			rss.RssDate, err1 = utils.String2date(rss.Date, utils.RSSDateTimeTZ)
+			if err1 != nil {
+				rss.RssDate, err2 = utils.String2date(rss.Date, utils.RSSDateTime)
+				if err2 != nil {
+					return err1
+				}
 			}
 		}
 
@@ -224,7 +228,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			rss.Enclosure.URL,
 			rss.Enclosure.Length,
 			rss.Enclosure.Type,
-			rss.RssDate,
+			rss.RssDate.UTC(),
 			dt)
 
 		_, err = dbutl.ExecTx(tx, pq)
