@@ -37,6 +37,11 @@
             "SourceName": "Mediafax Comunicate",
             "Lang": "RO",
             "Link": "http://comunicate.mediafax.biz/rss.aspx"
+        },
+        {
+            "SourceName": "HLTV",
+            "Lang":"EN",
+            "Link": "https://www.hltv.org/rss/news"
         }
     ]
 }

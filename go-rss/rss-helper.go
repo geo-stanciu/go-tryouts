@@ -161,14 +161,9 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 	}
 
 	if len(r.LastDate) > 0 {
-		var err1, err2 error
-		var lastDate time.Time
-		lastDate, err1 = utils.String2date(r.LastDate, utils.RSSDateTimeTZ)
-		if err1 != nil {
-			lastDate, err2 = utils.String2date(r.LastDate, utils.RSSDateTime)
-			if err2 != nil {
-				return err1
-			}
+		lastDate, err := parseRSSDate(r.LastDate)
+		if err != nil {
+			return err
 		}
 
 		if !lastDate.After(r.LastRssDate) {
@@ -206,13 +201,9 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 
 			rss.RssDate = time.Now().UTC()
 		} else {
-			var err1, err2 error
-			rss.RssDate, err1 = utils.String2date(rss.Date, utils.RSSDateTimeTZ)
-			if err1 != nil {
-				rss.RssDate, err2 = utils.String2date(rss.Date, utils.RSSDateTime)
-				if err2 != nil {
-					return err1
-				}
+			rss.RssDate, err = parseRSSDate(rss.Date)
+			if err != nil {
+				return err
 			}
 		}
 
@@ -274,4 +265,18 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 	}
 
 	return err
+}
+
+func parseRSSDate(sdate string) (time.Time, error) {
+	var err1, err2 error
+	var dt time.Time
+	dt, err1 = utils.String2date(sdate, utils.RSSDateTimeTZ)
+	if err1 != nil {
+		dt, err2 = utils.String2date(sdate, utils.RSSDateTime)
+		if err2 != nil {
+			return dt.UTC(), err1
+		}
+	}
+
+	return dt.UTC(), nil
 }
