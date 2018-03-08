@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/xml"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -20,13 +21,15 @@ import (
 
 var (
 	appName    = "RssGather"
-	appVersion = "0.0.0.2"
+	appVersion = "0.0.1.0"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
 	dbutl      *utils.DbUtils
 	config     = configuration{}
 	queue      chan rssSource
+	mutex      sync.RWMutex
+	errFound   = false
 )
 
 func init() {
@@ -78,10 +81,25 @@ func main() {
 
 	done := rssSource{Done: true}
 	for i := 0; i < config.RSSParalelReaders; i++ {
+		wg.Add(1)
 		queue <- done
 	}
 
-	audit.Log(nil, "gather rss", "Import done.")
+	// wait for all rss to be done
+	wg.Wait()
+
+	mutex.Lock()
+
+	if errFound {
+		err = errors.New("errors found while gathering rss")
+		audit.Log(err, "gather rss", "Import failed.")
+	} else {
+		audit.Log(nil, "gather rss", "Import done.")
+	}
+
+	mutex.Unlock()
+
+	// wait for all logs to be written
 	wg.Wait()
 }
 
@@ -90,12 +108,19 @@ func dealWithRSS(wg *sync.WaitGroup) {
 		rss := <-queue
 
 		if rss.Done {
+			wg.Done()
 			break
 		}
 
 		wg.Add(1)
 
 		err := getStreamFromURL(&rss, parseXMLSource)
+
+		if err != nil {
+			mutex.Lock()
+			errFound = true
+			mutex.Unlock()
+		}
 
 		audit.Log(err,
 			"get rss",
