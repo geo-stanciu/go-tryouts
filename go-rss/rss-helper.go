@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/xml"
+	"strings"
 	"time"
 
 	"github.com/geo-stanciu/go-utils/utils"
@@ -11,9 +12,9 @@ import (
 // RssEnclosure - RssEnclosure Item struct
 type RssEnclosure struct {
 	XMLName xml.Name `xml:"enclosure"`
-	URL     string   `xml:"url,attr"`
-	Length  int      `xml:"length,attr"`
-	Type    string   `xml:"type,attr"`
+	URL     string   `xml:"url,attr" sql:"enclosure_link"`
+	Length  int      `xml:"length,attr" sql:"enclosure_length"`
+	Type    string   `xml:"type,attr" sql:"enclosure_filetype"`
 }
 
 // RssItem - Rss Item struct
@@ -48,8 +49,8 @@ func (r *RssFeed) getID(tx *sql.Tx) error {
 	pq := dbutl.PQuery(`
 		SELECT rss_source_id
 		  FROM rss_source
-		 WHERE lower(source_name) = lower(?)
-	`, r.Source)
+		 WHERE lowered_source_name = ?
+	`, strings.ToLower(r.Source))
 
 	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&r.SourceID)
 	if err != nil && err != sql.ErrNoRows {
@@ -82,6 +83,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		pq = dbutl.PQuery(`
 			INSERT INTO rss_source (
 				source_name,
+				lowered_source_name,
 				language,
 				source_link,
 				title,
@@ -89,9 +91,10 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 				add_date
 			)
 			VALUES (
-				?, ?, ?, ?, ?, ?
+				?, ?, ?, ?, ?, ?, ?
 			)
 		`, r.Source,
+			strings.ToLower(r.Source),
 			r.Language,
 			r.Link,
 			r.Title,
@@ -130,25 +133,29 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		pq = dbutl.PQuery(`
 			UPDATE rss_source
 			   SET source_name = ?,
+			       lowered_source_name = ?,
 				   language = ?,
 				   source_link = ?,
 				   title = ?,
 				   description = ?
 			 WHERE rss_source_id = ?
 			   AND (
-			       source_name != ? OR
-				   language != ? OR
-				   source_link != ? OR
-				   title != ? OR
-				   description != ?
+				   source_name <> ? OR
+				   lowered_source_name <> ? OR
+				   language <> ? OR
+				   source_link <> ? OR
+				   title <> ? OR
+				   description <> ?
 			   )
 		`, r.Source,
+			strings.ToLower(r.Source),
 			r.Language,
 			r.Link,
 			r.Title,
 			r.Description,
 			r.SourceID,
 			r.Source,
+			strings.ToLower(r.Source),
 			r.Language,
 			r.Link,
 			r.Title,
@@ -255,8 +262,10 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			UPDATE rss_source
 			   SET last_rss_date = ?
 			 WHERE rss_source_id = ?
+			   AND last_rss_date <> ?
 		`, lastRss.UTC(),
-			r.SourceID)
+			r.SourceID,
+			lastRss.UTC())
 
 		_, err = dbutl.ExecTx(tx, pq)
 		if err != nil {

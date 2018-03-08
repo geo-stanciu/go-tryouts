@@ -1,15 +1,16 @@
 create or replace view dual as select 'X' AS dummy;
 
 create table if not exists rss_source (
-    rss_source_id serial primary key not null,
-    source_name   text not null,
-    language      varchar(8) not null,
-    source_link   text not null,
-    title         text,
-    description   text,
-    last_rss_date timestamp,
-    add_date      timestamp not null,
-    constraint rss_source_uk unique (source_name)
+    rss_source_id       serial primary key not null,
+    source_name         text not null,
+    language            varchar(8) not null,
+    source_link         text not null,
+    title               text,
+    description         text,
+    last_rss_date       timestamp,
+    add_date            timestamp not null,
+    lowered_source_name text not null,
+    constraint rss_source_uk unique (lowered_source_name)
 );
 
 create table if not exists rss (
