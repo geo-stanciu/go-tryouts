@@ -26,6 +26,7 @@ var (
 	db         *sql.DB
 	dbutl      *utils.DbUtils
 	config     = configuration{}
+	queue      chan rssSource
 )
 
 func init() {
@@ -34,6 +35,8 @@ func init() {
 	log.Level = logrus.DebugLevel
 
 	dbutl = new(utils.DbUtils)
+
+	queue = make(chan rssSource, 32)
 }
 
 // ParseSourceStream - Parse Source Stream
@@ -64,25 +67,46 @@ func main() {
 	mw := io.MultiWriter(os.Stdout, audit)
 	log.Out = mw
 
+	// initialize the rss readers
+	for i := 0; i < config.RSSParalelReaders; i++ {
+		go dealWithRSS(&wg)
+	}
+
 	for _, rss := range config.Rss {
-		audit.Log(nil,
+		queue <- rss
+	}
+
+	done := rssSource{Done: true}
+	for i := 0; i < config.RSSParalelReaders; i++ {
+		queue <- done
+	}
+
+	audit.Log(nil, "gather rss", "Import done.")
+	wg.Wait()
+}
+
+func dealWithRSS(wg *sync.WaitGroup) {
+	for {
+		rss := <-queue
+
+		if rss.Done {
+			break
+		}
+
+		wg.Add(1)
+
+		err := getStreamFromURL(&rss, parseXMLSource)
+
+		audit.Log(err,
 			"get rss",
 			"save rss",
 			"lang", rss.Lang,
 			"source", rss.SourceName,
 			"link", rss.Link)
 
-		err = getStreamFromURL(&rss, parseXMLSource)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
 		time.Sleep(10 * time.Millisecond)
+		wg.Done()
 	}
-
-	audit.Log(nil, "gather rss", "Import done.")
-	wg.Wait()
 }
 
 func getStreamFromURL(rss *rssSource, callback ParseSourceStream) error {

@@ -9,6 +9,7 @@ type rssSource struct {
 	SourceName string `json:"SourceName"`
 	Lang       string `json:"Lang"`
 	Link       string `json:"Link"`
+	Done       bool
 }
 
 type rssSources struct {
@@ -16,8 +17,9 @@ type rssSources struct {
 }
 
 type configuration struct {
-	DbType string `json:"DbType"`
-	DbURL  string `json:"DbURL"`
+	DbType            string `json:"DbType"`
+	DbURL             string `json:"DbURL"`
+	RSSParalelReaders int    `json:"RSSParalelReaders"`
 	rssSources
 }
 
