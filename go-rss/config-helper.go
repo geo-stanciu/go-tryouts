@@ -20,6 +20,7 @@ type configuration struct {
 	DbType            string `json:"DbType"`
 	DbURL             string `json:"DbURL"`
 	RSSParalelReaders int    `json:"RSSParalelReaders"`
+	CountNewRssItems  bool   `json:"CountNewRssItems"`
 	rssSources
 }
 

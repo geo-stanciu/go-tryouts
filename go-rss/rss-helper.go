@@ -250,6 +250,12 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			return err
 		}
 
+		if config.CountNewRssItems {
+			mutex.Lock()
+			newRssItems++
+			mutex.Unlock()
+		}
+
 		if lastRss.Before(rss.RssDate) {
 			lastRss = rss.RssDate
 		}

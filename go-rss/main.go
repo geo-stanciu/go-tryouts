@@ -20,16 +20,17 @@ import (
 )
 
 var (
-	appName    = "RssGather"
-	appVersion = "0.0.1.0"
-	log        = logrus.New()
-	audit      = utils.AuditLog{}
-	db         *sql.DB
-	dbutl      *utils.DbUtils
-	config     = configuration{}
-	queue      chan rssSource
-	mutex      sync.RWMutex
-	errFound   = false
+	appName     = "RssGather"
+	appVersion  = "0.0.2.0"
+	log         = logrus.New()
+	audit       = utils.AuditLog{}
+	db          *sql.DB
+	dbutl       *utils.DbUtils
+	config      = configuration{}
+	queue       chan rssSource
+	mutex       sync.RWMutex
+	errFound    = false
+	newRssItems = 0
 )
 
 func init() {
@@ -92,9 +93,17 @@ func main() {
 
 	if errFound {
 		err = errors.New("errors found while gathering rss")
-		audit.Log(err, "gather rss", "Import failed.")
+		if config.CountNewRssItems {
+			audit.Log(err, "gather rss", "Import failed.", "new_rss_items", newRssItems)
+		} else {
+			audit.Log(err, "gather rss", "Import failed.")
+		}
 	} else {
-		audit.Log(nil, "gather rss", "Import done.")
+		if config.CountNewRssItems {
+			audit.Log(nil, "gather rss", "Import done.", "new_rss_items", newRssItems)
+		} else {
+			audit.Log(nil, "gather rss", "Import done.")
+		}
 	}
 
 	mutex.Unlock()
