@@ -31,10 +31,11 @@ create table if not exists rss (
 
 create table if not exists audit_log (
     audit_log_id   bigserial primary key,
-    log_source     varchar(64) not null,
+    source         varchar(64) not null,
+    source_version varchar(64) not null,
     log_time       timestamp not null,
-    audit_msg      jsonb     not null
+    log_msg        jsonb     not null
 );
 
 create index idx_time_audit_log on audit_log (log_time);
-CREATE INDEX idx_log_source_audit_log ON audit_log (log_source);
+CREATE INDEX idx_log_source_audit_log ON audit_log (source);

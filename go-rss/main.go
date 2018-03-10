@@ -64,7 +64,7 @@ func main() {
 	}
 	defer db.Close()
 
-	audit.SetLogger(appName+"/"+appVersion, log, dbutl)
+	audit.SetLogger(appName, appVersion, log, dbutl)
 	audit.SetWaitGroup(&wg)
 	defer audit.Close()
 

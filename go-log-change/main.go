@@ -52,7 +52,7 @@ func main() {
 	}
 	defer db.Close()
 
-	audit.SetLogger(appName+"/"+appVersion, log, dbutl)
+	audit.SetLogger(appName, appVersion, log, dbutl)
 	audit.SetWaitGroup(&wg)
 	defer audit.Close()
 
@@ -78,10 +78,10 @@ func changeKeyName(msgType string, oldKeyName string) error {
 	mtype := fmt.Sprintf("{\"msg_type\": \"%s\"}", msgType)
 
 	pq := dbutl.PQuery(`
-		select audit_log_id, audit_msg
+		select audit_log_id, log_msg
 	      from audit_log
-		 where audit_msg @> ?
-		   and audit_msg ?? ?
+		 where log_msg @> ?
+		   and log_msg ?? ?
 		   limit ?
 	`, mtype,
 		oldKeyName,
@@ -132,7 +132,7 @@ func changeKeyName(msgType string, oldKeyName string) error {
 	}
 
 	pq = dbutl.PQuery(`
-	    UPDATE audit_log SET audit_msg = ? WHERE audit_log_id = ? 
+	    UPDATE audit_log SET log_msg = ? WHERE audit_log_id = ? 
 	`)
 
 	for _, msg := range messages {
