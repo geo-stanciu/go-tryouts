@@ -96,9 +96,9 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		`, r.Source,
 			strings.ToLower(r.Source),
 			r.Language,
-			r.Link,
-			r.Title,
-			r.Description,
+			strings.TrimSpace(r.Link),
+			strings.TrimSpace(r.Title),
+			strings.TrimSpace(r.Description),
 			dt)
 
 		_, err = dbutl.ExecTx(tx, pq)
@@ -150,16 +150,16 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		`, r.Source,
 			strings.ToLower(r.Source),
 			r.Language,
-			r.Link,
-			r.Title,
-			r.Description,
+			strings.TrimSpace(r.Link),
+			strings.TrimSpace(r.Title),
+			strings.TrimSpace(r.Description),
 			r.SourceID,
 			r.Source,
 			strings.ToLower(r.Source),
 			r.Language,
-			r.Link,
-			r.Title,
-			r.Description)
+			strings.TrimSpace(r.Link),
+			strings.TrimSpace(r.Title),
+			strings.TrimSpace(r.Description))
 
 		_, err = dbutl.ExecTx(tx, pq)
 		if err != nil {
@@ -235,11 +235,11 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 				?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 			)
 		`, r.SourceID,
-			rss.Title,
-			rss.Link,
-			rss.Description,
-			rss.Category,
-			rss.Enclosure.URL,
+			strings.TrimSpace(rss.Title),
+			strings.TrimSpace(rss.Link),
+			strings.TrimSpace(rss.Description),
+			strings.TrimSpace(rss.Category),
+			strings.TrimSpace(rss.Enclosure.URL),
 			rss.Enclosure.Length,
 			rss.Enclosure.Type,
 			rss.RssDate.UTC(),
