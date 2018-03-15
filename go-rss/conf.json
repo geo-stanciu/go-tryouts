@@ -44,6 +44,11 @@
             "SourceName": "HLTV",
             "Lang":"EN",
             "Link": "https://www.hltv.org/rss/news"
+        },
+        {
+            "SourceName": "Adevarul",
+            "Lang":"RO",
+            "Link": "http://adevarul.ro/ex/yrssv2"
         }
     ]
 }

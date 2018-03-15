@@ -202,6 +202,16 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 				decoder.DecodeElement(&feed.Date, &se)
 			case "lastBuildDate":
 				decoder.DecodeElement(&feed.LastDate, &se)
+			case "generator":
+				decoder.DecodeElement(&feed.Generator, &se)
+			case "webMaster":
+				decoder.DecodeElement(&feed.WebMaster, &se)
+			case "copyright":
+				decoder.DecodeElement(&feed.Copyright, &se)
+			case "image":
+				var img RssImage
+				decoder.DecodeElement(&img, &se)
+				feed.Image = img
 			case "item":
 				var item RssItem
 				decoder.DecodeElement(&item, &se)
