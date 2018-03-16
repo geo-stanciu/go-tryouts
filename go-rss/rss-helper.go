@@ -38,6 +38,7 @@ type RssItem struct {
 	Description  string   `xml:"description" sql:"description"`
 	Link         string   `xml:"link" sql:"link"`
 	ItemGUID     string   `xml:"guid" sql:"item_guid"`
+	OrigLink     string   `xml:"origLink"`
 	Date         string   `xml:"pubDate" sql:"sdate"`
 	Keywords     string   `xml:"keywords"`
 	Category     string   `xml:"category"`
@@ -164,9 +165,12 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			return err
 		}
 
-		r.LastRssDate = epochStart
+		if r.LastRssDate.IsZero() {
+			r.LastRssDate = epochStart
+		}
 	} else {
-		pq = dbutl.PQuery(`
+		if r.LastRssDate.IsZero() {
+			pq = dbutl.PQuery(`
 			SELECT CASE
 					 WHEN last_rss_date IS NULL THEN
 					   DATE ?
@@ -176,11 +180,12 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			  FROM rss_source
 			 WHERE rss_source_id = ?
 		`, "1970-01-01",
-			r.SourceID)
+				r.SourceID)
 
-		err := tx.QueryRow(pq.Query, pq.Args...).Scan(&r.LastRssDate)
-		if err != nil {
-			return err
+			err := tx.QueryRow(pq.Query, pq.Args...).Scan(&r.LastRssDate)
+			if err != nil {
+				return err
+			}
 		}
 
 		pq = dbutl.PQuery(`
@@ -324,6 +329,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 				link,
 				description,
 				item_guid,
+				orig_link,
 				category,
 				subcategory,
 				content,
@@ -343,13 +349,14 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 				?, ?, ?, ?, ?,
 				?, ?, ?, ?, ?,
 				?, ?, ?, ?, ?,
-				?, ?, ?, ?
+				?, ?, ?, ?, ?
 			)
 		`, r.SourceID,
 			strings.TrimSpace(rss.Title),
 			strings.TrimSpace(rss.Link),
 			strings.TrimSpace(rss.Description),
 			strings.TrimSpace(rss.ItemGUID),
+			strings.TrimSpace(rss.OrigLink),
 			strings.TrimSpace(rss.Category),
 			strings.TrimSpace(rss.SubCategory),
 			strings.TrimSpace(rss.Content),
@@ -381,14 +388,14 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		}
 	}
 
-	if lastRss.After(epochStart) {
+	if lastRss.After(r.LastRssDate) {
 		r.LastRssDate = lastRss
 
 		pq = dbutl.PQuery(`
 			UPDATE rss_source
 			   SET last_rss_date = ?
 			 WHERE rss_source_id = ?
-			   AND (last_rss_date IS NULL OR last_rss_date <> ?)
+			   AND (last_rss_date IS NULL OR last_rss_date < ?)
 		`, lastRss.UTC(),
 			r.SourceID,
 			lastRss.UTC())
@@ -400,4 +407,37 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 	}
 
 	return err
+}
+
+func getLastRSS(source string) (time.Time, error) {
+	var err error
+	var lastRSS time.Time
+
+	pq := dbutl.PQuery(`
+		SELECT CASE
+			     WHEN last_rss_date IS NULL THEN
+				   DATE ?
+				 ELSE
+				   last_rss_date
+				END last_rss_date
+			  FROM rss_source
+		 WHERE lowered_source_name = ?
+	`, "1970-01-01",
+		strings.ToLower(source))
+
+	err = db.QueryRow(pq.Query, pq.Args...).Scan(&lastRSS)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			epochStart, err := utils.String2date("1970-01-01", utils.UTCDate)
+			if err != nil {
+				return time.Now(), err
+			}
+
+			lastRSS = epochStart
+		} else {
+			return time.Now(), err
+		}
+	}
+
+	return lastRSS.UTC(), nil
 }

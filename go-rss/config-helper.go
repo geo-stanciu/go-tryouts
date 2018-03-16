@@ -3,12 +3,15 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"time"
 )
 
 type rssSource struct {
-	SourceName string `json:"SourceName"`
-	Lang       string `json:"Lang"`
-	Link       string `json:"Link"`
+	SourceName string   `json:"SourceName"`
+	Lang       string   `json:"Lang"`
+	Link       string   `json:"Link"`
+	Links      []string `json:"Links"`
+	LastRSS    time.Time
 	Done       bool
 }
 

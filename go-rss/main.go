@@ -21,7 +21,7 @@ import (
 
 var (
 	appName     = "RssGather"
-	appVersion  = "0.0.2.0"
+	appVersion  = "0.0.3.0"
 	log         = logrus.New()
 	audit       = utils.AuditLog{}
 	db          *sql.DB
@@ -77,7 +77,26 @@ func main() {
 	}
 
 	for _, rss := range config.Rss {
-		queue <- rss
+		lastRSS, err := getLastRSS(rss.SourceName)
+		if err != nil {
+			audit.Log(err, "gather rss", "Import failed.")
+			return
+		}
+		rss.LastRSS = lastRSS
+
+		if len(rss.Link) > 0 {
+			queue <- rss
+		}
+
+		for _, lnk := range rss.Links {
+			rss1 := rssSource{
+				SourceName: rss.SourceName,
+				Lang:       rss.Lang,
+				Link:       lnk,
+				LastRSS:    rss.LastRSS,
+			}
+			queue <- rss1
+		}
 	}
 
 	done := rssSource{Done: true}
@@ -179,8 +198,8 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 
 	var feed RssFeed
 	feed.Source = rss.SourceName
-	feed.Link = rss.Link
 	feed.Language = rss.Lang
+	feed.LastRssDate = rss.LastRSS
 
 	for {
 		t, _ := decoder.Token()
