@@ -2,7 +2,7 @@
     "DbType": "postgres",
     "DbURL1": "host=devel port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=RssGather --search_path=public --timezone=UTC --client_encoding=UTF8'",
     "DbURL": "host=devel port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=RssGather --search_path=public --client_encoding=UTF8'",
-    "RSSParalelReaders": 2,
+    "RSSParalelReaders": 4,
     "CountNewRssItems": true,
     "RSSSource": [
         {
@@ -49,6 +49,36 @@
             "SourceName": "Adevarul",
             "Lang":"RO",
             "Link": "http://adevarul.ro/ex/yrssv2"
+        },
+        {
+            "SourceName": "Digi24",
+            "Lang":"RO",
+            "Link": "https://www.digi24.ro/rss"
+        },
+        {
+            "SourceName": "Descopera.ro",
+            "Lang":"RO",
+            "Link": "http://feeds.feedburner.com/descopera/iIyY?format=xml"
+        },
+        {
+            "SourceName": "agerpres.ro",
+            "Lang":"RO",
+            "Link": "https://www.agerpres.ro/home.rss"
+        },
+        {
+            "SourceName": "stirileprotv.ro",
+            "Lang":"RO",
+            "Link": "http://incont.stirileprotv.ro/rss"
+        },
+        {
+            "SourceName": "HotNews.ro",
+            "Lang":"RO",
+            "Link": "https://www.hotnews.ro/rss"
+        },
+        {
+            "SourceName": "HotNews.ro - EN",
+            "Lang":"EN",
+            "Link": "https://www.hotnews.ro/rss/english"
         }
     ]
 }

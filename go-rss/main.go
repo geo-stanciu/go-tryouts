@@ -139,6 +139,7 @@ func dealWithRSS(wg *sync.WaitGroup) {
 			"link", rss.Link)
 
 		time.Sleep(10 * time.Millisecond)
+
 		wg.Done()
 	}
 }

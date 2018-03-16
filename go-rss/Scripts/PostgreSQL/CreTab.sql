@@ -30,6 +30,7 @@ create table if not exists rss (
     item_guid          text,
     rss_date           timestamp not null,
     add_date           timestamp not null,
+    keywords           text,
     category           text,
     subcategory        text,
     content            text,
@@ -40,6 +41,7 @@ create table if not exists rss (
     enclosure_filetype text,
     media_link         text,
     media_filetype     text,
+    media_thumbnail    text,
     constraint rss_source_fk foreign key (rss_source_id)
         references rss_source (rss_source_id)
 );

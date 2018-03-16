@@ -24,6 +24,12 @@ type RssMediaContent struct {
 	Type    string   `xml:"type,attr" sql:"media_filetype"`
 }
 
+// RssMediaThumbnail - RssMediaThumbnail Item struct
+type RssMediaThumbnail struct {
+	XMLName xml.Name `xml:"thumbnail"`
+	URL     string   `xml:"url,attr" sql:"media_thumbnail"`
+}
+
 // RssItem - Rss Item struct
 type RssItem struct {
 	XMLName      xml.Name `xml:"item"`
@@ -33,11 +39,13 @@ type RssItem struct {
 	Link         string   `xml:"link" sql:"link"`
 	ItemGUID     string   `xml:"guid" sql:"item_guid"`
 	Date         string   `xml:"pubDate" sql:"sdate"`
+	Keywords     string   `xml:"keywords"`
 	Category     string   `xml:"category"`
 	SubCategory  string   `xml:"subcategory"`
 	Content      string   `xml:"encoded"`
 	Tags         string   `xml:"tags"`
 	Creator      string   `xml:"creator"`
+	Thumbnail    RssMediaThumbnail
 	MediaContent RssMediaContent
 	Enclosure    RssEnclosure
 	RssDate      time.Time `sql:"rss_date"`
@@ -319,6 +327,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 				category,
 				subcategory,
 				content,
+				keywords,
 				tags,
 				creator,
 				enclosure_link,
@@ -326,6 +335,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 				enclosure_filetype,
 				media_link,
 				media_filetype,
+				media_thumbnail,
 				rss_date,
 				add_date
 			)
@@ -333,7 +343,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 				?, ?, ?, ?, ?,
 				?, ?, ?, ?, ?,
 				?, ?, ?, ?, ?,
-				?, ?
+				?, ?, ?, ?
 			)
 		`, r.SourceID,
 			strings.TrimSpace(rss.Title),
@@ -343,6 +353,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			strings.TrimSpace(rss.Category),
 			strings.TrimSpace(rss.SubCategory),
 			strings.TrimSpace(rss.Content),
+			strings.TrimSpace(rss.Keywords),
 			strings.TrimSpace(rss.Tags),
 			strings.TrimSpace(rss.Creator),
 			strings.TrimSpace(rss.Enclosure.URL),
@@ -350,6 +361,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			rss.Enclosure.Type,
 			strings.TrimSpace(rss.MediaContent.URL),
 			rss.MediaContent.Type,
+			strings.TrimSpace(rss.Thumbnail.URL),
 			rss.RssDate.UTC(),
 			dt)
 
