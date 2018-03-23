@@ -91,6 +91,11 @@
                 "http://feeds.reuters.com/reuters/sportsNews",
                 "http://feeds.reuters.com/reuters/topNews"
             ]
+        },
+        {
+            "SourceName": "Money.ro",
+            "Lang":"RO",
+            "Link": "https://www.money.ro/feed/"
         }
     ]
 }

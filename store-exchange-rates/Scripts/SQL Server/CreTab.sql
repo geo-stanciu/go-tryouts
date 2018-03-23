@@ -18,6 +18,8 @@ create table exchange_rate (
         references currency (currency_id)
 );
 
+create index idx_exchange_rate_curr_id on exchange_rate (currency_id);
+create index idx_exchange_rate_refcurr_id on exchange_rate (reference_currency_id);
 create index idx_exchange_rate_date on exchange_rate (exchange_date);
 
 create table audit_log (

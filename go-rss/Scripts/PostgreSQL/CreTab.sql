@@ -47,6 +47,9 @@ create table if not exists rss (
         references rss_source (rss_source_id)
 );
 
+create index if not exists idx_rss_source_id on rss (rss_source_id);
+create index if not exists idx_rss_date on rss (rss_date);
+
 create table if not exists audit_log (
     audit_log_id   bigserial primary key,
     source         varchar(64) not null,
