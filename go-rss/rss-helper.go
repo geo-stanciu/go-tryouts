@@ -286,30 +286,6 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 
 	for _, rss := range r.Rss {
 		if len(rss.Date) == 0 {
-			found := false
-
-			pq = dbutl.PQuery(`
-				SELECT CASE WHEN EXISTS (
-					SELECT 1
-					  FROM rss
-					 WHERE rss_source_id = ?
-					   AND title = ?
-					   AND link = ?
-				) THEN 1 ELSE 0 END
-				FROM dual
-			`, r.SourceID,
-				rss.Title,
-				rss.Link)
-
-			err = tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
-			if err != nil {
-				return err
-			}
-
-			if found {
-				continue
-			}
-
 			rss.RssDate = time.Now().UTC()
 		} else {
 			rss.RssDate, err = utils.ParseRSSDate(rss.Date)
@@ -319,6 +295,15 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		}
 
 		if !rss.RssDate.After(r.LastRssDate) {
+			continue
+		}
+
+		found, err := r.rssExists(tx, rss.Title, rss.Link)
+		if err != nil {
+			return err
+		}
+
+		if found {
 			continue
 		}
 
@@ -407,6 +392,30 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 	}
 
 	return err
+}
+
+func (r *RssFeed) rssExists(tx *sql.Tx, title string, link string) (bool, error) {
+	found := false
+
+	pq := dbutl.PQuery(`
+		SELECT CASE WHEN EXISTS (
+			SELECT 1
+			  FROM rss
+			 WHERE rss_source_id = ?
+			   AND title = ?
+			   AND link = ?
+		) THEN 1 ELSE 0 END
+		FROM dual
+	`, r.SourceID,
+		strings.TrimSpace(title),
+		strings.TrimSpace(link))
+
+	err := tx.QueryRow(pq.Query, pq.Args...).Scan(&found)
+	if err != nil {
+		return false, err
+	}
+
+	return found, nil
 }
 
 func getLastRSS(source string) (time.Time, error) {
