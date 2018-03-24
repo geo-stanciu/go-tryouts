@@ -109,6 +109,11 @@
             "SourceName": "zf.ro",
             "Lang":"RO",
             "Link": "http://www.zf.ro/rss"
+        },
+        {
+            "SourceName": "romanialibera.ro",
+            "Lang":"RO",
+            "Link": "http://romanialibera.ro/rss"
         }
     ]
 }
