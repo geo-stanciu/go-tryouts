@@ -1,6 +1,6 @@
-drop view if exists v_last_rss;
+drop view if exists v_rss;
 
-create view v_last_rss as
+create view v_rss as
 select
 	rs.source_name as source,
 	r.title,
@@ -18,5 +18,4 @@ join rss_source rs on
 		r.rss_source_id = rs.rss_source_id
 	)
 order by
-	rss_date desc
-limit 100;
+	rss_date desc;

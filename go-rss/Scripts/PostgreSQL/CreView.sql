@@ -1,1 +1,1 @@
-\i v_last_rss.sql;
+\i v_rss.sql;

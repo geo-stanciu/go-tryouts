@@ -98,14 +98,6 @@
             "Link": "https://www.money.ro/feed/"
         },
         {
-            "SourceName": "Bursa",
-            "Lang":"RO",
-            "Links": [
-                "http://www.bursa.ro/_rss/?t=tz",
-                "http://www.bursa.ro/_rss/?t=en"
-            ]
-        },
-        {
             "SourceName": "zf.ro",
             "Lang":"RO",
             "Link": "http://www.zf.ro/rss"
