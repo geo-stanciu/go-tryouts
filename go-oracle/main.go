@@ -28,6 +28,10 @@ type test1 struct {
 	DNull utils.NullTime `sql:"d_null"`
 }
 
+type tablename struct {
+	Tname string `sql:"table_name"`
+}
+
 func init() {
 	// init databaseutils
 	dbutl = new(utils.DbUtils)
@@ -163,6 +167,25 @@ func main() {
 		} else {
 			fmt.Println("D NUll: null")
 		}
+
+		return nil
+	})
+
+	pq = dbutl.PQuery(`
+		select table_name
+		  from all_tables
+		 order by 1
+		 limit ? offset ?
+	`, 2, 1)
+
+	err = dbutl.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
+		t1 := tablename{}
+		err = sc.Scan(dbutl, row, &t1)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("table:", t1.Tname)
 
 		return nil
 	})
