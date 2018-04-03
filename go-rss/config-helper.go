@@ -7,12 +7,12 @@ import (
 )
 
 type rssSource struct {
-	SourceName string   `json:"SourceName"`
-	Lang       string   `json:"Lang"`
-	Link       string   `json:"Link"`
-	Links      []string `json:"Links"`
-	LastRSS    time.Time
-	Done       bool
+	SourceName  string   `json:"SourceName"`
+	Lang        string   `json:"Lang"`
+	Link        string   `json:"Link"`
+	Links       []string `json:"Links"`
+	LastRSSDate time.Time
+	Done        bool
 }
 
 type rssSources struct {

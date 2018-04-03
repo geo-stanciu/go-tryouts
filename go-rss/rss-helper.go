@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/xml"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/geo-stanciu/go-utils/utils"
@@ -64,19 +65,18 @@ type RssImage struct {
 
 // RssFeed - Rss Channel struct
 type RssFeed struct {
-	XMLName     xml.Name  `xml:"channel"`
-	SourceID    int       `xml:"-" sql:"rss_source_id"`
-	Source      string    `sql:"source_name"`
-	Title       string    `xml:"title" sql:"source_title"`
-	Description string    `xml:"description" sql:"source_description"`
-	Link        string    `xml:"link" sql:"source_title"`
-	Language    string    `xml:"language" sql:"language"`
-	Date        string    `xml:"pubDate"`
-	LastDate    string    `xml:"lastBuildDate"`
-	LastRssDate time.Time `sql:"last_rss_date"`
-	Generator   string    `xml:"generator"`
-	WebMaster   string    `xml:"webMaster"`
-	Copyright   string    `xml:"copyright"`
+	XMLName     xml.Name `xml:"channel"`
+	SourceID    int      `xml:"-" sql:"rss_source_id"`
+	Source      string   `sql:"source_name"`
+	Title       string   `xml:"title" sql:"source_title"`
+	Description string   `xml:"description" sql:"source_description"`
+	Link        string   `xml:"link" sql:"source_title"`
+	Language    string   `xml:"language" sql:"language"`
+	Date        string   `xml:"pubDate"`
+	LastDate    string   `xml:"lastBuildDate"`
+	Generator   string   `xml:"generator"`
+	WebMaster   string   `xml:"webMaster"`
+	Copyright   string   `xml:"copyright"`
 	Image       RssImage
 	Rss         []*RssItem
 }
@@ -96,6 +96,8 @@ func (r *RssFeed) getID(tx *sql.Tx) error {
 	return nil
 }
 
+var newSourceLock sync.RWMutex
+
 // Save - save rss news
 func (r *RssFeed) Save(tx *sql.Tx) error {
 	var pq *utils.PreparedQuery
@@ -108,9 +110,12 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		return err
 	}
 
+	newSourceLock.Lock()
+
 	if r.SourceID <= 0 {
 		r.getID(tx)
 		if err != nil {
+			newSourceLock.Unlock()
 			return err
 		}
 	}
@@ -157,36 +162,55 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 
 		_, err = dbutl.ExecTx(tx, pq)
 		if err != nil {
+			newSourceLock.Unlock()
 			return err
 		}
 
 		r.getID(tx)
 		if err != nil {
+			newSourceLock.Unlock()
 			return err
 		}
 
-		if r.LastRssDate.IsZero() {
-			r.LastRssDate = epochStart
+		lastRSS.Lock()
+		if !lastRSS.RssExists(r.SourceID) {
+			s := new(SourceLastRSS)
+			s.SourceID = r.SourceID
+			s.LastRssDate = epochStart
+			lastRSS.AddRSS(s)
 		}
+		lastRSS.Unlock()
+
+		newSourceLock.Unlock()
 	} else {
-		if r.LastRssDate.IsZero() {
+		newSourceLock.Unlock()
+
+		lastRSS.Lock()
+		if !lastRSS.RssExists(r.SourceID) {
+			s := new(SourceLastRSS)
+			s.SourceID = r.SourceID
+
 			pq = dbutl.PQuery(`
-			SELECT CASE
-					 WHEN last_rss_date IS NULL THEN
-					   DATE ?
-					 ELSE
-					   last_rss_date
-					 END last_rss_date
-			  FROM rss_source
-			 WHERE rss_source_id = ?
-		`, "1970-01-01",
+				SELECT CASE
+						WHEN last_rss_date IS NULL THEN
+						DATE ?
+						ELSE
+						last_rss_date
+						END last_rss_date
+				FROM rss_source
+				WHERE rss_source_id = ?
+			`, "1970-01-01",
 				r.SourceID)
 
-			err := tx.QueryRow(pq.Query, pq.Args...).Scan(&r.LastRssDate)
+			err := tx.QueryRow(pq.Query, pq.Args...).Scan(&s.LastRssDate)
 			if err != nil {
+				lastRSS.Unlock()
 				return err
 			}
+
+			lastRSS.AddRSS(s)
 		}
+		lastRSS.Unlock()
 
 		pq = dbutl.PQuery(`
 			UPDATE rss_source
@@ -277,12 +301,19 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			return err
 		}
 
-		if !lastDate.After(r.LastRssDate) {
-			return nil
+		lastRSS.Lock()
+		if lastRSS.RssExists(r.SourceID) {
+			s := lastRSS.GetRSS(r.SourceID)
+			if !lastDate.After(s.LastRssDate) {
+				lastRSS.Unlock()
+				return nil
+			}
+
 		}
+		lastRSS.Unlock()
 	}
 
-	lastRss := epochStart
+	lastRssDate := epochStart
 
 	for _, rss := range r.Rss {
 		if len(rss.Date) == 0 {
@@ -294,9 +325,16 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			}
 		}
 
-		if !rss.RssDate.After(r.LastRssDate) {
-			continue
+		lastRSS.Lock()
+		if lastRSS.RssExists(r.SourceID) {
+			s := lastRSS.GetRSS(r.SourceID)
+			if !rss.RssDate.After(s.LastRssDate) {
+				lastRSS.Unlock()
+				continue
+			}
+
 		}
+		lastRSS.Unlock()
 
 		found, err := r.rssExists(tx, rss.Title, rss.Link)
 		if err != nil {
@@ -368,28 +406,18 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			mutex.Unlock()
 		}
 
-		if lastRss.Before(rss.RssDate) {
-			lastRss = rss.RssDate
+		if lastRssDate.Before(rss.RssDate) {
+			lastRssDate = rss.RssDate
 		}
 	}
 
-	if lastRss.After(r.LastRssDate) {
-		r.LastRssDate = lastRss
+	lastRSS.Lock()
+	if lastRSS.RssExists(r.SourceID) {
+		s := lastRSS.GetRSS(r.SourceID)
+		s.RssDate = append(s.RssDate, lastRssDate)
 
-		pq = dbutl.PQuery(`
-			UPDATE rss_source
-			   SET last_rss_date = ?
-			 WHERE rss_source_id = ?
-			   AND (last_rss_date IS NULL OR last_rss_date < ?)
-		`, lastRss.UTC(),
-			r.SourceID,
-			lastRss.UTC())
-
-		_, err = dbutl.ExecTx(tx, pq)
-		if err != nil {
-			return err
-		}
 	}
+	lastRSS.Unlock()
 
 	return err
 }

@@ -31,6 +31,7 @@ var (
 	mutex       sync.RWMutex
 	errFound    = false
 	newRssItems = 0
+	lastRSS     = LastRssItems{}
 )
 
 func init() {
@@ -77,12 +78,12 @@ func main() {
 	}
 
 	for _, rss := range config.Rss {
-		lastRSS, err := getLastRSS(rss.SourceName)
+		lastRSSDate, err := getLastRSS(rss.SourceName)
 		if err != nil {
 			audit.Log(err, "gather rss", "Import failed.")
 			return
 		}
-		rss.LastRSS = lastRSS
+		rss.LastRSSDate = lastRSSDate
 
 		if len(rss.Link) > 0 {
 			queue <- rss
@@ -90,10 +91,10 @@ func main() {
 
 		for _, lnk := range rss.Links {
 			rss1 := rssSource{
-				SourceName: rss.SourceName,
-				Lang:       rss.Lang,
-				Link:       lnk,
-				LastRSS:    rss.LastRSS,
+				SourceName:  rss.SourceName,
+				Lang:        rss.Lang,
+				Link:        lnk,
+				LastRSSDate: rss.LastRSSDate,
 			}
 			queue <- rss1
 		}
@@ -108,24 +109,29 @@ func main() {
 	// wait for all rss to be done
 	wg.Wait()
 
-	mutex.Lock()
-
-	if errFound {
-		err = errors.New("errors found while gathering rss")
-		if config.CountNewRssItems {
-			audit.Log(err, "gather rss", "Import failed.", "new_rss_items", newRssItems)
-		} else {
-			audit.Log(err, "gather rss", "Import failed.")
-		}
+	err = lastRSS.SavelastDates()
+	if err != nil {
+		audit.Log(err, "gather rss", "Import failed.")
 	} else {
-		if config.CountNewRssItems {
-			audit.Log(nil, "gather rss", "Import done.", "new_rss_items", newRssItems)
-		} else {
-			audit.Log(nil, "gather rss", "Import done.")
-		}
-	}
+		mutex.Lock()
 
-	mutex.Unlock()
+		if errFound {
+			err = errors.New("errors found while gathering rss")
+			if config.CountNewRssItems {
+				audit.Log(err, "gather rss", "Import failed.", "new_rss_items", newRssItems)
+			} else {
+				audit.Log(err, "gather rss", "Import failed.")
+			}
+		} else {
+			if config.CountNewRssItems {
+				audit.Log(nil, "gather rss", "Import done.", "new_rss_items", newRssItems)
+			} else {
+				audit.Log(nil, "gather rss", "Import done.")
+			}
+		}
+
+		mutex.Unlock()
+	}
 
 	// wait for all logs to be written
 	wg.Wait()
@@ -199,7 +205,6 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 	var feed RssFeed
 	feed.Source = rss.SourceName
 	feed.Language = rss.Lang
-	feed.LastRssDate = rss.LastRSS
 
 	for {
 		t, _ := decoder.Token()

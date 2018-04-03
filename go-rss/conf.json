@@ -106,6 +106,23 @@
             "SourceName": "romanialibera.ro",
             "Lang":"RO",
             "Link": "http://romanialibera.ro/rss"
+        },
+        {
+            "SourceName": "Profit.ro",
+            "Lang": "RO",
+            "Link": "https://www.profit.ro/rss"
+        },
+        {
+            "SourceName": "BBC",
+            "Lang":"EN",
+            "Links": [
+                "http://feeds.bbci.co.uk/news/world/rss.xml",
+                "http://feeds.bbci.co.uk/news/business/rss.xml",
+                "http://feeds.bbci.co.uk/news/politics/rss.xml",
+                "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+                "http://feeds.bbci.co.uk/news/technology/rss.xml",
+                "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml"
+            ]
         }
     ]
 }
