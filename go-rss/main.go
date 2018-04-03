@@ -264,6 +264,8 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 				decoder.DecodeElement(&feed.Description, &se)
 			case "language":
 				decoder.DecodeElement(&feed.Language, &se)
+			case "link":
+				decoder.DecodeElement(&feed.Link, &se)
 			case "pubDate":
 				decoder.DecodeElement(&feed.Date, &se)
 			case "lastBuildDate":
