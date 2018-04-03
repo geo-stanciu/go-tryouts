@@ -173,8 +173,8 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		}
 
 		lastRSS.Lock()
-		if !lastRSS.RssExists(r.SourceID) {
-			s := new(SourceLastRSS)
+		if s := lastRSS.GetRSS(r.SourceID); s == nil {
+			s = new(SourceLastRSS)
 			s.SourceID = r.SourceID
 			s.LastRssDate = epochStart
 			lastRSS.AddRSS(s)
@@ -186,8 +186,8 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		newSourceLock.Unlock()
 
 		lastRSS.Lock()
-		if !lastRSS.RssExists(r.SourceID) {
-			s := new(SourceLastRSS)
+		if s := lastRSS.GetRSS(r.SourceID); s == nil {
+			s = new(SourceLastRSS)
 			s.SourceID = r.SourceID
 
 			pq = dbutl.PQuery(`
@@ -302,13 +302,11 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		}
 
 		lastRSS.Lock()
-		if lastRSS.RssExists(r.SourceID) {
-			s := lastRSS.GetRSS(r.SourceID)
+		if s := lastRSS.GetRSS(r.SourceID); s != nil {
 			if !lastDate.After(s.LastRssDate) {
 				lastRSS.Unlock()
 				return nil
 			}
-
 		}
 		lastRSS.Unlock()
 	}
@@ -326,13 +324,11 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		}
 
 		lastRSS.Lock()
-		if lastRSS.RssExists(r.SourceID) {
-			s := lastRSS.GetRSS(r.SourceID)
+		if s := lastRSS.GetRSS(r.SourceID); s != nil {
 			if !rss.RssDate.After(s.LastRssDate) {
 				lastRSS.Unlock()
 				continue
 			}
-
 		}
 		lastRSS.Unlock()
 
@@ -404,6 +400,12 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			mutex.Lock()
 			newRssItems++
 			mutex.Unlock()
+
+			lastRSS.Lock()
+			if s := lastRSS.GetRSS(r.SourceID); s != nil {
+				s.NewRssItems++
+			}
+			lastRSS.Unlock()
 		}
 
 		if lastRssDate.Before(rss.RssDate) {
@@ -412,10 +414,8 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 	}
 
 	lastRSS.Lock()
-	if lastRSS.RssExists(r.SourceID) {
-		s := lastRSS.GetRSS(r.SourceID)
+	if s := lastRSS.GetRSS(r.SourceID); s != nil {
 		s.RssDate = append(s.RssDate, lastRssDate)
-
 	}
 	lastRSS.Unlock()
 

@@ -156,12 +156,20 @@ func dealWithRSS(wg *sync.WaitGroup) {
 			mutex.Unlock()
 		}
 
+		newRss := 0
+		lastRSS.Lock()
+		if s, err := lastRSS.GetRSSBySource(rss.SourceName); s != nil && err == nil {
+			newRss = s.NewRssItems
+		}
+		lastRSS.Unlock()
+
 		audit.Log(err,
 			"get rss",
 			"save rss",
 			"lang", rss.Lang,
 			"source", rss.SourceName,
-			"link", rss.Link)
+			"link", rss.Link,
+			"new_rss_items", newRss)
 
 		time.Sleep(10 * time.Millisecond)
 

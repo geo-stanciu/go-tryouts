@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -11,6 +13,7 @@ type SourceLastRSS struct {
 	SourceID    int       `sql:"rss_source_id"`
 	LastRssDate time.Time `sql:"last_rss_date"`
 	RssDate     []time.Time
+	NewRssItems int
 }
 
 // LastRssItems - Last Rss dates
@@ -19,8 +22,8 @@ type LastRssItems struct {
 	RSS []*SourceLastRSS
 }
 
-// RssExists - Check if Rss exists in list
-func (r *LastRssItems) RssExists(sourceID int) bool {
+// rssExists - Check if Rss exists in list
+func (r *LastRssItems) rssExists(sourceID int) bool {
 	for _, elem := range r.RSS {
 		if elem.SourceID == sourceID {
 			return true
@@ -32,7 +35,7 @@ func (r *LastRssItems) RssExists(sourceID int) bool {
 
 // AddRSS - Add RSS elem
 func (r *LastRssItems) AddRSS(s *SourceLastRSS) error {
-	if r.RssExists(s.SourceID) {
+	if r.rssExists(s.SourceID) {
 		return fmt.Errorf("element already exists")
 	}
 
@@ -50,6 +53,32 @@ func (r *LastRssItems) GetRSS(sourceID int) *SourceLastRSS {
 	}
 
 	return nil
+}
+
+// GetRSSBySource - Get RSS elem by source name
+func (r *LastRssItems) GetRSSBySource(sourceName string) (*SourceLastRSS, error) {
+	var sourceID int
+	pq := dbutl.PQuery(`
+		SELECT rss_source_id
+		  FROM rss_source
+		 WHERE lowered_source_name = ?
+	`, strings.ToLower(sourceName))
+
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(&sourceID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	for _, elem := range r.RSS {
+		if elem.SourceID == sourceID {
+			return elem, nil
+		}
+	}
+
+	return nil, nil
 }
 
 // SavelastDates - Save last RSS Dates
