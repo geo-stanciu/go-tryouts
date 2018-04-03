@@ -13,6 +13,8 @@ type rssSource struct {
 	Links       []string `json:"Links"`
 	LastRSSDate time.Time
 	Done        bool
+	SrcLastRss  *SourceLastRSS
+	RssLnk      *RssLink
 }
 
 type rssSources struct {

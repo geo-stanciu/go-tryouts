@@ -1,19 +1,37 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 )
 
+// RssLink - statistics for each rss link
+type RssLink struct {
+	Link        string
+	RssDate     time.Time
+	NewRssItems int
+}
+
 // SourceLastRSS - LastRSS for source
 type SourceLastRSS struct {
-	SourceID    int       `sql:"rss_source_id"`
-	LastRssDate time.Time `sql:"last_rss_date"`
-	RssDate     []time.Time
-	NewRssItems int
+	sync.RWMutex
+	SourceID          int `sql:"rss_source_id"`
+	LoweredSourceName string
+	LastRssDate       time.Time `sql:"last_rss_date"`
+	Links             []*RssLink
+}
+
+// GetLink - Get Rss link statistics by link
+func (s *SourceLastRSS) GetLink(lnk string) *RssLink {
+	for _, elem := range s.Links {
+		if elem.Link == lnk {
+			return elem
+		}
+	}
+
+	return nil
 }
 
 // LastRssItems - Last Rss dates
@@ -57,23 +75,10 @@ func (r *LastRssItems) GetRSS(sourceID int) *SourceLastRSS {
 
 // GetRSSBySource - Get RSS elem by source name
 func (r *LastRssItems) GetRSSBySource(sourceName string) (*SourceLastRSS, error) {
-	var sourceID int
-	pq := dbutl.PQuery(`
-		SELECT rss_source_id
-		  FROM rss_source
-		 WHERE lowered_source_name = ?
-	`, strings.ToLower(sourceName))
-
-	err := db.QueryRow(pq.Query, pq.Args...).Scan(&sourceID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
-	}
+	loweredSrcName := strings.ToLower(sourceName)
 
 	for _, elem := range r.RSS {
-		if elem.SourceID == sourceID {
+		if elem.LoweredSourceName == loweredSrcName {
 			return elem, nil
 		}
 	}
@@ -93,9 +98,9 @@ func (r *LastRssItems) SavelastDates() error {
 		// for rss's that have multiple links, I get the min last rss
 		var minLastRSS time.Time
 
-		for _, dt := range elem.RssDate {
-			if minLastRSS.IsZero() || minLastRSS.After(dt) {
-				minLastRSS = dt
+		for _, lnk := range elem.Links {
+			if minLastRSS.IsZero() || minLastRSS.After(lnk.RssDate) {
+				minLastRSS = lnk.RssDate
 			}
 		}
 

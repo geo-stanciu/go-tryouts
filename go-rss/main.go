@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -148,7 +149,40 @@ func dealWithRSS(wg *sync.WaitGroup) {
 
 		wg.Add(1)
 
-		err := getStreamFromURL(&rss, parseXMLSource)
+		var err error
+
+		lastRSS.Lock()
+		rss.SrcLastRss, err = lastRSS.GetRSSBySource(rss.SourceName)
+		if err != nil {
+			audit.Log(err,
+				"get rss",
+				"save rss",
+				"lang", rss.Lang,
+				"source", rss.SourceName,
+				"link", rss.Link,
+				"new_rss_items", 0)
+
+			wg.Done()
+			continue
+		}
+
+		if rss.SrcLastRss == nil {
+			epochStart, _ := utils.String2date("1970-01-01", utils.UTCDate)
+			rss.SrcLastRss = new(SourceLastRSS)
+			rss.SrcLastRss.SourceID = -1
+			rss.SrcLastRss.LoweredSourceName = strings.ToLower(rss.SourceName)
+			rss.SrcLastRss.LastRssDate = epochStart
+			lastRSS.AddRSS(rss.SrcLastRss)
+		}
+
+		if rss.RssLnk = rss.SrcLastRss.GetLink(rss.Link); rss.RssLnk == nil {
+			rss.RssLnk = new(RssLink)
+			rss.RssLnk.Link = rss.Link
+			rss.SrcLastRss.Links = append(rss.SrcLastRss.Links, rss.RssLnk)
+		}
+		lastRSS.Unlock()
+
+		err = getStreamFromURL(&rss, parseXMLSource)
 
 		if err != nil {
 			mutex.Lock()
@@ -157,11 +191,9 @@ func dealWithRSS(wg *sync.WaitGroup) {
 		}
 
 		newRss := 0
-		lastRSS.Lock()
-		if s, err := lastRSS.GetRSSBySource(rss.SourceName); s != nil && err == nil {
-			newRss = s.NewRssItems
-		}
-		lastRSS.Unlock()
+		rss.SrcLastRss.Lock()
+		newRss = rss.RssLnk.NewRssItems
+		rss.SrcLastRss.Unlock()
 
 		audit.Log(err,
 			"get rss",
@@ -213,6 +245,9 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 	var feed RssFeed
 	feed.Source = rss.SourceName
 	feed.Language = rss.Lang
+	feed.Link = rss.Link
+	feed.SrcLastRss = rss.SrcLastRss
+	feed.SrcRssLink = rss.RssLnk
 
 	for {
 		t, _ := decoder.Token()
@@ -227,8 +262,6 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 				decoder.DecodeElement(&feed.Title, &se)
 			case "description":
 				decoder.DecodeElement(&feed.Description, &se)
-			case "link":
-				decoder.DecodeElement(&feed.Link, &se)
 			case "language":
 				decoder.DecodeElement(&feed.Language, &se)
 			case "pubDate":
