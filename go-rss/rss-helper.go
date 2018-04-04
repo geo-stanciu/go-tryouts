@@ -95,6 +95,8 @@ func (r *RssFeed) getID(tx *sql.Tx) error {
 		return err
 	}
 
+	r.SrcLastRss.SourceID = r.SourceID
+
 	return nil
 }
 

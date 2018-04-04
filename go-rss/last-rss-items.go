@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/geo-stanciu/go-utils/utils"
 )
 
 // RssLink - statistics for each rss link
@@ -53,7 +55,7 @@ func (r *LastRssItems) rssExists(sourceID int) bool {
 
 // AddRSS - Add RSS elem
 func (r *LastRssItems) AddRSS(s *SourceLastRSS) error {
-	if r.rssExists(s.SourceID) {
+	if s.SourceID > 0 && r.rssExists(s.SourceID) {
 		return fmt.Errorf("element already exists")
 	}
 
@@ -97,9 +99,13 @@ func (r *LastRssItems) SavelastDates() error {
 	for _, elem := range r.RSS {
 		// for rss's that have multiple links, I get the min last rss
 		var minLastRSS time.Time
+		epochStart, _ := utils.String2date("1970-01-01", utils.UTCDate)
 
 		for _, lnk := range elem.Links {
-			if minLastRSS.IsZero() || minLastRSS.After(lnk.RssDate) {
+			if minLastRSS.IsZero() ||
+				minLastRSS.Equal(epochStart) ||
+				(lnk.RssDate.After(epochStart) && minLastRSS.After(lnk.RssDate)) {
+
 				minLastRSS = lnk.RssDate
 			}
 		}
