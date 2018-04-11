@@ -123,6 +123,11 @@
                 "http://feeds.bbci.co.uk/news/technology/rss.xml",
                 "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml"
             ]
+        },
+		{
+            "SourceName": "depesz.com",
+            "Lang":"EN",
+            "Link": "https://www.depesz.com/feed/"
         }
     ]
 }

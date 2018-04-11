@@ -20,7 +20,7 @@ create table if not exists exchange_rate (
 
 create index if not exists idx_exchange_rate_curr_id on exchange_rate (currency_id);
 create index if not exists idx_exchange_rate_refcurr_id on exchange_rate (reference_currency_id);
-create index idx_exchange_rate_date on exchange_rate (exchange_date);
+create index if not exists idx_exchange_rate_date on exchange_rate (exchange_date);
 
 create table if not exists audit_log (
     audit_log_id   bigserial primary key,
@@ -30,5 +30,5 @@ create table if not exists audit_log (
     log_msg        jsonb     not null
 );
 
-create index idx_time_audit_log on audit_log (log_time);
-CREATE INDEX idx_log_source_audit_log ON audit_log (source);
+create index if not exists idx_time_audit_log on audit_log (log_time);
+create index if not exists idx_log_source_audit_log ON audit_log (source);
