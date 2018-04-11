@@ -128,6 +128,15 @@
             "SourceName": "depesz.com",
             "Lang":"EN",
             "Link": "https://www.depesz.com/feed/"
+        },
+		{
+            "SourceName": "PostgreSQL",
+            "Lang":"EN",
+            "Links": [
+                "https://www.postgresql.org/news.rss",
+                "https://www.postgresql.org/events.rss",
+                "https://planet.postgresql.org/rss20.xml"
+            ]
         }
     ]
 }
