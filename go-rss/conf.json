@@ -68,12 +68,18 @@
         {
             "SourceName": "stirileprotv.ro",
             "Lang":"RO",
-            "Link": "http://incont.stirileprotv.ro/rss"
+			"Links": [
+                "https://rss.stirileprotv.ro/",
+				"http://incont.stirileprotv.ro/rss"
+            ]
         },
         {
             "SourceName": "HotNews.ro",
             "Lang":"RO",
-            "Link": "https://www.hotnews.ro/rss"
+			"Links": [
+                "https://www.hotnews.ro/rss",
+				"https://www.hotnews.ro/rss/actualitate"
+            ]
         },
         {
             "SourceName": "HotNews.ro - EN",
