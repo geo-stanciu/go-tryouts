@@ -9,22 +9,26 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"sort"
 	"time"
 )
 
-type Configuration struct {
-	DumpDir string `json:"DumpDir"`
-	DbName  string `json:"DbName"`
+type configuration struct {
+	DumpDir    string `json:"DumpDir"`
+	Files2Keep int    `json:"Files2Keep"`
+	DbName     string `json:"DbName"`
 }
 
 var (
-	config = Configuration{}
+	config = configuration{}
+	layout = "20060102"
 )
 
 func main() {
 	var err error
 	t := time.Now().UTC()
-	sData := t.Format("20060102")
+	sData := t.Format(layout)
 
 	logFile, err := os.OpenFile(fmt.Sprintf("logs/backup_%s.txt", sData), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
@@ -67,7 +71,7 @@ func main() {
 
 	/*
 		Restore with
-		pg_restore -Fc -C save_devel_yyyymmdd.bak
+		pg_restore -d devel -U postgres -Fc -C save_devel_yyyymmdd.bak
 	*/
 
 	var outb, errb bytes.Buffer
@@ -91,10 +95,77 @@ func main() {
 	log.Println(outb.String())
 	log.Println("Error:", errb.String())
 
+	directory := getAbsPath(config.DumpDir)
+
+	log.Printf("Cleaning old files from \"%s\"\n", directory)
+	log.Printf("Will keep the last %d files.", config.Files2Keep)
+
+	err = cleanDir(directory, "save_devel_*.bak")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	log.Printf("end dump backup")
 }
 
-func (c *Configuration) readFromFile(cfgFile string) error {
+func getAbsPath(dir string) string {
+	directory := dir
+
+	if len(directory) == 0 {
+		directory = "./"
+	}
+
+	directory, err := filepath.Abs(directory)
+	if err != nil {
+		log.Fatal(err)
+		return "./"
+	}
+
+	if directory[len(directory)-1:] == "/" || directory[len(directory)-1:] == "\\" {
+		directory = directory[0 : len(directory)-1]
+	}
+
+	return directory
+}
+
+func cleanDir(directory, pattern string) error {
+	files, err := filepath.Glob(directory + "/" + pattern)
+	if err != nil {
+		return err
+	}
+
+	sort.Slice(files, func(i, j int) bool {
+		a := files[i]
+		b := files[j]
+
+		if len(a) >= 12 && len(b) >= 12 {
+			sda := a[len(a)-12 : len(a)-4]
+			sdb := b[len(b)-12 : len(b)-4]
+
+			da, _ := time.Parse(layout, sda)
+			db, _ := time.Parse(layout, sdb)
+
+			return da.After(db)
+		}
+
+		return files[i] < files[j]
+	})
+
+	for i, f := range files {
+		if i > config.Files2Keep-1 {
+			log.Printf("deleting \"%s\"...\n", f)
+			err = os.Remove(f)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *configuration) readFromFile(cfgFile string) error {
 	if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
 		return err
 	}
