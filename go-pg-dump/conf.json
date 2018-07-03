@@ -1,4 +1,5 @@
 {
     "DumpDir": "d:/backup/postgres",
+    "Files2Keep": 5,
     "DbName": "devel"
 }
