@@ -97,13 +97,15 @@ func main() {
 
 	directory := getAbsPath(config.DumpDir)
 
-	log.Printf("Cleaning old files from \"%s\"\n", directory)
-	log.Printf("Will keep the last %d files.", config.Files2Keep)
+	if config.Files2Keep > 0 {
+		log.Printf("Cleaning old files from \"%s\"\n", directory)
+		log.Printf("Will keep the last %d files.", config.Files2Keep)
 
-	err = cleanDir(directory, "save_devel_*.bak")
-	if err != nil {
-		log.Fatal(err)
-		return
+		err = cleanDir(directory, "save_devel_*.bak")
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
 	}
 
 	log.Printf("end dump backup")
