@@ -71,7 +71,7 @@ func main() {
 
 	/*
 		Restore with
-		pg_restore -d devel -U postgres -Fc -C save_devel_yyyymmdd.bak
+		pg_restore -d devel -U postgres -v -e save_devel_yyyymmdd.bak
 	*/
 
 	var outb, errb bytes.Buffer
