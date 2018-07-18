@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -167,11 +166,8 @@ func dealWithRSS(wg *sync.WaitGroup) {
 		}
 
 		if rss.SrcLastRss == nil {
-			epochStart, _ := utils.String2date("1970-01-01", utils.UTCDate)
 			rss.SrcLastRss = new(SourceLastRSS)
-			rss.SrcLastRss.SourceID = -1
-			rss.SrcLastRss.LoweredSourceName = strings.ToLower(rss.SourceName)
-			rss.SrcLastRss.LastRssDate = epochStart
+			rss.SrcLastRss.Initialize(rss.SourceName)
 			lastRSS.AddRSS(rss.SrcLastRss)
 		}
 

@@ -148,6 +148,114 @@
             "SourceName": "Capital.ro",
             "Lang": "RO",
             "Link": "http://www.capital.ro/rss/"
+        },
+        {
+            "SourceName": "NASDAQ",
+            "Lang":"EN",
+            "Links": [
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Basics",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=International",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Stocks",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Business",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Economy",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Technology",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=US+Markets"
+            ]
+        },
+        {
+            "SourceName": "MarketWatch",
+            "Lang":"EN",
+            "Links": [
+                "http://www.marketwatch.com/rss/topstories",
+                "http://www.marketwatch.com/rss/realtimeheadlines",
+                "http://www.marketwatch.com/rss/marketpulse",
+                "http://feeds.marketwatch.com/marketwatch/bulletins",
+                "http://www.marketwatch.com/rss/pf",
+                "http://www.marketwatch.com/rss/StockstoWatch",
+                "http://www.marketwatch.com/rss/internet",
+                "http://www.marketwatch.com/rss/mutualfunds",
+                "http://www.marketwatch.com/rss/software",
+                "http://www.marketwatch.com/rss/financial",
+                "http://feeds.marketwatch.com/marketwatch/banking/",
+                "http://www.marketwatch.com/rss/commentary",
+                "http://www.marketwatch.com/rss/newslettersandresearch",
+                "http://www.marketwatch.com/rss/Autoreviews"
+            ]
+        },
+        {
+            "SourceName": "SeekingAlpha",
+            "Lang": "EN",
+            "Link": "http://seekingalpha.com/feed.xml"
+        },
+        {
+            "SourceName": "Investing.com",
+            "Lang": "EN",
+            "Link": "https://www.investing.com/rss/news_25.rss"
+        },
+        {
+            "SourceName": "CNNMoney.com",
+            "Lang": "EN",
+            "Link": "http://rss.cnn.com/rss/money_markets.rss"
+        },
+        {
+            "SourceName": "WallStreetSurvivor.com",
+            "Lang": "EN",
+            "Link": "http://blog.wallstreetsurvivor.com/feed"
+        },
+        {
+            "SourceName": "StocksToTrade.com",
+            "Lang": "EN",
+            "Link": "http://stockstotrade.com/blog/feed"
+        },
+        {
+            "SourceName": "MebFaber.com",
+            "Lang": "EN",
+            "Link": "http://mebfaber.com/feed"
+        },
+        {
+            "SourceName": "Barrons.com",
+            "Lang": "EN",
+            "Link": "http://blogs.barrons.com/stockstowatchtoday/feed/"
+        },
+        {
+            "SourceName": "PhilStockWorld.com",
+            "Lang": "EN",
+            "Link": "http://welcome.philstockworld.com/feed"
+        },
+        {
+            "SourceName": "RedditStocks",
+            "Lang": "EN",
+            "Link": "https://www.reddit.com/r/stocks/.rss"
+        },
+        {
+            "SourceName": "NinjaTRader",
+            "Lang": "EN",
+            "Link": "http://ninjatrader.com/blog/feed"
+        },
+        {
+            "SourceName": "MotleyFool",
+            "Lang": "EN",
+            "Link": "http://www.fool.ca/feed/"
+        },
+        {
+            "SourceName": "AussieStockForums",
+            "Lang": "EN",
+            "Link": "http://www.aussiestockforums.com/forums/-/index.rss"
+        },
+        {
+            "SourceName": "MQL5",
+            "Lang": "EN",
+            "Link": "https://www.mql5.com/en/blogs/rss"
+        },
+        {
+            "SourceName": "TradingSim.com",
+            "Lang": "EN",
+            "Link": "https://tradingsim.com/feed"
+        },
+        {
+            "SourceName": "StockGumShoe.com",
+            "Lang": "EN",
+            "Link": "http://www.stockgumshoe.com/feed"
         }
     ]
 }

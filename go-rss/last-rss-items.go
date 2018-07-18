@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strings"
 	"sync"
@@ -23,6 +24,16 @@ type SourceLastRSS struct {
 	LoweredSourceName string
 	LastRssDate       time.Time `sql:"last_rss_date"`
 	Links             []*RssLink
+	rssHash           map[string]bool
+}
+
+// Initialize - Initialize
+func (s *SourceLastRSS) Initialize(sourceName string) {
+	epochStart, _ := utils.String2date("1970-01-01", utils.UTCDate)
+	s.SourceID = -1
+	s.LoweredSourceName = strings.ToLower(sourceName)
+	s.LastRssDate = epochStart
+	s.rssHash = make(map[string]bool)
 }
 
 // GetLink - Get Rss link statistics by link
@@ -34,6 +45,24 @@ func (s *SourceLastRSS) GetLink(lnk string) *RssLink {
 	}
 
 	return nil
+}
+
+// RssExists - check if the hash of title##link was already added in current session
+func (s *SourceLastRSS) RssExists(title string, lnk string) bool {
+	key := fmt.Sprintf("%s##%s", title, lnk)
+
+	h := sha256.New()
+	h.Write([]byte(key))
+
+	hash := fmt.Sprintf("%x", h.Sum(nil))
+
+	if _, ok := s.rssHash[hash]; ok {
+		return true
+	}
+
+	s.rssHash[hash] = true
+
+	return false
 }
 
 // LastRssItems - Last Rss dates

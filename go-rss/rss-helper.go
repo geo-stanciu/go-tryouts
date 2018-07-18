@@ -312,7 +312,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		}
 
 		r.SrcLastRss.Lock()
-		if !rss.RssDate.After(r.SrcLastRss.LastRssDate) {
+		if !rss.RssDate.After(r.SrcLastRss.LastRssDate) || r.SrcLastRss.RssExists(rss.Title, rss.Link) {
 			r.SrcLastRss.Unlock()
 			continue
 		}
