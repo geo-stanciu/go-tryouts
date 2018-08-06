@@ -2,7 +2,7 @@
     "DbType": "postgres",
     "DbURL1": "host=devel port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=RssGather --search_path=public --timezone=UTC --client_encoding=UTF8'",
     "DbURL": "host=devel port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=RssGather --search_path=public --client_encoding=UTF8'",
-    "RSSParalelReaders": 4,
+    "RSSParalelReaders": 8,
     "CountNewRssItems": true,
     "RSSSource": [
         {
@@ -223,11 +223,6 @@
             "Link": "http://welcome.philstockworld.com/feed"
         },
         {
-            "SourceName": "RedditStocks",
-            "Lang": "EN",
-            "Link": "https://www.reddit.com/r/stocks/.rss"
-        },
-        {
             "SourceName": "NinjaTRader",
             "Lang": "EN",
             "Link": "http://ninjatrader.com/blog/feed"
@@ -256,6 +251,126 @@
             "SourceName": "StockGumShoe.com",
             "Lang": "EN",
             "Link": "http://www.stockgumshoe.com/feed"
+        },
+        {
+            "SourceName": "cointelegraph.com",
+            "Lang": "EN",
+            "Link": "https://cointelegraph.com/rss"
+        },
+        {
+            "SourceName": "coindesk.com",
+            "Lang": "EN",
+            "Link": "https://www.coindesk.com/feed"
+        },
+        {
+            "SourceName": "cryptopotato.com",
+            "Lang": "EN",
+            "Link": "https://cryptopotato.com/feed"
+        },
+        {
+            "SourceName": "coinsutra.com",
+            "Lang": "EN",
+            "Link": "https://coinsutra.com/blog/feed"
+        },
+        {
+            "SourceName": "newsbtc.com",
+            "Lang": "EN",
+            "Link": "https://www.newsbtc.com/feed"
+        },
+        {
+            "SourceName": "cryptoninjas.net",
+            "Lang": "EN",
+            "Link": "https://www.cryptoninjas.net/feed"
+        },
+        {
+            "SourceName": "blog.coinspectator.com",
+            "Lang": "EN",
+            "Link": "https://blog.coinspectator.com/feed"
+        },
+        {
+            "SourceName": "bitcoinist.com",
+            "Lang": "EN",
+            "Link": "http://bitcoinist.com/feed"
+        },
+        {
+            "SourceName": "coinspeaker.com",
+            "Lang": "EN",
+            "Link": "https://www.coinspeaker.com/feed"
+        },
+        {
+            "SourceName": "bitcoinexchangeguide.com",
+            "Lang": "EN",
+            "Link": "https://bitcoinexchangeguide.com/feed"
+        },
+        {
+            "SourceName": "usethebitcoin.com",
+            "Lang": "EN",
+            "Link": "https://usethebitcoin.com/feed"
+        },
+        {
+            "SourceName": "bitcoinmagazine.com",
+            "Lang": "EN",
+            "Link": "https://bitcoinmagazine.com/feed"
+        },
+        {
+            "SourceName": "coinfunda.com",
+            "Lang": "EN",
+            "Link": "https://coinfunda.com/feed"
+        },
+        {
+            "SourceName": "forklog.net",
+            "Lang": "EN",
+            "Link": "http://forklog.net/feed"
+        },
+        {
+            "SourceName": "cryptonewsmonitor.com",
+            "Lang": "EN",
+            "Link": "https://cryptonewsmonitor.com/feed"
+        },
+        {
+            "SourceName": "news.bitcoin.com",
+            "Lang": "EN",
+            "Link": "https://news.bitcoin.com/feed"
+        },
+        {
+            "SourceName": "blog.cex.io",
+            "Lang": "EN",
+            "Link": "https://blog.cex.io/cryptonews/feed"
+        },
+        {
+            "SourceName": "changelly.com",
+            "Lang": "EN",
+            "Link": "https://changelly.com/blog/feed"
+        },
+        {
+            "SourceName": "99bitcoins.com",
+            "Lang": "EN",
+            "Link": "https://99bitcoins.com/feed"
+        },
+        {
+            "SourceName": "ccn.com",
+            "Lang": "EN",
+            "Link": "https://www.ccn.com/bitcoin-mining/feed"
+        },
+        {
+            "SourceName": "bitcoin.org",
+            "Lang": "EN",
+            "Link": "https://bitcoin.org/en/rss/blog.xml"
+        },
+        {
+            "SourceName": "blog.spectrocoin.com",
+            "Lang": "EN",
+            "Link": "https://blog.spectrocoin.com/en/feed"
+        },
+        {
+            "SourceName": "blog.spectrocoin.com",
+            "Lang": "EN",
+            "Link": "https://blog.spectrocoin.com/en/feed"
+        },
+        {
+            "SourceName": "cryptocurrencynews.com",
+            "Lang": "EN",
+            "Link": "https://cryptocurrencynews.com/feed/"
         }
     ]
 }
