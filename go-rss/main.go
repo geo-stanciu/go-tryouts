@@ -21,7 +21,7 @@ import (
 
 var (
 	appName     = "RssGather"
-	appVersion  = "0.0.3.0"
+	appVersion  = "0.0.4.0"
 	log         = logrus.New()
 	audit       = utils.AuditLog{}
 	db          *sql.DB
@@ -161,6 +161,7 @@ func dealWithRSS(wg *sync.WaitGroup) {
 				"link", rss.Link,
 				"new_rss_items", 0)
 
+			lastRSS.Unlock()
 			wg.Done()
 			continue
 		}
