@@ -256,6 +256,11 @@
             "SourceName": "StockGumShoe.com",
             "Lang": "EN",
             "Link": "http://www.stockgumshoe.com/feed"
+        },
+        {
+            "SourceName": "MariaDB.org",
+            "Lang": "EN",
+            "Link": "https://mariadb.org/feed"
         }
     ]
 }
