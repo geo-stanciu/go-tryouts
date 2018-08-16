@@ -4,7 +4,7 @@ create view v_rss as
 select
 	rs.source_name as source,
 	r.title,
-	r.rss_date at time zone 'UTC' local_time,
+	convert_tz(r.rss_date, 'UTC', 'Europe/Bucharest') local_time,
 	r.link,
 	r.description
 from

@@ -1,4 +1,4 @@
 {
     "DbType": "mysql",
-    "DbURL": "geo:geo@tcp(devel:3306)/devel?parseTime=true&sql_mode=%27ORACLE,TRADITIONAL%27"
+    "DbURL": "geo:geo@tcp(devel:3306)/devel?parseTime=true&collation=utf8mb4_unicode_ci&sql_mode=%27ORACLE,TRADITIONAL%27"
 }

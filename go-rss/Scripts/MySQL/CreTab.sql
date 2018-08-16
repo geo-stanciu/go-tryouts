@@ -1,16 +1,14 @@
-create or replace view dual as select 'X' AS dummy;
-
 create table if not exists rss_source (
-    rss_source_id       serial primary key not null,
-    source_name         text not null,
-    lowered_source_name text not null,
+    rss_source_id       int auto_increment primary key not null,
+    source_name         varchar(256) not null,
+    lowered_source_name varchar(256) not null,
     language            varchar(8) not null,
     copyright           text,
     source_link         text,
     title               text,
     description         text,
-    last_rss_date       timestamp not null DEFAULT '1970-01-01 00:00:00',
-    add_date            timestamp not null,
+    last_rss_date       datetime(3) not null DEFAULT '1970-01-01 00:00:00',
+    add_date            datetime(3) not null,
     generator           text,
     web_master          text,
     image_title         text,
@@ -22,15 +20,15 @@ create table if not exists rss_source (
 );
 
 create table if not exists rss (
-    rss_id             bigserial primary key not null,
+    rss_id             bigint auto_increment primary key not null,
     rss_source_id      int not null,
     title              text not null,
     link               text,
-    description        text,
+    description        mediumtext,
     item_guid          text,
     orig_link          text,
-    rss_date           timestamp not null,
-    add_date           timestamp not null,
+    rss_date           datetime(3) not null,
+    add_date           datetime(3) not null,
     keywords           text,
     category           text,
     subcategory        text,
@@ -49,14 +47,14 @@ create table if not exists rss (
 
 create index if not exists idx_rss_source_id on rss (rss_source_id);
 create index if not exists idx_rss_date on rss (rss_date);
-create index if not exists idx_rss_item on rss (title, link);
+create index if not exists idx_rss_item on rss (title(256), link(256));
 
 create table if not exists audit_log (
-    audit_log_id   bigserial primary key,
+    audit_log_id   bigint auto_increment primary key not null,
     source         varchar(64) not null,
-    source_version varchar(64) not null,
-    log_time       timestamp not null,
-    log_msg        jsonb     not null
+    source_version varchar(16) not null,
+    log_time       datetime(3) not null,
+    log_msg        JSON not null
 );
 
 create index if not exists idx_time_audit_log on audit_log (log_time);

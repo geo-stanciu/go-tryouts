@@ -139,20 +139,30 @@ func (r *LastRssItems) SavelastDates() error {
 			}
 		}
 
+		var pq *utils.PreparedQuery
+
 		if !minLastRSS.IsZero() {
-			pq := dbutl.PQuery(`
+			pq = dbutl.PQuery(`
 				UPDATE rss_source
-				SET last_rss_date = ?
-				WHERE rss_source_id = ?
-				AND (last_rss_date IS NULL OR last_rss_date < ?)
+				   SET last_rss_date = ?
+				 WHERE rss_source_id = ?
+				   AND (last_rss_date IS NULL OR last_rss_date < ?)
 			`, minLastRSS.UTC(),
 				elem.SourceID,
 				minLastRSS.UTC())
+		} else {
+			pq = dbutl.PQuery(`
+				UPDATE rss_source
+				   SET last_rss_date = ?
+				 WHERE rss_source_id = ?
+				   AND last_rss_date IS NULL
+			`, "1970-01-01 00:00:00",
+				elem.SourceID)
+		}
 
-			_, err = dbutl.ExecTx(tx, pq)
-			if err != nil {
-				return err
-			}
+		_, err = dbutl.ExecTx(tx, pq)
+		if err != nil {
+			return err
 		}
 	}
 

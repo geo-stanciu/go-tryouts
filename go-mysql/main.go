@@ -152,4 +152,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	/*
+		pq = dbutl.PQuery(`select dt from test1 order by 1`)
+
+		var lastRSS time.Timer
+		err = db.QueryRow(pq.Query, pq.Args...).Scan(&lastRSS)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(lastRSS)
+	*/
 }

@@ -1,0 +1,380 @@
+{
+    "DbType": "mysql",
+    "DbURL": "geo:geo@tcp(devel:3306)/devel?parseTime=true&collation=utf8mb4_unicode_ci&sql_mode=%27ORACLE,TRADITIONAL%27",
+    "RSSParalelReaders": 8,
+    "CountNewRssItems": true,
+    "RSSSource": [
+        {
+            "SourceName": "BVB News",
+            "Lang": "EN",
+            "Link": "http://www.bvb.ro/Rss/BSENews.ashx"
+        },
+        {
+            "SourceName": "BVB Stiri",
+            "Lang": "RO",
+            "Link": "http://www.bvb.ro/Rss/StiriBVB.ashx"
+        },
+        {
+            "SourceName": "BVB ATS News",
+            "Lang": "EN",
+            "Link": "http://www.bvb.ro/Rss/ATSNews.ashx"
+        },
+        {
+            "SourceName": "BVB Stiri ATS",
+            "Lang": "RO",
+            "Link": "http://www.bvb.ro/Rss/StiriATS.ashx"
+        },
+        {
+            "SourceName": "BVB Comunicate",
+            "Lang": "RO",
+            "Link": "http://www.bvb.ro/Rss/OperatiuniSiComunicateBVB.ashx"
+        },
+        {
+            "SourceName": "Mediafax",
+            "Lang": "RO",
+            "Link": "http://www.mediafax.ro/rss/"
+        },
+        {
+            "SourceName": "Mediafax Comunicate",
+            "Lang": "RO",
+            "Link": "http://comunicate.mediafax.biz/rss.aspx"
+        },
+        {
+            "SourceName": "HLTV",
+            "Lang":"EN",
+            "Link": "https://www.hltv.org/rss/news"
+        },
+        {
+            "SourceName": "Adevarul",
+            "Lang":"RO",
+            "Link": "http://adevarul.ro/ex/yrssv2"
+        },
+        {
+            "SourceName": "Digi24",
+            "Lang":"RO",
+            "Link": "https://www.digi24.ro/rss"
+        },
+        {
+            "SourceName": "Descopera.ro",
+            "Lang":"RO",
+            "Link": "http://feeds.feedburner.com/descopera/iIyY?format=xml"
+        },
+        {
+            "SourceName": "agerpres.ro",
+            "Lang":"RO",
+            "Link": "https://www.agerpres.ro/home.rss"
+        },
+        {
+            "SourceName": "stirileprotv.ro",
+            "Lang":"RO",
+            "Links": [
+                "https://rss.stirileprotv.ro/",
+                "http://incont.stirileprotv.ro/rss"
+            ]
+        },
+        {
+            "SourceName": "HotNews.ro",
+            "Lang":"RO",
+            "Links": [
+                "https://www.hotnews.ro/rss",
+                "https://www.hotnews.ro/rss/actualitate"
+            ]
+        },
+        {
+            "SourceName": "HotNews.ro - EN",
+            "Lang":"EN",
+            "Link": "https://www.hotnews.ro/rss/english"
+        },
+        {
+            "SourceName": "Reuters",
+            "Lang":"EN",
+            "Links": [
+                "http://feeds.reuters.com/reuters/businessNews",
+                "http://feeds.reuters.com/reuters/entertainment",
+                "http://feeds.reuters.com/reuters/PoliticsNews",
+                "http://feeds.reuters.com/reuters/scienceNews",
+                "http://feeds.reuters.com/reuters/sportsNews",
+                "http://feeds.reuters.com/reuters/topNews"
+            ]
+        },
+        {
+            "SourceName": "Money.ro",
+            "Lang":"RO",
+            "Link": "https://www.money.ro/feed/"
+        },
+        {
+            "SourceName": "zf.ro",
+            "Lang":"RO",
+            "Link": "http://www.zf.ro/rss"
+        },
+        {
+            "SourceName": "romanialibera.ro",
+            "Lang":"RO",
+            "Link": "http://romanialibera.ro/rss"
+        },
+        {
+            "SourceName": "Profit.ro",
+            "Lang": "RO",
+            "Link": "https://www.profit.ro/rss"
+        },
+        {
+            "SourceName": "BBC",
+            "Lang":"EN",
+            "Links": [
+                "http://feeds.bbci.co.uk/news/world/rss.xml",
+                "http://feeds.bbci.co.uk/news/business/rss.xml",
+                "http://feeds.bbci.co.uk/news/politics/rss.xml",
+                "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+                "http://feeds.bbci.co.uk/news/technology/rss.xml",
+                "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml"
+            ]
+        },
+        {
+            "SourceName": "depesz.com",
+            "Lang":"EN",
+            "Link": "https://www.depesz.com/feed/"
+        },
+        {
+            "SourceName": "PostgreSQL",
+            "Lang":"EN",
+            "Links": [
+                "https://www.postgresql.org/news.rss",
+                "https://www.postgresql.org/events.rss",
+                "https://planet.postgresql.org/rss20.xml"
+            ]
+        },
+        {
+            "SourceName": "Capital.ro",
+            "Lang": "RO",
+            "Link": "http://www.capital.ro/rss/"
+        },
+        {
+            "SourceName": "NASDAQ",
+            "Lang":"EN",
+            "Links": [
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Basics",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=International",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Stocks",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Business",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Economy",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=Technology",
+                "http://articlefeeds.nasdaq.com/nasdaq/categories?category=US+Markets"
+            ]
+        },
+        {
+            "SourceName": "MarketWatch",
+            "Lang":"EN",
+            "Links": [
+                "http://www.marketwatch.com/rss/topstories",
+                "http://www.marketwatch.com/rss/realtimeheadlines",
+                "http://www.marketwatch.com/rss/marketpulse",
+                "http://feeds.marketwatch.com/marketwatch/bulletins",
+                "http://www.marketwatch.com/rss/pf",
+                "http://www.marketwatch.com/rss/StockstoWatch",
+                "http://www.marketwatch.com/rss/internet",
+                "http://www.marketwatch.com/rss/mutualfunds",
+                "http://www.marketwatch.com/rss/software",
+                "http://www.marketwatch.com/rss/financial",
+                "http://feeds.marketwatch.com/marketwatch/banking/",
+                "http://www.marketwatch.com/rss/commentary",
+                "http://www.marketwatch.com/rss/newslettersandresearch",
+                "http://www.marketwatch.com/rss/Autoreviews"
+            ]
+        },
+        {
+            "SourceName": "SeekingAlpha",
+            "Lang": "EN",
+            "Link": "http://seekingalpha.com/feed.xml"
+        },
+        {
+            "SourceName": "Investing.com",
+            "Lang": "EN",
+            "Link": "https://www.investing.com/rss/news_25.rss"
+        },
+        {
+            "SourceName": "CNNMoney.com",
+            "Lang": "EN",
+            "Link": "http://rss.cnn.com/rss/money_markets.rss"
+        },
+        {
+            "SourceName": "WallStreetSurvivor.com",
+            "Lang": "EN",
+            "Link": "http://blog.wallstreetsurvivor.com/feed"
+        },
+        {
+            "SourceName": "StocksToTrade.com",
+            "Lang": "EN",
+            "Link": "http://stockstotrade.com/blog/feed"
+        },
+        {
+            "SourceName": "MebFaber.com",
+            "Lang": "EN",
+            "Link": "http://mebfaber.com/feed"
+        },
+        {
+            "SourceName": "Barrons.com",
+            "Lang": "EN",
+            "Link": "http://blogs.barrons.com/stockstowatchtoday/feed/"
+        },
+        {
+            "SourceName": "PhilStockWorld.com",
+            "Lang": "EN",
+            "Link": "http://welcome.philstockworld.com/feed"
+        },
+        {
+            "SourceName": "NinjaTRader",
+            "Lang": "EN",
+            "Link": "http://ninjatrader.com/blog/feed"
+        },
+        {
+            "SourceName": "MotleyFool",
+            "Lang": "EN",
+            "Link": "http://www.fool.ca/feed/"
+        },
+        {
+            "SourceName": "AussieStockForums",
+            "Lang": "EN",
+            "Link": "http://www.aussiestockforums.com/forums/-/index.rss"
+        },
+        {
+            "SourceName": "MQL5",
+            "Lang": "EN",
+            "Link": "https://www.mql5.com/en/blogs/rss"
+        },
+        {
+            "SourceName": "TradingSim.com",
+            "Lang": "EN",
+            "Link": "https://tradingsim.com/feed"
+        },
+        {
+            "SourceName": "StockGumShoe.com",
+            "Lang": "EN",
+            "Link": "http://www.stockgumshoe.com/feed"
+        },
+        {
+            "SourceName": "MariaDB.org",
+            "Lang": "EN",
+            "Link": "https://mariadb.org/feed"
+	},
+	{
+	    "SourceName": "cointelegraph.com",
+            "Lang": "EN",
+            "Link": "https://cointelegraph.com/rss"
+        },
+        {
+            "SourceName": "coindesk.com",
+            "Lang": "EN",
+            "Link": "https://www.coindesk.com/feed"
+        },
+        {
+            "SourceName": "cryptopotato.com",
+            "Lang": "EN",
+            "Link": "https://cryptopotato.com/feed"
+        },
+        {
+            "SourceName": "coinsutra.com",
+            "Lang": "EN",
+            "Link": "https://coinsutra.com/blog/feed"
+        },
+        {
+            "SourceName": "newsbtc.com",
+            "Lang": "EN",
+            "Link": "https://www.newsbtc.com/feed"
+        },
+        {
+            "SourceName": "cryptoninjas.net",
+            "Lang": "EN",
+            "Link": "https://www.cryptoninjas.net/feed"
+        },
+        {
+            "SourceName": "blog.coinspectator.com",
+            "Lang": "EN",
+            "Link": "https://blog.coinspectator.com/feed"
+        },
+        {
+            "SourceName": "bitcoinist.com",
+            "Lang": "EN",
+            "Link": "http://bitcoinist.com/feed"
+        },
+        {
+            "SourceName": "coinspeaker.com",
+            "Lang": "EN",
+            "Link": "https://www.coinspeaker.com/feed"
+        },
+        {
+            "SourceName": "bitcoinexchangeguide.com",
+            "Lang": "EN",
+            "Link": "https://bitcoinexchangeguide.com/feed"
+        },
+        {
+            "SourceName": "usethebitcoin.com",
+            "Lang": "EN",
+            "Link": "https://usethebitcoin.com/feed"
+        },
+        {
+            "SourceName": "bitcoinmagazine.com",
+            "Lang": "EN",
+            "Link": "https://bitcoinmagazine.com/feed"
+        },
+        {
+            "SourceName": "coinfunda.com",
+            "Lang": "EN",
+            "Link": "https://coinfunda.com/feed"
+        },
+        {
+            "SourceName": "forklog.net",
+            "Lang": "EN",
+            "Link": "http://forklog.net/feed"
+        },
+        {
+            "SourceName": "cryptonewsmonitor.com",
+            "Lang": "EN",
+            "Link": "https://cryptonewsmonitor.com/feed"
+        },
+        {
+            "SourceName": "news.bitcoin.com",
+            "Lang": "EN",
+            "Link": "https://news.bitcoin.com/feed"
+        },
+        {
+            "SourceName": "blog.cex.io",
+            "Lang": "EN",
+            "Link": "https://blog.cex.io/cryptonews/feed"
+        },
+        {
+            "SourceName": "changelly.com",
+            "Lang": "EN",
+            "Link": "https://changelly.com/blog/feed"
+        },
+        {
+            "SourceName": "99bitcoins.com",
+            "Lang": "EN",
+            "Link": "https://99bitcoins.com/feed"
+        },
+        {
+            "SourceName": "ccn.com",
+            "Lang": "EN",
+            "Link": "https://www.ccn.com/bitcoin-mining/feed"
+        },
+        {
+            "SourceName": "bitcoin.org",
+            "Lang": "EN",
+            "Link": "https://bitcoin.org/en/rss/blog.xml"
+        },
+        {
+            "SourceName": "blog.spectrocoin.com",
+            "Lang": "EN",
+            "Link": "https://blog.spectrocoin.com/en/feed"
+        },
+        {
+            "SourceName": "blog.spectrocoin.com",
+            "Lang": "EN",
+            "Link": "https://blog.spectrocoin.com/en/feed"
+        },
+        {
+            "SourceName": "cryptocurrencynews.com",
+            "Lang": "EN",
+            "Link": "https://cryptocurrencynews.com/feed/"
+        }
+    ]
+}

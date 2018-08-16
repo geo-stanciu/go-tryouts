@@ -1,1 +1,1 @@
-\i v_rss.sql;
+\ir v_rss.sql;

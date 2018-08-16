@@ -52,6 +52,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	cfgFile := "./conf.json"
+	//cfgFile := "./conf_MySQL.json"
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		log.Println(err)

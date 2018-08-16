@@ -83,6 +83,11 @@ type RssFeed struct {
 	Rss         []*RssItem
 }
 
+type rssLastDate struct {
+	SourceID int       `sql:"rss_source_id"`
+	LastDate time.Time `sql:"last_rss_date"`
+}
+
 func (r *RssFeed) getID(tx *sql.Tx) error {
 	pq := dbutl.PQuery(`
 		SELECT rss_source_id
@@ -185,20 +190,23 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			pq = dbutl.PQuery(`
 				SELECT CASE
 						WHEN last_rss_date IS NULL THEN
-						DATE ?
+						  TIMESTAMP ?
 						ELSE
-						last_rss_date
-						END last_rss_date
+						  last_rss_date
+						END last_rss_date,
+						rss_source_id
 				FROM rss_source
 				WHERE rss_source_id = ?
-			`, "1970-01-01",
+			`, "1970-01-01 00:00:00",
 				r.SourceID)
 
-			err := tx.QueryRow(pq.Query, pq.Args...).Scan(&r.SrcLastRss.LastRssDate)
+			lastDt := rssLastDate{}
+			err := dbutl.RunQueryTx(tx, pq, &lastDt)
 			if err != nil {
 				r.SrcLastRss.Unlock()
 				return err
 			}
+			r.SrcLastRss.LastRssDate = lastDt.LastDate
 		}
 		r.SrcLastRss.Unlock()
 
@@ -432,21 +440,23 @@ func (r *RssFeed) rssExists(tx *sql.Tx, title string, link string) (bool, error)
 
 func getLastRSS(source string) (time.Time, error) {
 	var err error
-	var lastRSS time.Time
 
 	pq := dbutl.PQuery(`
 		SELECT CASE
 			     WHEN last_rss_date IS NULL THEN
-				   DATE ?
+				   TIMESTAMP ?
 				 ELSE
 				   last_rss_date
-				END last_rss_date
-			  FROM rss_source
+				END last_rss_date,
+				rss_source_id
+		  FROM rss_source
 		 WHERE lowered_source_name = ?
-	`, "1970-01-01",
+	`, "1970-01-01 00:00:00",
 		strings.ToLower(source))
 
-	err = db.QueryRow(pq.Query, pq.Args...).Scan(&lastRSS)
+	lastDt := rssLastDate{}
+	err = dbutl.RunQuery(pq, &lastDt)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			epochStart, err := utils.String2date("1970-01-01", utils.UTCDate)
@@ -454,11 +464,11 @@ func getLastRSS(source string) (time.Time, error) {
 				return time.Now(), err
 			}
 
-			lastRSS = epochStart
+			lastDt.LastDate = epochStart
 		} else {
 			return time.Now(), err
 		}
 	}
 
-	return lastRSS.UTC(), nil
+	return lastDt.LastDate.UTC(), nil
 }
