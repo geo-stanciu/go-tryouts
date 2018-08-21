@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/xml"
 	"errors"
+	"flag"
 	"io"
 	"net/http"
 	"os"
@@ -51,8 +52,11 @@ func main() {
 	var err error
 	var wg sync.WaitGroup
 
-	cfgFile := "./conf.json"
-	//cfgFile := "./conf_MySQL.json"
+	cfgPtr := flag.String("c", "conf.json", "config file")
+
+	flag.Parse()
+
+	cfgFile := *cfgPtr
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		log.Println(err)

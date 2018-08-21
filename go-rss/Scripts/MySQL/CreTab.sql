@@ -32,7 +32,7 @@ create table if not exists rss (
     keywords           text,
     category           text,
     subcategory        text,
-    content            text,
+    content            mediumtext,
     tags               text,
     creator            text,
     enclosure_link     text,
