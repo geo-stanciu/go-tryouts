@@ -22,7 +22,7 @@ import (
 
 var (
 	appName     = "RssGather"
-	appVersion  = "0.0.4.0"
+	appVersion  = "0.0.5.0"
 	log         = logrus.New()
 	audit       = utils.AuditLog{}
 	db          *sql.DB
@@ -56,8 +56,13 @@ func main() {
 
 	flag.Parse()
 
-	cfgFile := *cfgPtr
-	err = config.ReadFromFile(cfgFile)
+	err = config.ReadFromFile(*cfgPtr)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	err = config.ReadFromFile("./rss.json")
 	if err != nil {
 		log.Println(err)
 		return
