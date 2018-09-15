@@ -20,8 +20,6 @@ create index if not exists idx_exchange_rate_curr_id on exchange_rate (currency_
 create index if not exists idx_exchange_rate_refcurr_id on exchange_rate (reference_currency_id);
 create index if not exists idx_exchange_rate_date on exchange_rate (exchange_date);
 
-create index idx_exchange_rate_date on exchange_rate (exchange_date);
-
 create table if not exists audit_log (
     audit_log_id   bigint auto_increment PRIMARY KEY,
     source         varchar(64) not null,

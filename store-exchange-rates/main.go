@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/xml"
+	"flag"
 	"io"
 	"net/http"
 	"os"
@@ -20,7 +21,7 @@ import (
 
 var (
 	appName    = "GoExchRates"
-	appVersion = "0.0.0.2"
+	appVersion = "0.0.1.0"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
@@ -56,8 +57,11 @@ func main() {
 	var err error
 	var wg sync.WaitGroup
 
-	cfgFile := "./conf.json"
-	err = config.ReadFromFile(cfgFile)
+	cfgPtr := flag.String("c", "conf.json", "config file")
+
+	flag.Parse()
+
+	err = config.ReadFromFile(*cfgPtr)
 	if err != nil {
 		log.Println(err)
 		return
@@ -83,12 +87,7 @@ func main() {
 		return
 	}
 
-	if len(os.Args) >= 2 {
-		err = getStreamFromFile(os.Args[1], parseXMLSource)
-	} else {
-		err = getStreamFromURL(config.RatesXMLUrl, parseXMLSource)
-	}
-
+	err = getStreamFromURL(config.RatesXMLUrl, parseXMLSource)
 	if err != nil {
 		log.Println(err)
 		return
@@ -134,6 +133,10 @@ func parseXMLSource(source io.Reader) error {
 		return err
 	}
 	defer tx.Rollback()
+
+	if err = dbutl.SetAsyncCommit(tx); err != nil {
+		return err
+	}
 
 	decoder := xml.NewDecoder(source)
 
@@ -204,6 +207,10 @@ func prepareCurrencies() error {
 		return err
 	}
 	defer tx.Rollback()
+
+	if err = dbutl.SetAsyncCommit(tx); err != nil {
+		return err
+	}
 
 	refCurrencyID, err := addCurrencyIfNotExists(tx, "RON")
 	if err != nil {

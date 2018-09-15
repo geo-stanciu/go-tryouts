@@ -125,6 +125,10 @@ func (r *LastRssItems) SavelastDates() error {
 	}
 	defer tx.Rollback()
 
+	if err = dbutl.SetAsyncCommit(tx); err != nil {
+		return err
+	}
+
 	for _, elem := range r.RSS {
 		// for rss's that have multiple links, I get the min last rss
 		var minLastRSS time.Time

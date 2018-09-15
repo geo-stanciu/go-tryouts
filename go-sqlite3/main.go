@@ -55,6 +55,7 @@ func main() {
 
 	t1 := test{}
 	pq := dbutl.PQuery("select current_timestamp date, sqlite_version() as version")
+
 	err = dbutl.RunQuery(pq, &t1)
 	if err != nil {
 		panic(err)
@@ -62,146 +63,93 @@ func main() {
 
 	fmt.Println("Date: ", t1.Date)
 	fmt.Println("Date - local: ", t1.Date.In(loc))
-	//fmt.Println(t1.Version)
+	fmt.Println(t1.Version)
 
-	/*sqlStmt := `
-		create table foo (id integer not null primary key, name text);
-		delete from foo;
+	err = dbutl.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
+		t2 := test{}
+		err = sc.Scan(dbutl, row, &t2)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("Date: ", t2.Date)
+		fmt.Println("Date - local:", t2.Date.In(loc))
+
+		return nil
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	query := `
+		create table if not exists test1 (
+			dt timestamp,
+			dtz timestamp with time zone,
+			d date,
+			d_null timestamp
+		)
 	`
-	_, err = db.Exec(sqlStmt)
+
+	_, err = db.Exec(query)
 	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
-		return
+		panic(err)
 	}
 
-	tx, err := db.Begin()
+	query = `
+	    select CASE WHEN EXISTS (
+			select 1 from test1
+		) THEN 1 ELSE 0 END
+	`
+
+	found := false
+	err = db.QueryRow(query).Scan(&found)
 	if err != nil {
-		log.Println(err)
-		return
+		panic(err)
 	}
 
-	stmt, err := tx.Prepare("insert into foo(id, name) values(?, ?)")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer stmt.Close()
+	if !found {
+		now := time.Now().UTC()
 
-	for i := 0; i < 100; i++ {
-		_, err = stmt.Exec(i, fmt.Sprintf("%03d", i))
+		pq = dbutl.PQuery(`
+			insert into test1 (
+				dt,
+				dtz,
+				d
+			)
+			values (?, ?, ?)
+		`, now, now, now, now)
+
+		_, err = dbutl.Exec(pq)
 		if err != nil {
-			log.Println(err)
-			return
+			panic(err)
 		}
 	}
 
-	tx.Commit()
+	pq = dbutl.PQuery(`select dt, dtz, d, d_null from test1 order by 1`)
 
-	rows, err := db.Query("select id, name from foo")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var id int
-		var name string
-		err = rows.Scan(&id, &name)
+	err = dbutl.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
+		t1 := test1{}
+		err = sc.Scan(dbutl, row, &t1)
 		if err != nil {
-			log.Println(err)
-			return
+			return err
 		}
 
-		fmt.Println(id, name)
-	}
+		fmt.Println("Dt:", t1.Dt)
+		fmt.Println("Dt - local:", t1.Dt.In(loc))
+		fmt.Println("Dtz:", t1.Dtz)
+		fmt.Println("D:", t1.D)
 
-	err = rows.Err()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	rows.Close()
-
-	stmt, err = db.Prepare("select name from foo where id = ?")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer stmt.Close()
-
-	var name string
-	err = stmt.QueryRow("3").Scan(&name)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	fmt.Println(name)
-
-	_, err = db.Exec("delete from foo")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	_, err = db.Exec("insert into foo(id, name) values(1, 'foo'), (2, 'bar'), (3, 'baz')")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	rows, err = db.Query("select id, name from foo")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var id int
-		var name string
-		err = rows.Scan(&id, &name)
-		if err != nil {
-			log.Println(err)
-			return
+		if t1.DNull.Valid {
+			fmt.Println("D NUll:", t1.DNull.Time)
+		} else {
+			fmt.Println("D NUll: null")
 		}
 
-		fmt.Println(id, name)
-	}
+		return nil
+	})
 
-	err = rows.Err()
 	if err != nil {
-		log.Println(err)
-		return
+		panic(err)
 	}
-
-	rows.Close()
-
-	rows, err = db.Query("select strftime('%Y-%m-%d %H:%M:%S', current_timestamp, 'localtime')")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var dt string
-		err = rows.Scan(&dt)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		fmt.Println(dt)
-	}
-
-	err = rows.Err()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	rows.Close()*/
 }
