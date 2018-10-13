@@ -16,6 +16,7 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	//_ "github.com/mattn/go-oci8"
 )
 
@@ -128,16 +129,6 @@ func getStreamFromFile(filename string, callback ParseSourceStream) error {
 }
 
 func parseXMLSource(source io.Reader) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if err = dbutl.SetAsyncCommit(tx); err != nil {
-		return err
-	}
-
 	decoder := xml.NewDecoder(source)
 
 	for {
@@ -152,12 +143,30 @@ func parseXMLSource(source io.Reader) error {
 				var cube Cube
 				decoder.DecodeElement(&cube, &se)
 
-				err := storeRates(tx, cube)
-				if err != nil {
+				if err := dealWithRates(&cube); err != nil {
 					return err
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+func dealWithRates(cube *Cube) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err = dbutl.SetAsyncCommit(tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = storeRates(tx, *cube); err != nil {
+		return err
 	}
 
 	tx.Commit()
@@ -176,6 +185,7 @@ func getCurrencyIfExists(tx *sql.Tx, currency string) (int32, error) {
 	if err != nil && err != sql.ErrNoRows {
 		return -1, err
 	}
+
 	return currencyID, nil
 }
 
