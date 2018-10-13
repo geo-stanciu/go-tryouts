@@ -10,10 +10,14 @@ import (
 	"time"
 )
 
+var (
+	layout = "20060102"
+)
+
 func main() {
 	var err error
 	t := time.Now().UTC()
-	sData := t.Format("20060102")
+	sData := t.Format(layout)
 
 	logFile, err := os.OpenFile(fmt.Sprintf("logs/vacuumlog_%s.txt", sData), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
@@ -55,7 +59,7 @@ func main() {
 	}
 
 	log.Println(outb.String())
-	log.Println("Error:", errb.String())
+	log.Println(errb.String())
 
 	log.Printf("*******************\nend vacuum\n")
 }
