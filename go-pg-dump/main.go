@@ -15,9 +15,10 @@ import (
 )
 
 type configuration struct {
-	DumpDir    string `json:"DumpDir"`
-	Files2Keep int    `json:"Files2Keep"`
-	DbName     string `json:"DbName"`
+	DumpDir    string   `json:"DumpDir"`
+	Files2Keep int      `json:"Files2Keep"`
+	User       string   `json:"User"`
+	DbNames    []string `json:"DbNames"`
 }
 
 var (
@@ -48,67 +49,70 @@ func main() {
 		return
 	}
 
-	dumpFile := path.Join(config.DumpDir, fmt.Sprintf("save_devel_%s.bak", sData))
+	for _, dbname := range config.DbNames {
+		dumpFile := path.Join(config.DumpDir, fmt.Sprintf("save_%s_%s.bak", dbname, sData))
 
-	log.Printf("start dump backup \"%s\"\n", dumpFile)
+		log.Printf("start dump backup \"%s\"\n", dumpFile)
 
-	/*
-		On Windows:
+		/*
+			On Windows:
 
-		 You must edit C:\Users\geo\AppData\Roaming\postgresql\pgpass.conf on Windows
-		 (1 row for each database !):
+			 You must edit C:\Users\geo\AppData\Roaming\postgresql\pgpass.conf on Windows
+			 (1 row for each database !):
 
-		 #hostname:port:database:username:password
+			 #hostname:port:database:username:password
 
-		 On Linux:
+			 On Linux:
 
-		 su - postgres      //this will land in the home directory set for postgres user
-		 vi .pgpass         //enter all users entries
-		 chmod 0600 .pgpass // change the ownership to 0600 to avoid errors
+			 su - postgres      //this will land in the home directory set for postgres user
+			 vi .pgpass         //enter all users entries
+			 chmod 0600 .pgpass // change the ownership to 0600 to avoid errors
 
-		 #hostname:port:database:username:password
-	*/
+			 #hostname:port:database:username:password
+		*/
 
-	/*
-		Restore with
-		pg_restore -d devel -U postgres -v -e save_devel_yyyymmdd.bak
-	*/
+		/*
+			Restore with
+			pg_restore -d devel -U postgres -v -e save_devel_yyyymmdd.bak
+		*/
 
-	var outb, errb bytes.Buffer
+		var outb, errb bytes.Buffer
 
-	cmd := exec.Command(
-		"pg_dump",
-		"-f", dumpFile,
-		"--clean",
-		"--format=c",
-		"-v",
-		config.DbName)
+		cmd := exec.Command(
+			"pg_dump",
+			"-f", dumpFile,
+			"--clean",
+			"--format=c",
+			"-U", config.User,
+			"-v",
+			dbname)
 
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
-	err = cmd.Run()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	log.Println(outb.String())
-	log.Println("Error:", errb.String())
-
-	directory := getAbsPath(config.DumpDir)
-
-	if config.Files2Keep > 0 {
-		log.Printf("Cleaning old files from \"%s\"\n", directory)
-		log.Printf("Will keep the last %d files.", config.Files2Keep)
-
-		err = cleanDir(directory, "save_devel_*.bak")
+		cmd.Stdout = &outb
+		cmd.Stderr = &errb
+		err = cmd.Run()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			return
+		}
+
+		log.Println(outb.String())
+		log.Println(errb.String())
+
+		directory := getAbsPath(config.DumpDir)
+
+		if config.Files2Keep > 0 {
+			log.Printf("\n\nCleaning old files from \"%s\"\n", directory)
+			log.Printf("Will keep the last %d files.", config.Files2Keep)
+
+			err = cleanDir(directory, fmt.Sprintf("save_%s_*.bak", dbname))
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
 		}
 	}
 
-	log.Printf("end dump backup")
+	log.Printf("\n\nend dump backup")
 }
 
 func getAbsPath(dir string) string {
