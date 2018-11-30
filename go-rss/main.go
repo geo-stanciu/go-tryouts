@@ -110,12 +110,6 @@ func main() {
 		}
 	}
 
-	done := rssSource{Done: true}
-	for i := 0; i < config.RSSParalelReaders; i++ {
-		wg.Add(1)
-		queue <- done
-	}
-
 	// wait for all rss to be done
 	wg.Wait()
 
@@ -145,14 +139,14 @@ func main() {
 
 	// wait for all logs to be written
 	wg.Wait()
+
+	close(queue)
 }
 
 func dealWithRSS(wg *sync.WaitGroup) {
 	for {
-		rss := <-queue
-
-		if rss.Done {
-			wg.Done()
+		rss, ok := <-queue
+		if !ok {
 			break
 		}
 
@@ -224,7 +218,7 @@ func getStreamFromURL(rss *rssSource, callback ParseSourceStream) error {
 		return err
 	}
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0")
 
 	response, err := client.Do(req)
 	if err != nil {
