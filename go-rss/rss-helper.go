@@ -78,8 +78,8 @@ type RssFeed struct {
 	WebMaster   string   `xml:"webMaster"`
 	Copyright   string   `xml:"copyright"`
 	Image       RssImage
-	SrcLastRss  *SourceLastRSS
-	SrcRssLink  *RssLink
+	Feed        *RSSFeed
+	FeedLink    *RssLink
 	Rss         []*RssItem
 }
 
@@ -100,7 +100,7 @@ func (r *RssFeed) getID(tx *sql.Tx) error {
 		return err
 	}
 
-	r.SrcLastRss.SourceID = r.SourceID
+	r.Feed.SourceID = r.SourceID
 
 	return nil
 }
@@ -185,8 +185,8 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 	} else {
 		newSourceLock.Unlock()
 
-		r.SrcLastRss.Lock()
-		if r.SrcLastRss.LastRssDate.IsZero() || r.SrcLastRss.LastRssDate.Equal(epochStart) {
+		r.Feed.Lock()
+		if r.Feed.LastUpdate.IsZero() || r.Feed.LastUpdate.Equal(epochStart) {
 			pq = dbutl.PQuery(`
 				SELECT CASE
 						WHEN last_rss_date IS NULL THEN
@@ -203,12 +203,12 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			lastDt := rssLastDate{}
 			err := dbutl.RunQueryTx(tx, pq, &lastDt)
 			if err != nil {
-				r.SrcLastRss.Unlock()
+				r.Feed.Unlock()
 				return err
 			}
-			r.SrcLastRss.LastRssDate = lastDt.LastDate
+			r.Feed.LastUpdate = lastDt.LastDate
 		}
-		r.SrcLastRss.Unlock()
+		r.Feed.Unlock()
 
 		pq = dbutl.PQuery(`
 			UPDATE rss_source
@@ -299,15 +299,15 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			return err
 		}
 
-		r.SrcLastRss.Lock()
-		if !lastDate.After(r.SrcLastRss.LastRssDate) {
-			r.SrcLastRss.Unlock()
+		r.Feed.Lock()
+		if !lastDate.After(r.Feed.LastUpdate) {
+			r.Feed.Unlock()
 			return nil
 		}
-		r.SrcLastRss.Unlock()
+		r.Feed.Unlock()
 	}
 
-	lastRssDate := epochStart
+	lastUpdate := epochStart
 
 	for _, rss := range r.Rss {
 		if len(rss.Date) == 0 {
@@ -319,12 +319,12 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 			}
 		}
 
-		r.SrcLastRss.Lock()
-		if !rss.RssDate.After(r.SrcLastRss.LastRssDate) || r.SrcLastRss.RssExists(rss.Title, rss.Link) {
-			r.SrcLastRss.Unlock()
+		r.Feed.Lock()
+		if !rss.RssDate.After(r.Feed.LastUpdate) || r.Feed.RssExists(rss.Title, rss.Link) {
+			r.Feed.Unlock()
 			continue
 		}
-		r.SrcLastRss.Unlock()
+		r.Feed.Unlock()
 
 		found, err := r.rssExists(tx, rss.Title, rss.Link)
 		if err != nil {
@@ -392,24 +392,24 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 
 		if config.CountNewRssItems {
 			mutex.Lock()
-			newRssItems++
+			newItems++
 			mutex.Unlock()
 
-			r.SrcLastRss.Lock()
-			r.SrcRssLink.NewRssItems++
-			r.SrcLastRss.Unlock()
+			r.Feed.Lock()
+			r.FeedLink.NewItems++
+			r.Feed.Unlock()
 		}
 
-		if lastRssDate.Before(rss.RssDate) {
-			lastRssDate = rss.RssDate
+		if lastUpdate.Before(rss.RssDate) {
+			lastUpdate = rss.RssDate
 		}
 	}
 
-	r.SrcLastRss.Lock()
-	if r.SrcRssLink.RssDate.IsZero() || r.SrcRssLink.RssDate.Before(lastRssDate) {
-		r.SrcRssLink.RssDate = lastRssDate
+	r.Feed.Lock()
+	if r.FeedLink.RssDate.IsZero() || r.FeedLink.RssDate.Before(lastUpdate) {
+		r.FeedLink.RssDate = lastUpdate
 	}
-	r.SrcLastRss.Unlock()
+	r.Feed.Unlock()
 
 	return err
 }

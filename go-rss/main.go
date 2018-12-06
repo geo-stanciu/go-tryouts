@@ -21,18 +21,18 @@ import (
 )
 
 var (
-	appName     = "RssGather"
-	appVersion  = "0.0.6.0"
-	log         = logrus.New()
-	audit       = utils.AuditLog{}
-	db          *sql.DB
-	dbutl       *utils.DbUtils
-	config      = configuration{}
-	queue       chan rssSource
-	mutex       sync.RWMutex
-	errFound    = false
-	newRssItems = 0
-	lastRSS     = LastRssItems{}
+	appName    = "RssGather"
+	appVersion = "0.0.6.0"
+	log        = logrus.New()
+	audit      = utils.AuditLog{}
+	db         *sql.DB
+	dbutl      *utils.DbUtils
+	config     = configuration{}
+	queue      chan rssSource
+	mutex      sync.RWMutex
+	errFound   = false
+	newItems   = 0
+	lastFeeds  = LastFeeds{}
 )
 
 func init() {
@@ -88,12 +88,12 @@ func main() {
 	}
 
 	for _, rss := range config.Rss {
-		lastRSSDate, err := getLastRSS(rss.SourceName)
+		lastUpdate, err := getLastRSS(rss.SourceName)
 		if err != nil {
 			audit.Log(err, "gather rss", "Import failed.")
 			return
 		}
-		rss.LastRSSDate = lastRSSDate
+		rss.LastUpdate = lastUpdate
 
 		if len(rss.Link) > 0 {
 			queue <- rss
@@ -101,10 +101,10 @@ func main() {
 
 		for _, lnk := range rss.Links {
 			rss1 := rssSource{
-				SourceName:  rss.SourceName,
-				Lang:        rss.Lang,
-				Link:        lnk,
-				LastRSSDate: rss.LastRSSDate,
+				SourceName: rss.SourceName,
+				Lang:       rss.Lang,
+				Link:       lnk,
+				LastUpdate: rss.LastUpdate,
 			}
 			queue <- rss1
 		}
@@ -113,7 +113,7 @@ func main() {
 	// wait for all rss to be done
 	wg.Wait()
 
-	err = lastRSS.SavelastDates()
+	err = lastFeeds.SavelastDates()
 	if err != nil {
 		audit.Log(err, "gather rss", "Import failed.")
 	} else {
@@ -122,13 +122,13 @@ func main() {
 		if errFound {
 			err = errors.New("errors found while gathering rss")
 			if config.CountNewRssItems {
-				audit.Log(err, "gather rss", "Import failed.", "new_rss_items", newRssItems)
+				audit.Log(err, "gather rss", "Import failed.", "new_rss_items", newItems)
 			} else {
 				audit.Log(err, "gather rss", "Import failed.")
 			}
 		} else {
 			if config.CountNewRssItems {
-				audit.Log(nil, "gather rss", "Import done.", "new_rss_items", newRssItems)
+				audit.Log(nil, "gather rss", "Import done.", "new_rss_items", newItems)
 			} else {
 				audit.Log(nil, "gather rss", "Import done.")
 			}
@@ -154,8 +154,8 @@ func dealWithRSS(wg *sync.WaitGroup) {
 
 		var err error
 
-		lastRSS.Lock()
-		rss.SrcLastRss, err = lastRSS.GetRSSBySource(rss.SourceName)
+		lastFeeds.Lock()
+		rss.Feed, err = lastFeeds.GetFeedBySource(rss.SourceName)
 		if err != nil {
 			audit.Log(err,
 				"get rss",
@@ -165,23 +165,23 @@ func dealWithRSS(wg *sync.WaitGroup) {
 				"link", rss.Link,
 				"new_rss_items", 0)
 
-			lastRSS.Unlock()
+			lastFeeds.Unlock()
 			wg.Done()
 			continue
 		}
 
-		if rss.SrcLastRss == nil {
-			rss.SrcLastRss = new(SourceLastRSS)
-			rss.SrcLastRss.Initialize(rss.SourceName)
-			lastRSS.AddRSS(rss.SrcLastRss)
+		if rss.Feed == nil {
+			rss.Feed = new(RSSFeed)
+			rss.Feed.Initialize(rss.SourceName)
+			lastFeeds.AddRSS(rss.Feed)
 		}
 
-		if rss.RssLnk = rss.SrcLastRss.GetLink(rss.Link); rss.RssLnk == nil {
-			rss.RssLnk = new(RssLink)
-			rss.RssLnk.Link = rss.Link
-			rss.SrcLastRss.Links = append(rss.SrcLastRss.Links, rss.RssLnk)
+		if rss.FeedLnk = rss.Feed.GetLink(rss.Link); rss.FeedLnk == nil {
+			rss.FeedLnk = new(RssLink)
+			rss.FeedLnk.Link = rss.Link
+			rss.Feed.Links = append(rss.Feed.Links, rss.FeedLnk)
 		}
-		lastRSS.Unlock()
+		lastFeeds.Unlock()
 
 		err = getStreamFromURL(&rss, parseXMLSource)
 
@@ -192,9 +192,9 @@ func dealWithRSS(wg *sync.WaitGroup) {
 		}
 
 		newRss := 0
-		rss.SrcLastRss.Lock()
-		newRss = rss.RssLnk.NewRssItems
-		rss.SrcLastRss.Unlock()
+		rss.Feed.Lock()
+		newRss = rss.FeedLnk.NewItems
+		rss.Feed.Unlock()
 
 		audit.Log(err,
 			"get rss",
@@ -251,8 +251,8 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 	feed.Source = rss.SourceName
 	feed.Language = rss.Lang
 	feed.Link = rss.Link
-	feed.SrcLastRss = rss.SrcLastRss
-	feed.SrcRssLink = rss.RssLnk
+	feed.Feed = rss.Feed
+	feed.FeedLink = rss.FeedLnk
 
 	for {
 		t, _ := decoder.Token()
