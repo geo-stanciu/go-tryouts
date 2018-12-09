@@ -253,8 +253,8 @@
             "SourceName": "MariaDB.org",
             "Lang": "EN",
             "Link": "https://mariadb.org/feed"
-	},
-	{
+	    },
+	    {
 	    "SourceName": "cointelegraph.com",
             "Lang": "EN",
             "Link": "https://cointelegraph.com/rss"

@@ -1,3 +1,5 @@
+create view if not exists dual as select 'X' AS dummy;
+
 create table if not exists rss_source (
     rss_source_id       integer primary key autoincrement not null,
     source_name         varchar(256) not null,
@@ -47,7 +49,7 @@ create table if not exists rss (
 
 create index if not exists idx_rss_source_id on rss (rss_source_id);
 create index if not exists idx_rss_date on rss (rss_date);
-create index if not exists idx_rss_item on rss (title(256), link(256));
+create index if not exists idx_rss_item on rss (title, link);
 
 create table if not exists audit_log (
     audit_log_id   integer primary key autoincrement not null,

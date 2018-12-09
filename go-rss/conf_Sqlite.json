@@ -1,0 +1,4 @@
+{
+    "DbType": "sqlite3",
+    "DbURL": "file:/home/geo/test.sqlite?cache=shared&mode=rw"
+}
