@@ -1,3 +1,5 @@
 logs/
 _test/
 *.bat
+store-exchange-rates
+
