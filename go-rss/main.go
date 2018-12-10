@@ -218,6 +218,9 @@ func getStreamFromURL(rss *rssSource, callback ParseSourceStream) error {
 	if err != nil {
 		return err
 	}
+	
+	// NOTE this !! - close the request
+	req.Close = true
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0")
 
@@ -256,7 +259,10 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 	feed.FeedLink = rss.FeedLnk
 
 	for {
-		t, _ := decoder.Token()
+		t, err := decoder.Token()
+		if err != nil {
+			return err
+		}
 		if t == nil {
 			break
 		}

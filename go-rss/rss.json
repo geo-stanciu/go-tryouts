@@ -373,6 +373,11 @@
             "SourceName": "cryptocurrencynews.com",
             "Lang": "EN",
             "Link": "https://cryptocurrencynews.com/feed/"
-        }
+        },
+		{
+			"SourceName": "i-programmer.info",
+			"Lang": "EN",
+			"Link": "https://www.i-programmer.info/index.php?option=com_ninjarsssyndicator&feed_id=3&format=raw"
+		}
     ]
 }
