@@ -218,7 +218,7 @@ func getStreamFromURL(rss *rssSource, callback ParseSourceStream) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// NOTE this !! - close the request
 	req.Close = true
 
@@ -260,11 +260,11 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 
 	for {
 		t, err := decoder.Token()
-		if err != nil {
-			return err
-		}
 		if t == nil {
 			break
+		}
+		if err != nil && err != io.EOF {
+			return err
 		}
 
 		switch se := t.(type) {
