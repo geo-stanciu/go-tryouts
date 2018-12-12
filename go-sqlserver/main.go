@@ -101,13 +101,13 @@ func main() {
 		) THEN 1 ELSE 0 END
 	`
 
-	found := false
+	found := 0
 	err = db.QueryRow(query).Scan(&found)
 	if err != nil {
 		panic(err)
 	}
 
-	if !found {
+	if found == 0 {
 		now := time.Now().UTC()
 
 		pq = dbutl.PQuery(`

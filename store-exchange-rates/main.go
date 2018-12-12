@@ -22,7 +22,7 @@ import (
 
 var (
 	appName    = "GoExchRates"
-	appVersion = "0.0.1.0"
+	appVersion = "0.0.2.0"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
@@ -132,9 +132,12 @@ func parseXMLSource(source io.Reader) error {
 	decoder := xml.NewDecoder(source)
 
 	for {
-		t, _ := decoder.Token()
+		t, err := decoder.Token()
 		if t == nil {
 			break
+		}
+		if err != nil && err != io.EOF {
+			return err
 		}
 
 		switch se := t.(type) {
@@ -295,7 +298,7 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 }
 
 func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, multiplier float64, exchRate float64) error {
-	var found bool
+	found := 0
 	var currencyID int32
 	var err error
 	rate := exchRate / multiplier
@@ -326,7 +329,7 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 		return err
 	}
 
-	if !found {
+	if found == 0 {
 		pq = dbutl.PQuery(`
 			INSERT INTO exchange_rate (
 				reference_currency_id,

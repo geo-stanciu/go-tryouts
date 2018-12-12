@@ -92,17 +92,17 @@ func main() {
 	query := `
 	    select CASE WHEN EXISTS (
 			select 1 from user_tables where table_name = 'TEST1'
-		) THEN 1 ELSE 0 END
+		) THEN 1 ELSE 0 END as table_exists
 		FROM dual
 	`
 
-	found := false
+	found := 0
 	err = db.QueryRow(query).Scan(&found)
 	if err != nil {
 		panic(err)
 	}
 
-	if !found {
+	if found == 0 {
 		query := `
 	    create table test1 (
 			dt date,
@@ -121,7 +121,7 @@ func main() {
 	query = `
 	    select CASE WHEN EXISTS (
 			select 1 from test1
-		) THEN 1 ELSE 0 END
+		) THEN 1 ELSE 0 END row_exists
 		FROM dual
 	`
 
@@ -130,7 +130,7 @@ func main() {
 		panic(err)
 	}
 
-	if !found {
+	if found == 0 {
 		now := time.Now().UTC()
 
 		pq = dbutl.PQuery(`
@@ -177,6 +177,8 @@ func main() {
 		 order by 1
 		 limit ? offset ?
 	`, 2, 1)
+	
+	fmt.Println(pq.Query)
 
 	err = dbutl.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {
 		t1 := tablename{}

@@ -415,7 +415,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 }
 
 func (r *RssFeed) rssExists(tx *sql.Tx, title string, link string) (bool, error) {
-	found := false
+	found := 0
 
 	pq := dbutl.PQuery(`
 		SELECT CASE WHEN EXISTS (
@@ -435,7 +435,11 @@ func (r *RssFeed) rssExists(tx *sql.Tx, title string, link string) (bool, error)
 		return false, err
 	}
 
-	return found, nil
+	if found == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func getLastRSS(source string) (time.Time, error) {
