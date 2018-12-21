@@ -11,6 +11,7 @@ type rssSource struct {
 	Lang       string   `json:"Lang"`
 	Link       string   `json:"Link"`
 	Links      []string `json:"Links"`
+	TrustCert  bool     `json:"TrustCert"`
 	LastUpdate time.Time
 	Feed       *RSSFeed
 	FeedLnk    *RssLink

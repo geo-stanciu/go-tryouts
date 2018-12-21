@@ -377,7 +377,8 @@
         {
             "SourceName": "i-programmer.info",
             "Lang": "EN",
-            "Link": "http://www.i-programmer.info/feed"
+            "Link": "https://www.i-programmer.info/index.php?option=com_ninjarsssyndicator&feed_id=3&format=raw",
+            "TrustCert": true
         }
     ]
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"encoding/xml"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -212,7 +214,17 @@ func dealWithRSS(wg *sync.WaitGroup) {
 }
 
 func getStreamFromURL(rss *rssSource, callback ParseSourceStream) error {
-	client := &http.Client{}
+	var client *http.Client
+
+	if strings.HasPrefix(rss.Link, "https") && rss.TrustCert {
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+
+		client = &http.Client{Transport: tr}
+	} else {
+		client = &http.Client{}
+	}
 
 	req, err := http.NewRequest("GET", rss.Link, nil)
 	if err != nil {
