@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/html/charset"
+
 	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/sirupsen/logrus"
 
@@ -272,6 +274,7 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 	}
 
 	decoder := xml.NewDecoder(source)
+	decoder.CharsetReader = charset.NewReaderLabel
 
 	var feed RssFeed
 	feed.Source = rss.SourceName
