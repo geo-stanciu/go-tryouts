@@ -25,7 +25,7 @@ import (
 
 var (
 	appName    = "RssGather"
-	appVersion = "0.0.6.0"
+	appVersion = "0.0.7.0"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
@@ -153,6 +153,8 @@ func dealWithRSS(wg *sync.WaitGroup) {
 			break
 		}
 
+		startTime := time.Now()
+
 		wg.Add(1)
 
 		var err error
@@ -160,13 +162,17 @@ func dealWithRSS(wg *sync.WaitGroup) {
 		lastFeeds.Lock()
 		rss.Feed, err = lastFeeds.GetFeedBySource(rss.SourceName)
 		if err != nil {
+			endTime := time.Now()
+
 			audit.Log(err,
 				"get rss",
 				"save rss",
 				"lang", rss.Lang,
 				"source", rss.SourceName,
 				"link", rss.Link,
-				"new_rss_items", 0)
+				"new_rss_items", 0,
+				"time_elapsed_ms", endTime.Sub(startTime)/1E6,
+			)
 
 			lastFeeds.Unlock()
 			wg.Done()
@@ -199,13 +205,17 @@ func dealWithRSS(wg *sync.WaitGroup) {
 		newRss = rss.FeedLnk.NewItems
 		rss.Feed.Unlock()
 
+		endTime := time.Now()
+
 		audit.Log(err,
 			"get rss",
 			"save rss",
 			"lang", rss.Lang,
 			"source", rss.SourceName,
 			"link", rss.Link,
-			"new_rss_items", newRss)
+			"new_rss_items", newRss,
+			"time_elapsed_ms", endTime.Sub(startTime)/1E6,
+		)
 
 		time.Sleep(10 * time.Millisecond)
 
@@ -216,7 +226,7 @@ func dealWithRSS(wg *sync.WaitGroup) {
 func getStreamFromURL(rss *rssSource, callback ParseSourceStream) error {
 	var client *http.Client
 
-	if strings.HasPrefix(rss.Link, "https") && rss.TrustCert {
+	if rss.TrustCert && strings.HasPrefix(rss.Link, "https") {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}

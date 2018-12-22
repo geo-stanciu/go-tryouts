@@ -255,7 +255,7 @@
             "Link": "https://mariadb.org/feed"
 	    },
 	    {
-	    "SourceName": "cointelegraph.com",
+            "SourceName": "cointelegraph.com",
             "Lang": "EN",
             "Link": "https://cointelegraph.com/rss"
         },
@@ -365,11 +365,6 @@
             "Link": "https://blog.spectrocoin.com/en/feed"
         },
         {
-            "SourceName": "blog.spectrocoin.com",
-            "Lang": "EN",
-            "Link": "https://blog.spectrocoin.com/en/feed"
-        },
-        {
             "SourceName": "cryptocurrencynews.com",
             "Lang": "EN",
             "Link": "https://cryptocurrencynews.com/feed/"
@@ -379,6 +374,19 @@
             "Lang": "EN",
             "Link": "https://www.i-programmer.info/index.php?option=com_ninjarsssyndicator&feed_id=3&format=raw",
             "TrustCert": true
+        },
+        {
+            "SourceName": "bursa.ro",
+            "Lang": "RO",
+            "Links": [
+                "http://www.bursa.ro/titluri-bursa.xml",
+                "http://www.bursa.ro/piata-capital-bursa.xml"
+            ]
+        },
+        {
+            "SourceName": "bursa-en",
+            "Lang": "EN",
+            "Link": "http://www.bursa.ro/english-section-bursa.xml"
         }
     ]
 }
