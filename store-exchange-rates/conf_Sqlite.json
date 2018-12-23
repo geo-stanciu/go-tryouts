@@ -1,6 +1,6 @@
 {
     "DbType": "sqlite3",
-    "DbURL": "file:/home/geo/test.sqlite?cache=shared&mode=rw",
+    "DbURL": "file:/home/geo/test.sqlite?mode=rw&_busy_timeout=9999&_foreign_keys=1&_journal_mode=WAL",
     "RatesXMLUrl": "http://www.bnro.ro/files/xml/years/nbrfxrates2018.xml",
     "RatesXMLUrl1": "http://bnro.ro/nbrfxrates.xml",
     "AddMissingCurrencies": true
