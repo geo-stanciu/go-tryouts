@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"flag"
 	"io"
+	"math/big"
 	"net/http"
 	"os"
 	"strconv"
@@ -301,7 +302,15 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 	found := 0
 	var currencyID int32
 	var err error
-	rate := exchRate / multiplier
+
+	exch := big.NewFloat(exchRate)
+	mul := big.NewFloat(multiplier)
+	srate := new(big.Float).SetMode(big.ToNearestAway).Quo(exch, mul).Text('f', 6)
+
+	rate, err := strconv.ParseFloat(srate, 64)
+	if err != nil {
+		return err
+	}
 
 	if config.AddMissingCurrencies {
 		currencyID, err = addCurrencyIfNotExists(tx, currency)
