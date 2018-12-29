@@ -247,7 +247,7 @@ func getStreamFromURL(rss *rssSource, callback ParseSourceStream) error {
 	// NOTE this !! - close the request
 	req.Close = true
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:64.0) Gecko/20100101 Firefox/64.0")
 
 	response, err := client.Do(req)
 	if err != nil {

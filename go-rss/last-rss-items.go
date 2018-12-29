@@ -15,8 +15,8 @@ type LastFeeds struct {
 	RSS []*RSSFeed
 }
 
-// rssExists - Check if Rss exists in list
-func (r *LastFeeds) rssExists(sourceID int) bool {
+// sourceExists - Check if Rss exists in list
+func (r *LastFeeds) sourceExists(sourceID int) bool {
 	for _, elem := range r.RSS {
 		if elem.SourceID == sourceID {
 			return true
@@ -28,7 +28,7 @@ func (r *LastFeeds) rssExists(sourceID int) bool {
 
 // AddRSS - Add RSS elem
 func (r *LastFeeds) AddRSS(s *RSSFeed) error {
-	if s.SourceID > 0 && r.rssExists(s.SourceID) {
+	if s.SourceID > 0 && r.sourceExists(s.SourceID) {
 		return fmt.Errorf("element already exists")
 	}
 
