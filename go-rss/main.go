@@ -27,7 +27,7 @@ import (
 
 var (
 	appName    = "RssGather"
-	appVersion = "0.0.7.0"
+	appVersion = "0.0.8.0"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
@@ -38,6 +38,7 @@ var (
 	errFound   = false
 	newItems   = 0
 	lastFeeds  = LastFeeds{}
+	rssLock    sync.RWMutex
 )
 
 func init() {
@@ -263,16 +264,6 @@ func getStreamFromURL(rss *rssSource, callback ParseSourceStream) error {
 }
 
 func parseXMLSource(rss *rssSource, source io.Reader) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if err = dbutl.SetAsyncCommit(tx); err != nil {
-		return err
-	}
-
 	decoder := xml.NewDecoder(source)
 	decoder.CharsetReader = charset.NewReaderLabel
 
@@ -323,6 +314,19 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 				feed.Rss = append(feed.Rss, &item)
 			}
 		}
+	}
+
+	rssLock.Lock()
+	defer rssLock.Unlock()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err = dbutl.SetAsyncCommit(tx); err != nil {
+		return err
 	}
 
 	err = feed.Save(tx)

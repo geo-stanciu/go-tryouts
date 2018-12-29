@@ -1,0 +1,7 @@
+{
+    "DumpDir": "d:/backup/mysql",
+    "Files2Keep": 5,
+    "User": "root",
+    "Password": "mysql",
+    "DbNames": [ "devel", "razvan" ]
+}

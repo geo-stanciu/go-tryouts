@@ -23,7 +23,7 @@ import (
 
 var (
 	appName    = "GoExchRates"
-	appVersion = "0.0.2.0"
+	appVersion = "0.0.3.0"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB

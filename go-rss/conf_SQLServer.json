@@ -1,0 +1,4 @@
+{
+    "DbType": "mssql",
+    "DbURL": "server=devel;database=devel;user id=geo;password=geo;port=1433;app name=RssGather"
+}
