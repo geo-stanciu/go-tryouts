@@ -326,7 +326,7 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 		}
 		r.Feed.Unlock()
 
-		found, err := r.rssExists(tx, rss.Title, rss.Link)
+		found, err := r.rssExists(tx, rss.Title, rss.Link, r.Feed.LastUpdate)
 		if err != nil {
 			return err
 		}
@@ -414,19 +414,21 @@ func (r *RssFeed) Save(tx *sql.Tx) error {
 	return err
 }
 
-func (r *RssFeed) rssExists(tx *sql.Tx, title string, link string) (bool, error) {
+func (r *RssFeed) rssExists(tx *sql.Tx, title string, link string, lastRss time.Time) (bool, error) {
 	found := 0
 
 	pq := dbutl.PQuery(`
 		SELECT CASE WHEN EXISTS (
 			SELECT 1
 			  FROM rss
-			 WHERE rss_source_id = ?
+			 WHERE rss_date >= ?
+			   AND rss_source_id = ?
 			   AND title = ?
 			   AND link = ?
 		) THEN 1 ELSE 0 END
 		FROM dual
-	`, r.SourceID,
+	`, lastRss,
+		r.SourceID,
 		strings.TrimSpace(title),
 		strings.TrimSpace(link))
 

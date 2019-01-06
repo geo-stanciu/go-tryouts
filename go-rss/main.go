@@ -325,10 +325,6 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 	}
 	defer tx.Rollback()
 
-	if err = dbutl.SetAsyncCommit(tx); err != nil {
-		return err
-	}
-
 	err = feed.Save(tx)
 	if err != nil {
 		return err

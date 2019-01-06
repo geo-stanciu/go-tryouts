@@ -1,0 +1,1 @@
+sqlcmd -S SOKAR -E -Q "EXEC sp_BackupDatabases @backupLocation='D:\backup\sqlserver\', @databaseName='devel', @backupType='F'"
