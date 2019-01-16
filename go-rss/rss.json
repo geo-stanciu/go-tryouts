@@ -387,6 +387,11 @@
             "SourceName": "bursa-en",
             "Lang": "EN",
             "Link": "http://www.bursa.ro/english-section-bursa.xml"
-        }
+        },
+		{
+			"SourceName": "dailywire",
+			"Lang": "EN",
+			"Link": "https://www.dailywire.com/rss.xml"
+		}
     ]
 }
