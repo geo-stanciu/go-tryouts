@@ -1,6 +1,6 @@
 {
     "DbType": "oci8",
-    "DbURL": "geo/geo@db1",
+    "DbURL": "geo/geo@devel",
     "RatesXMLUrl": "https://www2.bnr.ro/files/xml/years/nbrfxrates2019.xml",
     "RatesXMLUrl1": "https://www2.bnr.ro/nbrfxrates.xml",
     "AddMissingCurrencies": true
