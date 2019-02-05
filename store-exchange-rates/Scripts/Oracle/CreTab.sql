@@ -29,7 +29,7 @@ create table audit_log (
     source         varchar2(64) not null,
     source_version varchar2(16) not null,
     log_time       timestamp not null,
-    log_msg        long      not null
+    log_msg        nclob     not null
 );
 
 create index idx_time_audit_log on audit_log (log_time);

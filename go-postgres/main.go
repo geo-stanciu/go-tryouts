@@ -137,6 +137,7 @@ func main() {
 		fmt.Println("Dt:", t1.Dt)
 		fmt.Println("Dt - local:", t1.Dt.In(loc))
 		fmt.Println("Dtz:", t1.Dtz)
+		fmt.Println("Dtz - local:", t1.Dtz.In(loc))
 		fmt.Println("D:", t1.D)
 
 		if t1.DNull.Valid {
