@@ -69,11 +69,11 @@ func main() {
 }
 
 func changeKeyName(msgType string, oldKeyName string) error {
-	tx, err := db.Begin()
+	tx, err := dbutl.BeginTransaction()
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer dbutl.Rollback(tx)
 
 	mtype := fmt.Sprintf("{\"msg_type\": \"%s\"}", msgType)
 
@@ -154,7 +154,7 @@ func changeKeyName(msgType string, oldKeyName string) error {
 			"new", msg.new)
 	}
 
-	tx.Commit()
+	dbutl.Commit(tx)
 
 	return nil
 }

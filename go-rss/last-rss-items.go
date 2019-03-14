@@ -63,11 +63,11 @@ func (r *LastFeeds) GetFeedBySource(sourceName string) (*RSSFeed, error) {
 
 // SavelastDates - Save last RSS Dates
 func (r *LastFeeds) SavelastDates() error {
-	tx, err := db.Begin()
+	tx, err := dbutl.BeginTransaction()
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer dbutl.Rollback(tx)
 
 	if err = dbutl.SetAsyncCommit(tx); err != nil {
 		return err
@@ -114,7 +114,7 @@ func (r *LastFeeds) SavelastDates() error {
 		}
 	}
 
-	tx.Commit()
+	dbutl.Commit(tx)
 
 	return nil
 }

@@ -17,13 +17,13 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/mattn/go-oci8"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
 	appName    = "GoExchRates"
-	appVersion = "0.0.3.0"
+	appVersion = "0.0.4.0"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
@@ -158,11 +158,11 @@ func parseXMLSource(source io.Reader) error {
 }
 
 func dealWithRates(cube *Cube) error {
-	tx, err := db.Begin()
+	tx, err := dbutl.BeginTransaction()
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer dbutl.Rollback(tx)
 
 	if err = dbutl.SetAsyncCommit(tx); err != nil {
 		tx.Rollback()
@@ -173,7 +173,7 @@ func dealWithRates(cube *Cube) error {
 		return err
 	}
 
-	tx.Commit()
+	dbutl.Commit(tx)
 
 	return nil
 }
@@ -216,11 +216,11 @@ func addCurrencyIfNotExists(tx *sql.Tx, currency string) (int32, error) {
 }
 
 func prepareCurrencies() error {
-	tx, err := db.Begin()
+	tx, err := dbutl.BeginTransaction()
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer dbutl.Rollback(tx)
 
 	if err = dbutl.SetAsyncCommit(tx); err != nil {
 		return err
@@ -251,7 +251,7 @@ func prepareCurrencies() error {
 		return err
 	}
 
-	tx.Commit()
+	dbutl.Commit(tx)
 
 	return nil
 }
