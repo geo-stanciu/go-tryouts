@@ -27,7 +27,7 @@ import (
 
 var (
 	appName    = "RssGather"
-	appVersion = "0.0.8.0"
+	appVersion = "0.0.9.0"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
@@ -319,18 +319,18 @@ func parseXMLSource(rss *rssSource, source io.Reader) error {
 	rssLock.Lock()
 	defer rssLock.Unlock()
 
-	tx, err := db.Begin()
+	tx, err := dbutl.BeginTransaction()
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer dbutl.Rollback(tx)
 
 	err = feed.Save(tx)
 	if err != nil {
 		return err
 	}
 
-	tx.Commit()
+	dbutl.Commit(tx)
 
 	return nil
 }

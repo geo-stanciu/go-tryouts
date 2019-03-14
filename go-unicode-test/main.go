@@ -38,11 +38,11 @@ func main() {
 	}
 	defer db.Close()
 
-	tx, err := db.Begin()
+	tx, err := dbutl.BeginTransaction()
 	if err != nil {
 		panic(err)
 	}
-	defer tx.Rollback()
+	defer dbutl.Rollback(tx)
 
 	pq := dbutl.PQuery(`
 		DELETE FROM test_unicode
@@ -76,5 +76,5 @@ func main() {
 		return nil
 	})
 
-	tx.Commit()
+	dbutl.Commit(tx)
 }
