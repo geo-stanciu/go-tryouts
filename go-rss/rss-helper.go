@@ -427,7 +427,7 @@ func (r *RssFeed) rssExists(tx *sql.Tx, title string, link string, lastRss time.
 			   AND link = ?
 		) THEN 1 ELSE 0 END
 		FROM dual
-	`, lastRss,
+	`, lastRss.Add(-time.Hour*48),
 		r.SourceID,
 		strings.TrimSpace(title),
 		strings.TrimSpace(link))

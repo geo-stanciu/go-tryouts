@@ -130,7 +130,8 @@
         {
             "SourceName": "depesz.com",
             "Lang":"EN",
-            "Link": "https://www.depesz.com/feed/"
+            "Link": "https://www.depesz.com/feed/",
+            "TrustCert": true
         },
         {
             "SourceName": "PostgreSQL",
