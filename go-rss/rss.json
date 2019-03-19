@@ -393,6 +393,11 @@
 			"SourceName": "dailywire",
 			"Lang": "EN",
 			"Link": "https://www.dailywire.com/rss.xml"
+		},
+		{
+			"SourceName": "gateworld",
+			"Lang": "EN",
+			"Link": "https://www.gateworld.net/feed/"
 		}
     ]
 }
