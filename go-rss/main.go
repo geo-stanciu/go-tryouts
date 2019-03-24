@@ -6,9 +6,11 @@ import (
 	"encoding/xml"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -39,6 +41,7 @@ var (
 	newItems   = 0
 	lastFeeds  = LastFeeds{}
 	rssLock    sync.RWMutex
+	currentDir string
 )
 
 func init() {
@@ -49,6 +52,8 @@ func init() {
 	dbutl = new(utils.DbUtils)
 
 	queue = make(chan rssSource, 1024)
+
+	currentDir = filepath.Dir(os.Args[0])
 }
 
 // ParseSourceStream - Parse Source Stream
@@ -58,17 +63,22 @@ func main() {
 	var err error
 	var wg sync.WaitGroup
 
-	cfgPtr := flag.String("c", "conf.json", "config file")
+	cfgPtr := flag.String("c", fmt.Sprintf("%s/conf.json", currentDir), "config file")
 
 	flag.Parse()
 
-	err = config.ReadFromFile(*cfgPtr)
+	if _, err = os.Stat(*cfgPtr); os.IsNotExist(err) {
+		err = config.ReadFromFile(fmt.Sprintf("%s/%s", currentDir, *cfgPtr))
+	} else {
+		err = config.ReadFromFile(*cfgPtr)
+	}
+
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	err = config.ReadFromFile("./rss.json")
+	err = config.ReadFromFile(fmt.Sprintf("%s/rss.json", currentDir))
 	if err != nil {
 		log.Println(err)
 		return

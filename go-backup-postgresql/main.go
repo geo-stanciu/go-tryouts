@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -26,8 +27,13 @@ type Configuration struct {
 }
 
 var (
-	config = Configuration{}
+	config     = Configuration{}
+	currentDir string
 )
+
+func init() {
+	currentDir = filepath.Dir(os.Args[0])
+}
 
 func main() {
 	t := time.Now().UTC()
@@ -46,7 +52,7 @@ func main() {
 
 	log.SetOutput(mw)
 
-	cfgFile := "./conf.json"
+	cfgFile := fmt.Sprintf("%s/conf.json", currentDir)
 	err = config.readFromFile(cfgFile)
 	if err != nil {
 		log.Println(err)

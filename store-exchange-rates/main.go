@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/xml"
 	"flag"
+	"fmt"
 	"io"
 	"math/big"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 
@@ -29,6 +31,7 @@ var (
 	db         *sql.DB
 	dbutl      *utils.DbUtils
 	config     = configuration{}
+	currentDir string
 )
 
 func init() {
@@ -37,6 +40,7 @@ func init() {
 	log.Level = logrus.DebugLevel
 
 	dbutl = new(utils.DbUtils)
+	currentDir = filepath.Dir(os.Args[0])
 }
 
 // Rate - Exchange rate struct
@@ -59,7 +63,7 @@ func main() {
 	var err error
 	var wg sync.WaitGroup
 
-	cfgPtr := flag.String("c", "conf.json", "config file")
+	cfgPtr := flag.String("c", fmt.Sprintf("%s/conf.json", currentDir), "config file")
 
 	flag.Parse()
 

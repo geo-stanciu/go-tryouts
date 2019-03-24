@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/geo-stanciu/go-utils/utils"
@@ -11,9 +13,10 @@ import (
 )
 
 var (
-	db     *sql.DB
-	config = configuration{}
-	dbutl  *utils.DbUtils
+	db         *sql.DB
+	config     = configuration{}
+	dbutl      *utils.DbUtils
+	currentDir string
 )
 
 type test struct {
@@ -35,12 +38,13 @@ type tablename struct {
 func init() {
 	// init databaseutils
 	dbutl = new(utils.DbUtils)
+	currentDir = filepath.Dir(os.Args[0])
 }
 
 func main() {
 	var err error
 
-	cfgFile := "./conf.json"
+	cfgFile := fmt.Sprintf("%s/conf.json", currentDir)
 	err = config.readFromFile(cfgFile)
 	if err != nil {
 		panic(err)
@@ -177,7 +181,7 @@ func main() {
 		 order by 1
 		 limit ? offset ?
 	`, 2, 1)
-	
+
 	fmt.Println(pq.Query)
 
 	err = dbutl.ForEachRow(pq, func(row *sql.Rows, sc *utils.SQLScan) error {

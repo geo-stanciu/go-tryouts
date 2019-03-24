@@ -22,9 +22,14 @@ type configuration struct {
 }
 
 var (
-	config = configuration{}
-	layout = "20060102"
+	config     = configuration{}
+	layout     = "20060102"
+	currentDir string
 )
+
+func init() {
+	currentDir = filepath.Dir(os.Args[0])
+}
 
 func main() {
 	var err error
@@ -42,7 +47,7 @@ func main() {
 
 	log.SetOutput(mw)
 
-	cfgFile := "./conf.json"
+	cfgFile := fmt.Sprintf("%s/conf.json", currentDir)
 	err = config.readFromFile(cfgFile)
 	if err != nil {
 		log.Println(err)

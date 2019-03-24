@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/geo-stanciu/go-utils/utils"
@@ -11,9 +13,10 @@ import (
 )
 
 var (
-	db     *sql.DB
-	config = configuration{}
-	dbutl  *utils.DbUtils
+	db         *sql.DB
+	config     = configuration{}
+	dbutl      *utils.DbUtils
+	currentDir string
 )
 
 type test struct {
@@ -31,12 +34,13 @@ type test1 struct {
 func init() {
 	// init databaseutils
 	dbutl = new(utils.DbUtils)
+	currentDir = filepath.Dir(os.Args[0])
 }
 
 func main() {
 	var err error
 
-	cfgFile := "./conf.json"
+	cfgFile := fmt.Sprintf("%s/conf.json", currentDir)
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		panic(err)

@@ -24,6 +24,7 @@ var (
 	db         *sql.DB
 	dbutl      *utils.DbUtils
 	config     = Configuration{}
+	currentDir string
 )
 
 func init() {
@@ -32,13 +33,14 @@ func init() {
 	log.Level = logrus.DebugLevel
 
 	dbutl = new(utils.DbUtils)
+	currentDir = filepath.Dir(os.Args[0])
 }
 
 func main() {
 	var err error
 	var wg sync.WaitGroup
 
-	cfgFile := "./conf.json"
+	cfgFile := fmt.Sprintf("%s/conf.json", currentDir)
 	err = config.ReadFromFile(cfgFile)
 	if err != nil {
 		log.Println(err)
