@@ -41,6 +41,7 @@ create table if not exists rss (
     media_link         text,
     media_filetype     text,
     media_thumbnail    text,
+    seen               int not null default 0,
     constraint rss_source_fk foreign key (rss_source_id)
         references rss_source (rss_source_id)
 );
@@ -48,6 +49,7 @@ create table if not exists rss (
 create index if not exists idx_rss_source_id on rss (rss_source_id);
 create index if not exists idx_rss_date on rss (rss_date);
 create index if not exists idx_rss_item on rss (title(256), link(256));
+create index if not exists idx_rss_seen on rss (seen);
 
 create table if not exists audit_log (
     audit_log_id   bigint auto_increment primary key not null,

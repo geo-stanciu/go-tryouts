@@ -67,7 +67,12 @@ func main() {
 
 	flag.Parse()
 
-	err = config.ReadFromFile(*cfgPtr)
+	if _, err = os.Stat(*cfgPtr); os.IsNotExist(err) {
+		err = config.ReadFromFile(fmt.Sprintf("%s/%s", currentDir, *cfgPtr))
+	} else {
+		err = config.ReadFromFile(*cfgPtr)
+	}
+
 	if err != nil {
 		log.Println(err)
 		return
@@ -329,9 +334,9 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 	pq := dbutl.PQuery(`
 		SELECT CASE WHEN EXISTS (
 			SELECT 1
-			FROM exchange_rate 
-		   WHERE currency_id = ? 
-		     AND exchange_date = DATE ?
+			FROM exchange_rate
+		   WHERE currency_id = ?
+			 AND exchange_date = DATE ?
 		) THEN 1 ELSE 0 END
 		FROM dual
 	`, currencyID,
