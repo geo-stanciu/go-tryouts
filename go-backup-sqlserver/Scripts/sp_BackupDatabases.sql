@@ -29,7 +29,7 @@ DECLARE @dateTime NVARCHAR(20)
 SET @DBNAME = '[' + @databaseName + ']'
 
 -- Set the current date and time n yyyyhhmmss format
-SET @dateTime = REPLACE(CONVERT(VARCHAR, GETDATE(),101),'/','') + '_' +  REPLACE(CONVERT(VARCHAR, GETDATE(),108),':','')
+SET @dateTime = CONVERT(VARCHAR, GETDATE(),112) + '_' +  REPLACE(CONVERT(VARCHAR, GETDATE(),108),':','')
 
 -- Create backup filename in pathfilename.extension format for full,diff and log backups
 SET @BackupFile = @backupLocation+REPLACE(REPLACE(@DBNAME, '[',''),']','')+ '_FULL_'+ @dateTime+ '.BAK'
