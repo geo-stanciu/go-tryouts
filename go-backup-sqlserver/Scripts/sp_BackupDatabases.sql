@@ -21,6 +21,7 @@ SELECT Name FROM master.sys.databases WHERE state=0 AND name=@DatabaseName OR @D
 -- Declare variables
 DECLARE @BackupName varchar(100)
 DECLARE @BackupFile varchar(100)
+DECLARE @LogBackupFile varchar(100)
 DECLARE @DBNAME varchar(300)
 DECLARE @sqlCommand NVARCHAR(1000)
 DECLARE @dateTime NVARCHAR(20)
@@ -34,11 +35,20 @@ SET @dateTime = CONVERT(VARCHAR, GETDATE(),112) + '_' +  REPLACE(CONVERT(VARCHAR
 -- Create backup filename in pathfilename.extension format for full,diff and log backups
 SET @BackupFile = @backupLocation+REPLACE(REPLACE(@DBNAME, '[',''),']','')+ '_FULL_'+ @dateTime+ '.BAK'
 
+-- Create log backup filename in pathfilename.extension
+SET @LogBackupFile = @backupLocation+REPLACE(REPLACE(@DBNAME, '[',''),']','')+ '_LOG_'+ @dateTime+ '.TRN'
+
 -- Provide the backup a name for storing in the media
 SET @BackupName = REPLACE(REPLACE(@DBNAME,'[',''),']','') +' full backup for '+ @dateTime
 
 -- Generate the dynamic SQL command to be executed
 SET @sqlCommand = 'BACKUP DATABASE ' +@DBNAME+  ' TO DISK = '''+@BackupFile+ ''' WITH INIT, NAME= ''' +@BackupName+''', NOSKIP, NOFORMAT, COMPRESSION'
+
+-- Execute the generated SQL command
+EXEC(@sqlCommand)
+
+-- Generate the dynamic SQL command to be executed
+SET @sqlCommand = 'BACKUP LOG ' +@DBNAME+  ' TO DISK = '''+@LogBackupFile+ ''''
 
 -- Execute the generated SQL command
 EXEC(@sqlCommand)
