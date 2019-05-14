@@ -43,6 +43,7 @@ create table rss (
     media_link         nvarchar(max),
     media_filetype     nvarchar(max),
     media_thumbnail    nvarchar(max),
+    seen               int not null default 0,
     constraint rss_source_fk foreign key (rss_source_id)
         references rss_source (rss_source_id)
 );
@@ -50,6 +51,7 @@ create table rss (
 create index idx_rss_source_id on rss (rss_source_id);
 create index idx_rss_date on rss (rss_date);
 create index idx_rss_item on rss(rss_id) include (title, link);
+create index idx_rss_seen on rss(seen);
 
 create table audit_log (
     audit_log_id   bigint identity(1,1) PRIMARY KEY,
