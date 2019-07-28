@@ -25,7 +25,7 @@ import (
 
 var (
 	appName    = "GoExchRates"
-	appVersion = "0.0.4.0"
+	appVersion = "0.0.5.0"
 	log        = logrus.New()
 	audit      = utils.AuditLog{}
 	db         *sql.DB
@@ -235,11 +235,6 @@ func prepareCurrencies() error {
 		return err
 	}
 
-	refCurrencyID, err := addCurrencyIfNotExists(tx, "RON")
-	if err != nil {
-		return err
-	}
-
 	_, err = addCurrencyIfNotExists(tx, "EUR")
 	if err != nil {
 		return err
@@ -255,7 +250,7 @@ func prepareCurrencies() error {
 		return err
 	}
 
-	err = storeRate(tx, "1970-01-01", refCurrencyID, "RON", 1.0, 1.0)
+	err = storeRate(tx, "1970-01-01", "RON", 1.0, 1.0)
 	if err != nil {
 		return err
 	}
@@ -267,14 +262,8 @@ func prepareCurrencies() error {
 
 func storeRates(tx *sql.Tx, cube Cube) error {
 	var err error
-	var refCurrencyID int32
 
 	audit.Log(nil, "exchange rates", "Importing exchange rates...", "date", cube.Date)
-
-	refCurrencyID, err = addCurrencyIfNotExists(tx, "RON")
-	if err != nil {
-		return err
-	}
 
 	for _, rate := range cube.Rate {
 		multiplier := 1.0
@@ -298,7 +287,7 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 			}
 		}
 
-		err = storeRate(tx, cube.Date, refCurrencyID, rate.Currency, multiplier, exchRate)
+		err = storeRate(tx, cube.Date, rate.Currency, multiplier, exchRate)
 		if err != nil {
 			return err
 		}
@@ -307,7 +296,7 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 	return nil
 }
 
-func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, multiplier float64, exchRate float64) error {
+func storeRate(tx *sql.Tx, date string, currency string, multiplier float64, exchRate float64) error {
 	found := 0
 	var currencyID int32
 	var err error
@@ -350,14 +339,12 @@ func storeRate(tx *sql.Tx, date string, refCurrencyID int32, currency string, mu
 	if found == 0 {
 		pq = dbutl.PQuery(`
 			INSERT INTO exchange_rate (
-				reference_currency_id,
 				currency_id,
 				exchange_date,
 				rate
 			)
-			VALUES (?, ?, DATE ?, ?)
-		`, refCurrencyID,
-			currencyID,
+			VALUES (?, DATE ?, ?)
+		`, currencyID,
 			date,
 			rate)
 
