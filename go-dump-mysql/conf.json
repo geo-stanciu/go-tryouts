@@ -3,5 +3,5 @@
     "Files2Keep": 5,
     "User": "root",
     "Password": "mysql",
-    "DbNames": [ "devel", "razvan" ]
+    "DbNames": [ "devel", "razvan", "mysql" ]
 }
