@@ -21,6 +21,8 @@ create table if not exists rss_source (
     constraint rss_source_uk unique (lowered_source_name)
 );
 
+create index if not exists idx_rss_source_add_date on rss_source (add_date);
+
 create table if not exists rss (
     rss_id             integer primary key autoincrement not null,
     rss_source_id      int not null,
@@ -50,6 +52,7 @@ create table if not exists rss (
 
 create index if not exists idx_rss_source_id on rss (rss_source_id);
 create index if not exists idx_rss_date on rss (rss_date);
+create index if not exists idx_rss_add_date on rss (add_date);
 create index if not exists idx_rss_item on rss (title, link);
 create index if not exists idx_rss_seen on rss (seen);
 

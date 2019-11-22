@@ -4,6 +4,6 @@
     "DbUser": "postgres",
     "DbName": "postgres",
     "BackupDir": "d:/backup",
-    "ArchiveDir": "d:/backup/archive",
+    "ArchiveDir": "d:/backup/archive12",
     "NumberOfBackups2Keep": 7
 }
