@@ -26,14 +26,15 @@ import (
 )
 
 var (
-	appName    = "GoExchRates"
-	appVersion = "0.0.5.0"
-	log        = logrus.New()
-	audit      = utils.AuditLog{}
-	db         *sql.DB
-	dbutl      *utils.DbUtils
-	config     = configuration{}
-	currentDir string
+	appName          = "GoExchRates"
+	appVersion       = "0.0.6.0"
+	log              = logrus.New()
+	audit            = utils.AuditLog{}
+	db               *sql.DB
+	dbutl            *utils.DbUtils
+	config           = configuration{}
+	currentDir       string
+	lastExchangeRate time.Time
 )
 
 func init() {
@@ -100,6 +101,12 @@ func main() {
 		return
 	}
 
+	lastExchangeRate, err = getLastExchangeRate()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	err = getStreamFromURL(config.RatesXMLUrl, parseXMLSource)
 	if err != nil {
 		log.Println(err)
@@ -108,6 +115,20 @@ func main() {
 
 	audit.Log(nil, "import exchange rates", "Import done.")
 	wg.Wait()
+}
+
+func getLastExchangeRate() (time.Time, error) {
+	var lastExchangeRate time.Time
+	pq := dbutl.PQuery(`
+		select coalesce(max(exchange_date), date '1970-01-01') as exchange_date from exchange_rate
+	`)
+
+	err := db.QueryRow(pq.Query, pq.Args...).Scan(&lastExchangeRate)
+	if err != nil {
+		return time.Now(), err
+	}
+
+	return lastExchangeRate, nil
 }
 
 func getStreamFromURL(url string, callback ParseSourceStream) error {
@@ -158,6 +179,10 @@ func parseXMLSource(source io.Reader) error {
 				var cube Cube
 				decoder.DecodeElement(&cube, &se)
 
+				if isBeforeTheLastImport(cube.Date) {
+					continue
+				}
+
 				if err := dealWithRates(&cube); err != nil {
 					return err
 				}
@@ -166,6 +191,20 @@ func parseXMLSource(source io.Reader) error {
 	}
 
 	return nil
+}
+
+func isBeforeTheLastImport(date string) bool {
+	if utils.String2dateNoErr(date, utils.ISODate).Before(lastExchangeRate) {
+		audit.Log(nil,
+			"import exchange rates",
+			"date before the last import",
+			"date", date,
+			"last_import", utils.Date2string(lastExchangeRate, utils.ISODate))
+
+		return true
+	}
+
+	return false
 }
 
 func dealWithRates(cube *Cube) error {
@@ -266,20 +305,6 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 	var err error
 
 	audit.Log(nil, "exchange rates", "Importing exchange rates...", "date", cube.Date)
-
-	var lastExchangeRate time.Time
-	pq := dbutl.PQuery(`
-		select coalesce(max(exchange_date), date '1970-01-01') as exchange_date from exchange_rate
-	`)
-
-	err = tx.QueryRow(pq.Query, pq.Args...).Scan(&lastExchangeRate)
-	if err != nil {
-		return err
-	}
-
-	if utils.String2dateNoErr(cube.Date, utils.ISODate).Before(lastExchangeRate) {
-		return nil
-	}
 
 	for _, rate := range cube.Rate {
 		multiplier := 1.0
