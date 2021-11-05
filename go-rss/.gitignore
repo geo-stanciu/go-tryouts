@@ -3,3 +3,4 @@ _test/
 *.bat
 go-rss
 tags
+*.sqlite

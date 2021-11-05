@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/geo-stanciu/go-utils/utils"
 	"github.com/sirupsen/logrus"
@@ -19,6 +20,7 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
+
 	// _ "github.com/mattn/go-oci8"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -264,6 +266,20 @@ func storeRates(tx *sql.Tx, cube Cube) error {
 	var err error
 
 	audit.Log(nil, "exchange rates", "Importing exchange rates...", "date", cube.Date)
+
+	var lastExchangeRate time.Time
+	pq := dbutl.PQuery(`
+		select coalesce(max(exchange_date), date '1970-01-01') as exchange_date from exchange_rate
+	`)
+
+	err = tx.QueryRow(pq.Query, pq.Args...).Scan(&lastExchangeRate)
+	if err != nil {
+		return err
+	}
+
+	if utils.String2dateNoErr(cube.Date, utils.ISODate).Before(lastExchangeRate) {
+		return nil
+	}
 
 	for _, rate := range cube.Rate {
 		multiplier := 1.0

@@ -2,7 +2,7 @@
     "DbType": "postgres",
     "DbURL1": "host=devel port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=StoreExchRates --search_path=public --timezone=UTC --client_encoding=UTF8'",
     "DbURL": "host=devel port=5432 user=geo password=geo dbname=devel sslmode=disable options='--application_name=StoreExchRates --search_path=public --client_encoding=UTF8'",
-    "RatesXMLUrl1": "https://www.bnr.ro/files/xml/years/nbrfxrates2019.xml",
-    "RatesXMLUrl": "https://www.bnr.ro/nbrfxrates.xml",
+    "RatesXMLUrl": "https://www.bnr.ro/files/xml/years/nbrfxrates2021.xml",
+    "RatesXMLUrl1": "https://www.bnr.ro/nbrfxrates.xml",
     "AddMissingCurrencies": true
 }

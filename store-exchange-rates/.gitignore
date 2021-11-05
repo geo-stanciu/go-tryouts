@@ -3,3 +3,4 @@ _test/
 *.bat
 store-exchange-rates
 tags
+*.sqlite

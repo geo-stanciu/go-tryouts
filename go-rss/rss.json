@@ -323,12 +323,14 @@
         {
             "SourceName": "forklog.net",
             "Lang": "EN",
-            "Link": "http://forklog.net/feed"
+            "Link": "http://forklog.net/feed",
+            "TrustCert": true
         },
         {
             "SourceName": "cryptonewsmonitor.com",
             "Lang": "EN",
-            "Link": "https://cryptonewsmonitor.com/feed"
+            "Link": "https://cryptonewsmonitor.com/feed",
+            "TrustCert": true
         },
         {
             "SourceName": "news.bitcoin.com",
